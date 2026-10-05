@@ -43,7 +43,7 @@ async def database_error(request, error):
         status_code=503,
         content={
             "code": "persistence_error",
-            "message": "Database unavailable. The completed run was not saved.",
+            "message": "Database unavailable. Run persistence could not be confirmed.",
             "run_id": str(run_id) if run_id else None,
         },
     )
@@ -63,6 +63,7 @@ def get_pool(request: Request):
 
 
 async def read_chat(request: Request):
+    request.state.started = perf_counter()
     body = bytearray()
     async for chunk in request.stream():
         body.extend(chunk)
@@ -101,7 +102,7 @@ def chat(
     body: Annotated[ChatRequest, Depends(read_chat)],
     pool=Depends(get_pool),
 ):
-    started = perf_counter()
+    started = request.state.started
     run_id = uuid4()
     request.state.run_id = run_id
     db.create_run(pool, run_id, body)

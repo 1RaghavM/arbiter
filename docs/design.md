@@ -40,6 +40,8 @@ Dockerfile
 compose.yaml
 ```
 
+Phase 01 implements Message, ChatRequest, GenerationResult, and ChatResult, plus runs/calls/schema_migrations. Analysis/evaluation/route schemas and benchmark tables are added with their owning phases. Mock responses have `mode: mock`, null analysis, empty route decisions, and `unverified` quality status.
+
 Add modules only as their phase needs them. Do not scaffold empty future layers. Compose is for local PostgreSQL; the Dockerfile builds the frontend and serves it through FastAPI.
 
 ## Internal contracts
@@ -66,6 +68,8 @@ Provider fields are translated and validated at the adapter boundary. Unknown co
 | GET /api/benchmarks/{id} | Report and per-strategy metrics |
 | POST /api/session | Deployment-only shared-password login; rate-limited |
 | DELETE /api/session | Clear demo session |
+
+Phase 01 additionally caps the raw chat JSON body at 160,000 bytes before parsing. Text limits count Unicode code points; null characters and invalid Unicode are rejected for PostgreSQL compatibility.
 
 Use 422 for invalid input, 503 for no configured candidate/DB/provider availability failure, 504 for exhausted deadline, and 502 for unrecoverable upstream invalid response. A completed answer with failed or unknown quality returns 200 with explicit status. Error bodies include code, safe message, and run_id when allocated. Never expose raw SDK exception strings or keys. Protect all data/paid endpoints in deployed demo mode. Add only a simple per-process request limit and small concurrency cap because deployment is explicitly one process.
 
@@ -117,4 +121,4 @@ Index runs created_at and calls run_id. Derive task/model aggregates with a smal
 
 Total runtime cost = classifier + all generation attempts + all online evaluations, including unsuccessful calls when usage is known. Unknown charge after a timeout makes total incomplete; show known subtotal and conservative reservation, not a false zero. Benchmark scoring costs are recorded separately as research overhead, applied equally and excluded from runtime strategy comparison.
 
-End-to-end latency is wall-clock from request acceptance to finalized response, including classification, evaluation, retries, and DB work. Also retain stage timings. Costs based on provider token usage and price snapshots are estimates of billing, not invoice reconciliation. Disable budget-critical requests when pricing is unknown; reservations cannot guarantee final invoices, so also use provider-side spend limits.
+End-to-end latency is wall-clock from request acceptance to finalized response, including classification, evaluation, retries, and DB work. Also retain stage timings. Phase 01 measures from body-read start through the final run/call commit; the last timing-metadata write and HTTP serialization are outside that measurement. Costs based on provider token usage and price snapshots are estimates of billing, not invoice reconciliation. Disable budget-critical requests when pricing is unknown; reservations cannot guarantee final invoices, so also use provider-side spend limits.
