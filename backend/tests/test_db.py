@@ -1,4 +1,5 @@
 import os
+from time import perf_counter
 from uuid import uuid4
 
 import pytest
@@ -31,7 +32,7 @@ def test_round_trip_and_reconnect(pool):
     )
     try:
         db.create_run(pool, run_id, request)
-        db.finish_run(pool, result, generation)
+        db.finish_run(pool, result, generation, perf_counter())
         with db.create_pool(os.environ["TEST_DATABASE_URL"]) as reconnected:
             run = db.read_run(reconnected, run_id)
             assert run["messages"] == request.model_dump()["messages"]

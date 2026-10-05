@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from time import perf_counter
 from uuid import uuid4
 
 import psycopg
@@ -53,7 +54,9 @@ def create_run(pool, run_id, request: ChatRequest):
         )
 
 
-def finish_run(pool, result: ChatResult, generation: GenerationResult, error=None):
+def finish_run(
+    pool, result: ChatResult, generation: GenerationResult, started, error=None
+):
     with pool.connection() as connection:
         connection.execute(
             "INSERT INTO calls (id, run_id, sequence, stage, provider, model_id, "
@@ -86,6 +89,13 @@ def finish_run(pool, result: ChatResult, generation: GenerationResult, error=Non
                 Jsonb(error),
                 result.run_id,
             ),
+        )
+
+    result.total_latency_ms = round((perf_counter() - started) * 1000)
+    with pool.connection() as connection:
+        connection.execute(
+            "UPDATE runs SET total_latency_ms=%s WHERE id=%s",
+            (result.total_latency_ms, result.run_id),
         )
 
 
