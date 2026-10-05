@@ -8,7 +8,7 @@ Follow the user's current instructions first. Read this file, `docs/STATUS.md`, 
 
 ## Repository setup boundary
 
-The repository is bootstrapped with documentation only. All phases remain pending. Do not start Phase 00 or create a phase branch until the user explicitly authorizes implementation. The prompts in `docs/HANDOFF.md` are instructions to use later, not current authorization. Keep specifications in `docs/`; the root README is the repository entry point.
+The user has authorized Phase 00. Follow `docs/STATUS.md` for progress; later phases require separate authorization after the preceding phase is merged. The prompts in `docs/HANDOFF.md` are instructions to use later, not current authorization. Keep specifications in `docs/`; the root README is the repository entry point.
 
 ## Session procedure
 

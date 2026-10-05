@@ -2,16 +2,16 @@
 
 Specification prepared: 2026-10-04.
 
-- Current phase: none; Phase 00 has not started.
+- Current phase: 00 — foundation, in progress (authorized by the user).
 - Repository/default branch: public GitHub repository [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), using `master`; local `master` tracks `origin/master`.
-- Phase branch: none created.
+- Phase branch: `phase/00-foundation`, branched from `origin/master` at `16dfe43`.
 - Commits: documentation bootstrap `e425792`; author/committer is the user (`1RaghavM`), with no co-author trailer. Bootstrap pushed successfully to `origin/master`; the policy update follows as one coherent documentation commit with an immediate push.
 - PR: none created; no phase work to submit.
 - Repository setup: root README indexes all docs; root AGENTS.md applies repository-wide; GitHub PR template installed in `.github/`.
 - Implementation checks: not applicable; no runtime code or dependencies exist.
 - Live integrations: not tested; credentials not inspected.
 - Deployment: not created.
-- Next action: wait for explicit user authorization to start Phase 00. Remote and push access are configured.
+- Next action: finish Phase 00 gates and open its PR; stop for review.
 
 ## Repository setup evidence (2026-10-04)
 
@@ -28,7 +28,7 @@ Specification prepared: 2026-10-04.
 
 | Phase | State | Branch | PR | Evidence |
 | --- | --- | --- | --- | --- |
-| 00 | pending | — | — | — |
+| 00 | in_progress | phase/00-foundation | — | Health test and Ruff pass |
 | 01 | pending | — | — | — |
 | 02 | pending | — | — | — |
 | 03 | pending | — | — | — |
@@ -60,3 +60,5 @@ Allowed states: pending, in_progress, blocked, ready_for_review, merged. Ready_f
 2026-10-04: User requested minimal code in a clean junior-developer style, necessary comments only, meaningful frequent commits with an immediate push after each, and sole user authorship with no assistant co-author trailers. Updated agent rules, steering, quality, R13, phase guidance, handoff prompts, and PR checklist. No implementation started. The user authorized creating a public `arbiter` repository through gh. Created `origin` at https://github.com/1RaghavM/arbiter.git and successfully pushed the bootstrap commit with `git push -u origin master`.
 
 Documentation policy validation: `git diff --check` passed. Relative Markdown links resolve and all nine phases remain pending. No application code was added.
+
+Phase 00 started: Python dependencies pinned and locked; health endpoint/test, environment template, ignore rules, and local PostgreSQL Compose added. `uv run ruff check .` passed; `uv run pytest` passed (1 test; upstream TestClient/httpx deprecation warning). `docker compose config --quiet` passed. All four provider-key environment variables are absent in this shell; no live calls are needed for Phase 00. Setup commands will live in docs/SETUP.md to preserve the requested short root README.

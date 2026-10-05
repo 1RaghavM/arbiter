@@ -18,7 +18,7 @@ Complete phases in order. Each row is one branch, meaningful incremental commits
 
 **Depends on:** repository documentation bootstrap complete and explicit user authorization to start Phase 00.
 
-Tasks: inspect existing repository; initialize only if needed; establish backend Python project and frontend React/Vite/TypeScript; add Tailwind/shadcn using current Vite instructions; add only needed UI primitives. Add health route, env template, ignore rules, local PostgreSQL compose, command documentation, and basic offline CI. Pin and lock compatible dependencies. Define model-config schema with explicit placeholder values, not fake live IDs. Record verified SDK/model documentation links and available credentials without values. README lists install, dev, lint, test, and build commands.
+Tasks: inspect existing repository; initialize only if needed; establish backend Python project and frontend React/Vite/TypeScript; add Tailwind/shadcn using current Vite instructions; add only needed UI primitives. Add health route, env template, ignore rules, local PostgreSQL compose, command documentation, and basic offline CI. Pin and lock compatible dependencies. Define model-config schema with explicit placeholder values, not fake live IDs. Record verified SDK/model documentation links and available credentials without values. docs/SETUP.md lists install, dev, lint, test, and build commands; the root README remains a one-paragraph overview as requested.
 
 Suggested commits: (1) repo/tooling/environment setup; (2) health API and frontend shell; (3) CI and setup documentation.
 
