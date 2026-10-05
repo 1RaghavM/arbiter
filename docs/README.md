@@ -1,8 +1,8 @@
 # Arbiter documentation guide
 
-These are the canonical project specifications. The repository has been prepared for future implementation; no phase has started.
+These are the canonical project specifications. Phase 00 establishes the local development foundation; see STATUS.md for review progress.
 
-Start at the [repository index](../README.md) for links to every document and the [current status](STATUS.md) for verified progress.
+Read the [project overview](../README.md), use [SETUP.md](SETUP.md) for install/dev/check commands, and consult the [current status](STATUS.md) for verified progress.
 
 ## Reading order and ownership
 
