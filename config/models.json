@@ -1,0 +1,58 @@
+{
+  "models": [
+    {
+      "key": "openai",
+      "provider": "openai",
+      "model_id": null,
+      "enabled": false,
+      "context_limit": null,
+      "max_output_tokens": 1024,
+      "input_usd_per_million": null,
+      "output_usd_per_million": null,
+      "additional_pricing": {},
+      "price_verified_at": null,
+      "source_url": null,
+      "prior_quality": {},
+      "prior_latency_ms": null,
+      "capability_rank": null
+    },
+    {
+      "key": "anthropic",
+      "provider": "anthropic",
+      "model_id": null,
+      "enabled": false,
+      "context_limit": null,
+      "max_output_tokens": 1024,
+      "input_usd_per_million": null,
+      "output_usd_per_million": null,
+      "additional_pricing": {},
+      "price_verified_at": null,
+      "source_url": null,
+      "prior_quality": {},
+      "prior_latency_ms": null,
+      "capability_rank": null
+    },
+    {
+      "key": "google",
+      "provider": "google",
+      "model_id": null,
+      "enabled": false,
+      "context_limit": null,
+      "max_output_tokens": 1024,
+      "input_usd_per_million": null,
+      "output_usd_per_million": null,
+      "additional_pricing": {},
+      "price_verified_at": null,
+      "source_url": null,
+      "prior_quality": {},
+      "prior_latency_ms": null,
+      "capability_rank": null
+    }
+  ],
+  "cheap_baseline_key": null,
+  "strong_baseline_key": null,
+  "judge_key": null,
+  "quality_floor": 0.8,
+  "cost_weight": 0.7,
+  "latency_weight": 0.3
+}
