@@ -24,4 +24,4 @@ A student project to evaluate whether routing across cloud AI models can preserv
 
 Read the agent instructions and current status, then explicitly authorize Phase 00 using the handoff prompt. Each phase has its own branch and PR; subsequent phases wait for the preceding PR to be merged. Installation and development commands will be documented when Phase 00 creates the application.
 
-Git is initialized on `master`. No remote is configured; GitHub remote access and authentication will be needed to publish phase PRs.
+The public repository is [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), with `master` as its default branch. Make meaningful incremental commits under the user's sole Git identity, without assistant co-author trailers, and push immediately after every commit.

@@ -24,7 +24,7 @@ A single-user/demo chat app with React, shadcn/ui, FastAPI, PostgreSQL, Jev prom
 | R10 | Show route metadata under each assistant message and a small recent-runs/benchmark view | Selected model, rationale, escalation, quality, total latency and cost visible |
 | R11 | Compare routed, fixed-cheap, and fixed-strong strategies on a frozen held-out set | Reproducible report including overhead, failures, and sample size |
 | R12 | Deploy on cloud CPU infrastructure with PostgreSQL and browser access | HTTPS demo from a second machine; deployment instructions |
-| R13 | Work in separate phase branches, incremental commits, and phase PRs | Git history and PR links recorded |
+| R13 | Work in separate phase branches with meaningful incremental commits, an immediate push after each commit, sole user authorship, and phase PRs | Git history, push results, author metadata, and PR links recorded |
 | R14 | Provide local setup, environment template, tests, limitations, and final demo steps | Fresh setup from README succeeds |
 
 ## Input and behavior limits

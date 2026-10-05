@@ -19,7 +19,9 @@ Exact versions and provider model IDs are recorded during Phase 00/02/03 against
 
 ## Code budget
 
-Write the smallest clear implementation that satisfies the requirements. Avoid code golf. Aim for approximately 1,500–2,500 hand-written runtime LOC across backend and frontend. This is a soft review signal, not a gate. Count generated shadcn files, tests, migrations, and documentation separately. Do not remove necessary checks or compress code merely to hit a line count.
+Write the smallest clear implementation that satisfies the student-project requirements. There is no minimum line count: fewer lines are welcome when the code remains readable. Treat 1,500–2,500 hand-written runtime LOC as a rough planning estimate, never a target to fill. Count generated shadcn files, tests, migrations, and documentation separately. Keep necessary validation, spend limits, and tests; avoid code golf or compressed one-liners.
+
+Use a clean junior-developer style: descriptive names, small focused functions, explicit steps, and familiar loops and conditionals. Prefer code a junior developer can explain and maintain. Avoid clever language tricks, speculative flexibility, and production-level infrastructure. Comments and docstrings are only for non-obvious reasons, constraints, or workarounds; do not restate the code.
 
 Start with a flat app package and a few React components. Split a file when it has distinct responsibilities that are hard to follow. Avoid one-line forwarding modules, generic service/repository classes, dependency-injection containers, and plugin registries.
 

@@ -22,7 +22,9 @@ Known limitations, unresolved gates, and important decisions. Distinguish observ
 ## Phase checklist
 
 - [ ] Only the active phase is implemented
-- [ ] Incremental meaningful commits exist
+- [ ] Meaningful incremental commits exist; each was pushed immediately
+- [ ] User is sole author/committer; no assistant co-author trailers
+- [ ] Code is minimal and straightforward; comments explain only non-obvious details
 - [ ] Relevant quality gates passed
 - [ ] No secrets/private artifacts committed
 - [ ] STATUS and setup documentation updated

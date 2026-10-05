@@ -1,6 +1,6 @@
 # Arbiter phase build line
 
-Complete phases in order. Each row is one branch, incremental commits, one PR, and a review/merge boundary. Do not treat this document as authorization to merge. Start every new phase from the updated default branch after its dependency is merged.
+Complete phases in order. Each row is one branch, meaningful incremental commits (usually 3–6), one PR, and a review/merge boundary. Suggested commits below are milestones that may be split into coherent slices with their tests. Push immediately after every commit and use the user as sole author, without assistant co-author trailers; follow AGENTS.md when push access is blocked. Do not treat this document as authorization to merge. Start every new phase from the updated default branch after its dependency is merged.
 
 | Phase | Branch | Working result |
 | --- | --- | --- |

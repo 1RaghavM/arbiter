@@ -6,11 +6,11 @@ Readable small code, correct routing/accounting, explicit failure states, a usab
 
 ## Every phase
 
-- Only active-phase scope; no unrelated refactor.
+- Only active-phase scope; no unrelated refactor. Review for unnecessary code, abstractions, dependencies, and comments. Favor straightforward code a junior developer can maintain.
 - Run relevant offline tests, backend lint, frontend type/lint/build checks once those components exist.
 - No credentials in tracked files or frontend bundle; review staged diff.
 - Document exact commands and results in STATUS and PR; skipped/live-blocked checks are not passes.
-- Incremental commits and one phase PR. UI changes include a quick browser check at desktop and narrow/mobile width.
+- Meaningful incremental commits, each immediately pushed successfully, and one phase PR. Verify the user is the sole author/committer and no assistant co-author trailers exist. Follow AGENTS.md if pushing is blocked. UI changes include a quick browser check at desktop and narrow/mobile width.
 
 ## Test focus
 
