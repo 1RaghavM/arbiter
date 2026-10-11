@@ -2,15 +2,16 @@
 
 Updated: 2026-10-11.
 
-- Current phase: 04 — evaluation and escalation, ready for review.
+- Current phase: 05 — historical routing and resumable jobs, in progress.
 - Repository/default branch: [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), `master`.
 - Phase 01 [PR #2](https://github.com/1RaghavM/arbiter/pull/2) merged on 2026-10-11 after explicit user authorization. Its checks passed.
 - Phase 02 PR #3 merged by the review subagent at `2793f1b` after all gates passed.
 - Phase 03 PR #4 merged by the review subagent at `4377819` after fixes and passing CI.
-- Phase branch: `phase/04-evaluation`, from updated `origin/master` at `4377819`.
+- Phase 04 PR #5 merged by the review subagent at `b8086ad` after passing current CI.
+- Phase branch: `phase/05-history-jobs`, from updated `origin/master` at `b8086ad`.
 - Authorization: user gives standing authorization for subagent review/merge of passing phase PRs and continuation to the next phase.
-- Previous PR: [#4](https://github.com/1RaghavM/arbiter/pull/4), merged. Phase 04 PR not yet opened.
-- Next action: open Phase 04 PR, delegate final review/merge after current CI passes, then branch Phase 05 from updated master.
+- Previous PR: [#5](https://github.com/1RaghavM/arbiter/pull/5), merged. Phase 05 PR not yet opened.
+- Next action: add compatible attempt history, frozen resumable CLI jobs and PostgreSQL/offline evidence, then delegate PR review/merge.
 - Testing preference: keep paid checks minimal; reuse successful evidence, use offline fakes for failure paths, and rerun only affected checks after changes. Recorded in AGENTS.md and quality.md.
 
 ## Phase 04 results
@@ -121,8 +122,8 @@ Each commit uses `1RaghavM` as sole author/committer, with no assistant co-autho
 | 01 | merged | phase/01-chat-slice | [#2](https://github.com/1RaghavM/arbiter/pull/2) | Merged history and passing CI |
 | 02 | merged | phase/02-cloud-models | [#3](https://github.com/1RaghavM/arbiter/pull/3) | Offline gates and all three live checks pass |
 | 03 | merged | phase/03-jev-routing | [#4](https://github.com/1RaghavM/arbiter/pull/4) | Offline checks and live Jev/routing trace pass |
-| 04 | ready_for_review | phase/04-evaluation | — | 222 offline tests, normal live flow and controlled escalation pass |
-| 05 | pending | — | — | — |
+| 04 | merged | phase/04-evaluation | [#5](https://github.com/1RaghavM/arbiter/pull/5) | 222 offline tests, normal live flow and controlled escalation pass |
+| 05 | in_progress | phase/05-history-jobs | — | Implementation underway |
 | 06 | pending | — | — | — |
 | 07 | pending | — | — | — |
 | 08 | pending | — | — | — |

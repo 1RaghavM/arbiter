@@ -115,7 +115,7 @@ Use PostgreSQL UUIDs, UTC timestamps, JSONB for variable stage payloads, and NUM
 - `runs`: id, created_at, mode (live/mock/dev/heldout/baseline), status, messages JSONB, analysis JSONB, route_decisions JSONB, final_answer, final_model, total_latency_ms, total_cost_usd nullable, known_cost_usd, cost_complete, config/rubric/policy versions, evaluations JSONB, escalation_reason, reserved_cost_usd, benchmark_job_id nullable, error JSONB.
 - `calls`: id, run_id FK, sequence, stage (classify/generate/evaluate), provider, model_id, attempt number, status, latency_ms, input/output tokens nullable, raw usage JSONB, price snapshot JSONB, cost_usd nullable, cost_source, output JSONB, error JSONB. Unique run_id+sequence.
 - `benchmark_jobs`: id, status, dataset hash, config snapshot, history snapshot, strategy list, spend ceiling, progress/report JSONB, started_at, finished_at.
-- `benchmark_cases`: job_id FK, case_id, strategy, state pending/running/done/error, run_id nullable, grading JSONB; unique job_id+case_id+strategy.
+- `benchmark_cases`: job_id FK, case_id, strategy, state pending/running/done/error/uncertain, run_id nullable, grading JSONB; unique job_id+case_id+strategy.
 - `schema_migrations`: version, applied_at.
 
 Index runs created_at and calls run_id. Derive task/model aggregates with a small SQL query, not a warehouse. Store rubric outputs with their associated generation call. Write run/call updates in short transactions, never hold a transaction across a model request. Migrations apply once in order; never drop demo data on startup.
@@ -125,3 +125,11 @@ Index runs created_at and calls run_id. Derive task/model aggregates with a smal
 Total runtime cost = classifier + all generation attempts + all online evaluations, including unsuccessful calls when usage is known. Unknown charge after a timeout makes total incomplete; show known subtotal and conservative reservation, not a false zero. Benchmark scoring costs are recorded separately as research overhead, applied equally and excluded from runtime strategy comparison.
 
 End-to-end latency is wall-clock from request acceptance to finalized response, including classification, evaluation, retries, and DB work. Also retain stage timings. Phase 01 measures from body-read start through the final run/call commit; the last timing-metadata write and HTTP serialization are outside that measurement. Costs based on provider token usage and price snapshots are estimates of billing, not invoice reconciliation. Disable budget-critical requests when pricing is unknown; reservations cannot guarantee final invoices, so also use provider-side spend limits.
+
+## Phase 05 history compatibility and jobs
+
+History uses the `history-v1` policy and `rubric-v1` only. Earlier `priors-v1` records remain inspectable but do not train this policy: the compatibility boundary is explicit. Match exact generator provider/model ID and configured judge identity. Each generation attempt contributes its own grade; provider failures count as failures, unavailable judgments remain unknown. Use at least five known labels before replacing priors; output medians use available token counts. These labels remain biased online-judge proxies.
+
+A request loads one content-addressed history snapshot before paid work and reuses it for every selection. Jobs freeze dataset contents/hash, settings, model registry and that snapshot in PostgreSQL; resume uses those stored inputs. Development live records can enter future history; mock, held-out and baseline records cannot. The current development job reports online quality status only; independent comparison grading belongs to Phase 07.
+
+Before a case starts, persist its run ID, running state and full request reservation. Known complete costs release unused reservation; unknown/crashed work retains the cap. Resume skips finished cases and marks interrupted running cases uncertain. Only an explicit uncertain retry may allocate another reservation; the original charge remains. A per-job advisory lock prevents concurrent workers from mistaking active work for a crash. No database transaction spans provider work and no HTTP endpoint starts a job.
