@@ -8,6 +8,7 @@ from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 from psycopg_pool import ConnectionPool
 
+from app.config import load_environment
 from app.schemas import ChatRequest, ChatResult, GenerationResult
 
 
@@ -213,5 +214,6 @@ def read_run(pool, run_id):
 
 
 if __name__ == "__main__":
+    load_environment()
     migrate(os.environ["DATABASE_URL"])
     print("Migrations applied.")

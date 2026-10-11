@@ -14,6 +14,17 @@ Updated: 2026-10-11.
 - Next action: implementation paused at the user’s request while preparing [the concise progress summary](PROGRESS.md). When continuation is requested, finish subagent PR review/merge, then branch Phase 06 from updated master.
 - Testing preference: keep paid checks minimal; reuse successful evidence, use offline fakes for failure paths, and rerun only affected checks after changes. Recorded in AGENTS.md and quality.md.
 
+## Local live setup fix (2026-10-11)
+
+User requested automatic `.env` loading and a working local live system while phase progression remains paused. API startup, migrations, provider smoke, and benchmark/report entry points now load the root `.env` before configuration/database reads. Shell variables retain precedence; interpolation is disabled. Tests redirect env-file loading to a temporary path. python-dotenv 1.2.4 is pinned and locked; existing provider integrations are unchanged.
+
+- Checks: `TEST_DATABASE_URL=postgresql://arbiter:arbiter@localhost:5432/arbiter_test .venv/bin/pytest` from backend: **261 passed**, real PostgreSQL and offline providers. `.venv/bin/ruff check .` and `.venv/bin/ruff format --check .`: passed, 26 files. Frontend `npm run typecheck`, `npm run lint`, `npm run build`: passed. Independent subagent review found no blockers. No UI behavior changed.
+- `env -u DATABASE_URL -u CHAT_MODE .venv/bin/python -m app.db` succeeded using the root `.env`. Backend restarted with DATABASE_URL, CHAT_MODE and REQUEST_BUDGET_USD unset in its launch environment to verify file loading; frontend proxy `/api/config` reports live and all three generators available.
+- Initial USD 0.05 request ceiling rejected the arithmetic test before paid work; run `6882683b-f6fa-48a9-a7e2-6973ca9969bc` has zero calls and zero cost. The worst-case judge reservation alone was USD 0.133955. User explicitly approved increasing local REQUEST_BUDGET_USD to **0.25** and one live check.
+- One live request through Vite `/api/chat`: “What is 6 multiplied by 7? Reply with only the number.” Run `934a7910-165c-4e84-82f1-b5239dfb3949`: Jev → Google answer `42` → Anthropic judge, status passed, 3,002 ms, complete reported usage, estimated **USD 0.002020092**. Persisted run inspected through `/api/runs/{id}`. No extra provider smoke or benchmark calls.
+- Local `.env` remains ignored, credentials preserved, CHAT_MODE=live. Backend at `127.0.0.1:8000`, frontend at `127.0.0.1:5173`; refresh the browser to load live configuration. Budget is a conservative reservation ceiling, not expected spend or an invoice guarantee.
+- Branch: `phase/05-history-jobs`; fix and evidence are included together in the next commit (`git log -1` identifies it), immediately pushed to existing [PR #6](https://github.com/1RaghavM/arbiter/pull/6). No merge or next-phase work in this request. Next action: test the live UI; resume phase progression only when requested.
+
 ## Phase 05 results
 
 Live requests load one content-addressed compatible history snapshot. Routing uses per-attempt smoothed quality and median latency/output after five known labels. Unknown judgments remain unknown; provider errors count against reliability. The sequential benchmark/report CLI freezes dataset, settings, registry, history and runtime versions, reserves before calls, skips completed cases, retains uncertain spend and requires explicit uncertain retries.

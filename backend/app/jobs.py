@@ -13,7 +13,13 @@ from psycopg_pool import PoolTimeout
 from pydantic import Field
 
 from app import analysis, db, evaluation, history
-from app.config import ModelRegistry, Settings, load_registry, load_settings
+from app.config import (
+    ModelRegistry,
+    Settings,
+    load_environment,
+    load_registry,
+    load_settings,
+)
 from app.pipeline import run_chat
 from app.schemas import ChatRequest
 
@@ -310,6 +316,7 @@ def main():
     report = commands.add_parser("report")
     report.add_argument("job_id", type=UUID)
     args = parser.parse_args()
+    load_environment()
     try:
         url = os.environ.get("DATABASE_URL")
         if not url:

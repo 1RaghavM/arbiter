@@ -5,6 +5,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Annotated, Literal
 
+from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
 
 PositiveInt = Annotated[int, Field(gt=0)]
@@ -81,6 +82,11 @@ KEY_ENV = {
     "google": "GOOGLE_API_KEY",
 }
 REGISTRY_PATH = Path(__file__).resolve().parents[2] / "config/models.json"
+ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
+
+
+def load_environment():
+    load_dotenv(ENV_PATH, override=False, interpolate=False)
 
 
 class Settings(BaseModel):

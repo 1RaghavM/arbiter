@@ -12,7 +12,7 @@ from psycopg_pool import PoolTimeout
 from pydantic import ValidationError
 
 from app import db
-from app.config import load_registry, load_settings, model_status
+from app.config import load_environment, load_registry, load_settings, model_status
 from app.pipeline import run_chat
 from app.schemas import ChatRequest, ChatResult
 
@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app):
+    load_environment()
     url = os.environ.get("DATABASE_URL")
     app.state.pool = db.create_pool(url) if url else None
     yield

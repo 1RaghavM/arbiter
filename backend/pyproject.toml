@@ -10,6 +10,7 @@ dependencies = [
     "openai==3.28.0",
     "psycopg[binary,pool]==3.3.6",
     "pydantic==2.13.5",
+    "python-dotenv==1.2.4",
     "uvicorn==0.54.0",
 ]
 

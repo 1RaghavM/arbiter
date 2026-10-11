@@ -7,7 +7,7 @@ Use Node.js 24 (`nvm use` if available), uv 0.8.0 or newer, Python 3.12, and Doc
 From the repository root:
 
 ```sh
-cp .env.example .env
+cp -n .env.example .env
 cd backend
 uv sync --locked
 cd ../frontend
@@ -22,18 +22,17 @@ From the repository root, with Docker running:
 
 ```sh
 docker compose up -d --wait db
-export DATABASE_URL=postgresql://arbiter:arbiter@localhost:5432/arbiter
 cd backend
 uv run --frozen python -m app.db
 ```
 
-The application reads environment variables; it does not automatically load `.env`. Export `DATABASE_URL` in each terminal that runs migrations or the API. The command above uses the bundled local demo credentials. For another database, set its URL privately.
+The API, migrations, smoke CLI, and benchmark/report CLI automatically load the repository-root `.env` at startup, including when launched from `backend/`. Existing shell variables take precedence. Values are literal (no `${VARIABLE}` expansion). A missing `.env` is allowed when configuration is supplied by the environment. Restart the backend after changing `.env`; for another database, set `DATABASE_URL` privately.
 
 Migrations are numbered SQL files, applied in filename order in a transaction and tracked in `schema_migrations`. Running the migration command twice is safe. Run it before starting the API; startup never drops data or automatically changes the schema. The pool holds at most four connections, waits at most three seconds for one, and limits SQL statements to five seconds.
 
 ## Develop and try the chat
 
-Start the API from `backend/`, in the terminal with `DATABASE_URL` exported:
+Start the API from `backend/`:
 
 ```sh
 uv run --frozen uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
@@ -101,18 +100,22 @@ This preserves `postgres_data`. Do not add `--volumes` if you want to retain you
 
 ## Live analysis, generation, and evaluation (Phase 04)
 
-Mock mode is still the default. For live chat, configure Jev and the available generation keys privately in the backend environment, then start the API with:
+Mock mode is still the template default. For live chat, put `JEV_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `GOOGLE_API_KEY` in the root `.env`, then set these values there:
+
+```dotenv
+CHAT_MODE=live
+REQUEST_BUDGET_USD=0.25
+```
+
+The USD 0.25 ceiling accommodates the conservative generation and judge reservations; it is not expected spend. A USD 0.05 ceiling currently blocks even a short evaluated request before any paid call. Longer conversations can require more reservation and will fail safely if they do not fit.
+
+Start the API from `backend/`:
 
 ```sh
-export CHAT_MODE=live
-export CLASSIFICATION_TIMEOUT_SECONDS=10
-export EVALUATION_TIMEOUT_SECONDS=15
-export REQUEST_BUDGET_USD=0.25
-export GENERATION_TIMEOUT_SECONDS=30
 uv run --frozen uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-Credentials are `JEV_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `GOOGLE_API_KEY`. Keep them backend-only; never use `VITE_` variables. The app does not load `.env` automatically; export values in the process that starts it. Restart with `CHAT_MODE=mock` for free deterministic replies. Live chat now routes automatically; fixed selection is confined to the provider smoke CLI.
+Credentials are `JEV_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `GOOGLE_API_KEY`. Keep them backend-only; never use `VITE_` variables. The root `.env` loads automatically on startup. A previously exported `CHAT_MODE=mock` overrides the file; run `unset CHAT_MODE` before starting live mode. To test for free, use `CHAT_MODE=mock uv run --frozen uvicorn app.main:app --host 127.0.0.1 --port 8000`. Live chat now routes automatically; fixed selection is confined to the provider smoke CLI.
 
 `config/models.json` records exact documented model IDs, context/output limits, Decimal prices, source URLs, and verification dates. Enabled entries still become unavailable without their credentials. Unavailable generators are excluded; live requests never silently switch to mock. `GET /api/config` exposes mode, routed selection, and generation credential availability labels, never key values. The frontend checks it before enabling Send. No model selector is added.
 

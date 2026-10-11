@@ -76,6 +76,8 @@ Use 422 for invalid input, 503 for no configured candidate/DB/provider availabil
 
 ## Model configuration
 
+API and CLI entry points load the repository-root `.env` at startup with python-dotenv. Exported environment variables take precedence; values are literal, without interpolation. Missing files are allowed. Loading happens before database/configuration reads, never on import or per request. Tests substitute a temporary env-file path so local credentials and live settings are not loaded.
+
 Phase 03 populates explicit provisional quality/latency/rank assumptions and baseline/judge keys; these are not calibrated by the two development smoke cases. Quality lookup uses task:difficulty then difficulty, with missing priors excluding the candidate. Missing credentials make a configured candidate unavailable without changing its registry entry.
 
 Each generator entry has stable key, provider, exact model_id, enabled, context_limit, max_output_tokens, input/output pricing plus relevant cached/reasoning pricing rules, price_verified_at, source_url, per-bucket prior quality estimates, prior latency, and a provisional capability_rank. Configure a strong baseline key, cheap baseline key, and fixed judge key separately. Jev has separate settings. Start with 3 generator candidates total, one per provider, with different intended cost/capability profiles.
