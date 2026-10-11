@@ -34,3 +34,8 @@ For each enabled provider record: actual docs URL, verified date, SDK version, e
 - Backend: FastAPI 0.142.2, Pydantic 2.13.5, Uvicorn 0.54.0, pytest 9.1.1, Ruff 0.16.10, httpx 0.28.1. The current upstream TestClient emits an httpx deprecation warning; tests pass.
 - Frontend: React 19.2.8, Vite 8.3.0, TypeScript 6.0.2, Tailwind 4.3.3, Oxlint 1.81.0. PostgreSQL Compose image: 17.6.
 - Credential names checked in the current shell only: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `JEV_API_KEY` are all absent. No secret values were read or logged, and no paid calls were made.
+
+## Phase 01 verification — 2026-10-05
+
+- [Psycopg installation](https://www.psycopg.org/psycopg3/docs/basic/install.html) and [connection pools](https://www.psycopg.org/psycopg3/docs/advanced/pool.html): direct parameterized SQL, JSONB adaptation, short connection-context transactions, explicit pool lifecycle, and finite connection/statement waits. Installed exact `psycopg[binary,pool]==3.3.6`; the lockfile pins `psycopg-pool==3.3.3`.
+- PostgreSQL 17.6 was exercised locally through Compose and is now a CI service. No provider endpoint/model/pricing claim was added. Mock zero-cost records describe the absence of paid calls, not live billing measurements.
