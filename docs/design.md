@@ -52,7 +52,7 @@ These are Arbiter's internal schemas, not claims about provider wire formats.
 - `GenerationResult`: model key, text, finish reason, input/output tokens nullable, other billable usage when supplied, actual elapsed ms, cost_usd nullable, cost_source observed_usage/estimated/unknown, error category nullable.
 - `Evaluation`: status pass/fail/unknown; correctness, relevance, completeness each integer 0–4 when valid; reason at most 300 characters; evaluator model/version. Pass iff correctness >=3, relevance >=3, completeness >=3 and output is nonempty/nontruncated. Unknown means failed or malformed evaluation, never pass.
 - `RouteDecision`: selected key, bucket, policy version, candidate quality/cost/latency estimates, eligibility, score, reason, history snapshot identifier.
-- `ChatResult`: run_id, answer nullable, final_model nullable, status passed/quality_failed/unverified/error, analysis summary, route decisions, attempt summaries, total latency, total cost nullable, known cost subtotal, cost completeness, escalation reason, warnings.
+- `ChatResult`: evaluations associated with generation attempt/model, error_category nullable, run_id, answer nullable, final_model nullable, status passed/quality_failed/unverified/error, analysis summary, route decisions, attempt summaries, total latency, total cost nullable, known cost subtotal, cost completeness, escalation reason, warnings.
 
 Provider fields are translated and validated at the adapter boundary. Unknown confidence is null, never invented. Reasoning level is a routing feature, not access to hidden chain-of-thought.
 
@@ -106,13 +106,13 @@ A fixed online judge sees bounded conversation plus candidate answer as delimite
 - If second answer passes, return it. If both answers fail, return the one with higher minimum rubric dimension, then higher mean dimension, then later attempt on a tie; status quality_failed.
 - If only one valid answer exists and the other attempt errors, return the available answer with its actual evaluation status. If the only remaining answer cannot be evaluated, return unverified. If neither exists, return error.
 
-Use the original conversation for escalation, not the failed response as new user context. Each of up to two generation results can get at most one judge call; total cap is five paid calls including Jev. Reserve time and estimated budget for evaluation before generating. If either is exhausted, skip further calls and return the available answer unverified or quality_failed as supported by evidence. Record why escalation was skipped.
+Use the original conversation for escalation, not the failed response as new user context. Each of up to two generation results can get at most one judge call; total cap is five paid calls including Jev. Reserve time and estimated budget for evaluation before generating. When the configured judge is available but this reservation cannot fit, do not start generation; a missing judge may allow an explicitly unverified best-effort answer. If either is exhausted, skip further calls and return the available answer unverified or quality_failed as supported by evidence. Record why escalation was skipped.
 
 ## Storage
 
 Use PostgreSQL UUIDs, UTC timestamps, JSONB for variable stage payloads, and NUMERIC for currency. No ORM required.
 
-- `runs`: id, created_at, mode (live/mock/dev/heldout/baseline), status, messages JSONB, analysis JSONB, route_decisions JSONB, final_answer, final_model, total_latency_ms, total_cost_usd nullable, known_cost_usd, cost_complete, config/rubric/policy versions, benchmark_job_id nullable, error JSONB.
+- `runs`: id, created_at, mode (live/mock/dev/heldout/baseline), status, messages JSONB, analysis JSONB, route_decisions JSONB, final_answer, final_model, total_latency_ms, total_cost_usd nullable, known_cost_usd, cost_complete, config/rubric/policy versions, evaluations JSONB, escalation_reason, reserved_cost_usd, benchmark_job_id nullable, error JSONB.
 - `calls`: id, run_id FK, sequence, stage (classify/generate/evaluate), provider, model_id, attempt number, status, latency_ms, input/output tokens nullable, raw usage JSONB, price snapshot JSONB, cost_usd nullable, cost_source, output JSONB, error JSONB. Unique run_id+sequence.
 - `benchmark_jobs`: id, status, dataset hash, config snapshot, history snapshot, strategy list, spend ceiling, progress/report JSONB, started_at, finished_at.
 - `benchmark_cases`: job_id FK, case_id, strategy, state pending/running/done/error, run_id nullable, grading JSONB; unique job_id+case_id+strategy.

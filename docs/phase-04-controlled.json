@@ -1,0 +1,189 @@
+{
+  "purpose": "Offline controlled escalation fixture in arbiter_test; excluded from research evidence.",
+  "stages": [
+    "classify",
+    "generate",
+    "evaluate",
+    "generate",
+    "evaluate"
+  ],
+  "run_id": "0d4fc39c-6028-45e2-a634-ca2feb1050d1",
+  "mode": "live",
+  "answer": "OFFLINE FIXTURE: corrected answer",
+  "final_model": "anthropic",
+  "status": "passed",
+  "analysis": {
+    "task": "general",
+    "difficulty": "easy",
+    "reasoning": "low",
+    "confidence": 1.0,
+    "source": "jev",
+    "model_id": "jev-1.13.0",
+    "classifier_version": "jev-analysis-v1",
+    "latency_ms": 0,
+    "raw_usage": null,
+    "price_snapshot": {
+      "model_id": "jev-1.13.0",
+      "input_usd_per_million": "0.042",
+      "output_usd_per_million": "0",
+      "price_verified_at": "2026-10-11",
+      "source_url": "https://docs.typesafe.ai/models"
+    },
+    "cost_usd": "0.00001",
+    "cost_source": "estimated",
+    "error_category": null,
+    "called": true
+  },
+  "route_decisions": [
+    {
+      "selected_key": "google",
+      "bucket": "general:easy",
+      "policy_version": "priors-v1",
+      "candidates": [
+        {
+          "key": "anthropic",
+          "eligible": true,
+          "exclusion_reason": null,
+          "quality": 0.9,
+          "estimated_cost_usd": "0.00316",
+          "reserved_cost_usd": "0.01099",
+          "latency_ms": 2500,
+          "score": 1.0
+        },
+        {
+          "key": "google",
+          "eligible": true,
+          "exclusion_reason": null,
+          "quality": 0.8,
+          "estimated_cost_usd": "0.00073",
+          "reserved_cost_usd": "0.00265",
+          "latency_ms": 1000,
+          "score": 0.2817088607594937
+        },
+        {
+          "key": "openai",
+          "eligible": true,
+          "exclusion_reason": null,
+          "quality": 0.85,
+          "estimated_cost_usd": "0.0005296",
+          "reserved_cost_usd": "0.0017584",
+          "latency_ms": 1500,
+          "score": 0.2973164556962025
+        }
+      ],
+      "reason": "Eligible quality prior; lowest weighted cost/latency.",
+      "source": "priors",
+      "evaluation_reserved": true
+    },
+    {
+      "selected_key": "anthropic",
+      "bucket": "general:easy",
+      "policy_version": "priors-v1",
+      "candidates": [
+        {
+          "key": "anthropic",
+          "eligible": true,
+          "exclusion_reason": null,
+          "quality": 0.9,
+          "estimated_cost_usd": "0.00316",
+          "reserved_cost_usd": "0.01099",
+          "latency_ms": 2500,
+          "score": 1.0
+        },
+        {
+          "key": "google",
+          "eligible": false,
+          "exclusion_reason": "unavailable",
+          "quality": 0.8,
+          "estimated_cost_usd": "0.00073",
+          "reserved_cost_usd": null,
+          "latency_ms": 1000,
+          "score": null
+        },
+        {
+          "key": "openai",
+          "eligible": true,
+          "exclusion_reason": null,
+          "quality": 0.85,
+          "estimated_cost_usd": "0.0005296",
+          "reserved_cost_usd": "0.0017584",
+          "latency_ms": 1500,
+          "score": 0.2973164556962025
+        }
+      ],
+      "reason": "Escalation: highest quality prior among eligible ranks.",
+      "source": "priors",
+      "evaluation_reserved": true
+    }
+  ],
+  "attempts": [
+    {
+      "model_key": "google",
+      "provider": "google",
+      "model_id": "gemini-3.5-flash-lite",
+      "text": "OFFLINE FIXTURE: wrong answer",
+      "finish_reason": "stop",
+      "input_tokens": null,
+      "output_tokens": null,
+      "latency_ms": 0,
+      "raw_usage": null,
+      "price_snapshot": {
+        "reserved_cost_usd": "0.00265"
+      },
+      "cost_usd": "0.001",
+      "cost_source": "unknown",
+      "error_category": null
+    },
+    {
+      "model_key": "anthropic",
+      "provider": "anthropic",
+      "model_id": "claude-sonnet-5-5",
+      "text": "OFFLINE FIXTURE: corrected answer",
+      "finish_reason": "stop",
+      "input_tokens": null,
+      "output_tokens": null,
+      "latency_ms": 0,
+      "raw_usage": null,
+      "price_snapshot": {
+        "reserved_cost_usd": "0.01099"
+      },
+      "cost_usd": "0.001",
+      "cost_source": "unknown",
+      "error_category": null
+    }
+  ],
+  "total_latency_ms": 15,
+  "total_cost_usd": "0.00601",
+  "known_cost_usd": "0.00601",
+  "cost_complete": true,
+  "reserved_cost_usd": "0.038647512",
+  "evaluations": [
+    {
+      "status": "fail",
+      "correctness": 1,
+      "relevance": 4,
+      "completeness": 4,
+      "reason": "Controlled fixture, not a real judgment.",
+      "error_category": null,
+      "rubric_version": "rubric-v1",
+      "attempt": 1,
+      "model_key": "google"
+    },
+    {
+      "status": "pass",
+      "correctness": 4,
+      "relevance": 4,
+      "completeness": 4,
+      "reason": "Controlled fixture, not a real judgment.",
+      "error_category": null,
+      "rubric_version": "rubric-v1",
+      "attempt": 2,
+      "model_key": "anthropic"
+    }
+  ],
+  "error_category": null,
+  "escalation_reason": "quality_failed",
+  "warnings": [
+    "OFFLINE CONTROLLED FIXTURE: no real provider called; simulated costs and grades."
+  ]
+}

@@ -68,3 +68,10 @@ Candidate price differences do not prove quality differences. All three exact co
 - Direct `httpx2==2.13.1` was already present transitively and is now declared explicitly. Async requests have no retries/redirects and a whole-stage cancellation deadline. Offline transports cover the exact JSON contract and failure paths.
 
 Two live Jev calls and two generation calls produced the sanitized [development trace](phase-03-development.json), for a combined usage-based estimate of USD 0.010499268 under a USD 0.10 ceiling. Confidence and routing varied across the two examples. This establishes integration behavior, not calibrated quality priors or savings; the difficult answer was truncated. Future review should reuse this evidence.
+
+
+## Phase 04 verification — 2026-10-11
+
+[Anthropic structured outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs) and the installed 1.13.0 SDK confirm `messages.create(output_config={"format":{"type":"json_schema","schema":...}})` for Sonnet 5.5. The schema uses integer enums 0–4 and required fields with no extras; unsupported numeric/string range keywords are omitted, and local strict validation bounds the reason to 300 characters. The existing provider adapter supplies deadlines, disabled retries, usage and prices. Output is capped at 256 tokens.
+
+Schema enforcement constrains format, not grading accuracy. The rubric ignores grading instructions embedded in conversation/candidate data, but no prompt-injection immunity is claimed. Reservations include schema bytes and conservative framing because structured output adds billable input. Native schema compilation may add initial latency. Existing documented Sonnet prices apply; all figures remain usage-based estimates.

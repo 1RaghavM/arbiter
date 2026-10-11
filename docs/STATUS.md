@@ -2,7 +2,7 @@
 
 Updated: 2026-10-11.
 
-- Current phase: 04 — evaluation and escalation, in progress.
+- Current phase: 04 — evaluation and escalation, ready for review.
 - Repository/default branch: [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), `master`.
 - Phase 01 [PR #2](https://github.com/1RaghavM/arbiter/pull/2) merged on 2026-10-11 after explicit user authorization. Its checks passed.
 - Phase 02 PR #3 merged by the review subagent at `2793f1b` after all gates passed.
@@ -10,8 +10,21 @@ Updated: 2026-10-11.
 - Phase branch: `phase/04-evaluation`, from updated `origin/master` at `4377819`.
 - Authorization: user gives standing authorization for subagent review/merge of passing phase PRs and continuation to the next phase.
 - Previous PR: [#4](https://github.com/1RaghavM/arbiter/pull/4), merged. Phase 04 PR not yet opened.
-- Next action: implement fixed structured judge, at-most-one escalation, complete call accounting, offline branch tests, then one bounded normal live flow and controlled escalation evidence. Reuse existing provider/classifier smoke evidence.
+- Next action: open Phase 04 PR, delegate final review/merge after current CI passes, then branch Phase 05 from updated master.
 - Testing preference: keep paid checks minimal; reuse successful evidence, use offline fakes for failure paths, and rerun only affected checks after changes. Recorded in AGENTS.md and quality.md.
+
+## Phase 04 results
+
+Fixed Anthropic structured evaluation now checks each usable answer, with deterministic empty/truncated failures, explicit unknown grades, and at most one escalation. Classifier, generation and judge attempts commit before another paid stage. Generation reserves judge time/cost in advance; unknown cost consumes its reservation. Maximum paid calls are five. The UI distinguishes judge-passed, quality-failed and unverified answers, and shows escalation.
+
+- Full offline CI on `6179d61`: **222 passed**, PostgreSQL included; backend Ruff and frontend gates passed. [CI evidence](https://github.com/1RaghavM/arbiter/actions/runs/38162879069). Local first full run had 218 passes and two failures: retry filtering replaced original timeout/empty-response error categories. Fixed that cause, added two regressions, and reran 28 focused pipeline tests and four affected PostgreSQL tests successfully before CI.
+- `.venv/bin/ruff check .` and `.venv/bin/ruff format --check .`: passed, 21 Python files. From frontend, `npm run typecheck`, `npm run lint`, `npm run build`: passed after UI changes. Storage tests confirm attempt durability through a fresh connection; evaluator/provider fixtures validate strict scores, malformed output, native SDK schema serialization and usage preservation.
+- One normal live request on 2026-10-11 under USD 0.25: Jev → Google answer `42` → Anthropic judge scores 4/4/4. Run `69429b42-4431-47e6-a5f4-4415a9dee1ed`, three paid calls, complete reported usage, total estimated USD **0.002014434**, 3,848 ms. [Sanitized evidence](phase-04-live.json). No repeated provider smoke calls.
+- Offline controlled escalation in `arbiter_test`: initial Google failure → Anthropic pass, five stages and two attempts; simulated costs/grades clearly labeled and excluded from research. [Fixture](phase-04-controlled.json). Keyboard submission and desktop/mobile labels passed using this replay without new paid calls. [Desktop](screenshots/phase-04-desktop.png), [mobile](screenshots/phase-04-mobile.png). Normal free mock API restored afterward.
+- Delegation: provider agent implemented evaluator and structured provider output; UI/pipeline agent implemented bounded orchestration and focused tests; review agent independently reviewed storage, evaluator and connected pipeline. Root integrated, checked PostgreSQL/UI, and ran the one bounded live request.
+- Review fixed missing judge reservation before generation and preservation of original provider errors when escalation is unavailable. Final code review found no remaining blockers; final PR head/CI review remains the merge gate.
+- Commits, immediately pushed: `eea2b69` storage, `bef97bd` evaluator, `6179d61` bounded pipeline, `e655cce` UI/screenshots. Documentation/evidence follows; `git log -1` identifies that commit. User is sole author/committer.
+- Limits: online judge approval is a biased quality signal, not factual proof; provisional priors remain uncalibrated. USD 0.25 is a conservative ceiling, not expected spend. Timeout billing may be unknown; provider limits remain necessary. No history/jobs or benchmark comparison yet.
 
 ## Phase 03 results
 
@@ -108,7 +121,7 @@ Each commit uses `1RaghavM` as sole author/committer, with no assistant co-autho
 | 01 | merged | phase/01-chat-slice | [#2](https://github.com/1RaghavM/arbiter/pull/2) | Merged history and passing CI |
 | 02 | merged | phase/02-cloud-models | [#3](https://github.com/1RaghavM/arbiter/pull/3) | Offline gates and all three live checks pass |
 | 03 | merged | phase/03-jev-routing | [#4](https://github.com/1RaghavM/arbiter/pull/4) | Offline checks and live Jev/routing trace pass |
-| 04 | in_progress | phase/04-evaluation | — | Judge API contract verified; implementation underway |
+| 04 | ready_for_review | phase/04-evaluation | — | 222 offline tests, normal live flow and controlled escalation pass |
 | 05 | pending | — | — | — |
 | 06 | pending | — | — | — |
 | 07 | pending | — | — | — |

@@ -1,0 +1,149 @@
+{
+  "purpose": "One normal live development check; not benchmark evidence.",
+  "date": "2026-10-11",
+  "budget_usd": ".25",
+  "prompt": "What is 17 plus 25? Reply with only the number.",
+  "paid_call_count": 3,
+  "stages": [
+    "classify",
+    "generate",
+    "evaluate"
+  ],
+  "run_id": "69429b42-4431-47e6-a5f4-4415a9dee1ed",
+  "mode": "live",
+  "answer": "42",
+  "final_model": "google",
+  "status": "passed",
+  "analysis": {
+    "task": "reasoning",
+    "difficulty": "easy",
+    "reasoning": "low",
+    "confidence": 1.0,
+    "source": "jev",
+    "model_id": "jev-1.13.0",
+    "classifier_version": "jev-analysis-v1",
+    "latency_ms": 315,
+    "raw_usage": {
+      "input_tokens": 627,
+      "output_tokens": 140
+    },
+    "price_snapshot": {
+      "model_id": "jev-1.13.0",
+      "input_usd_per_million": "0.042",
+      "output_usd_per_million": "0",
+      "price_verified_at": "2026-10-11",
+      "source_url": "https://docs.typesafe.ai/models"
+    },
+    "cost_usd": "0.000026334",
+    "cost_source": "observed_usage",
+    "error_category": null,
+    "called": true
+  },
+  "route_decisions": [
+    {
+      "selected_key": "google",
+      "bucket": "reasoning:easy",
+      "policy_version": "priors-v1",
+      "candidates": [
+        {
+          "key": "anthropic",
+          "eligible": true,
+          "exclusion_reason": null,
+          "quality": 0.9,
+          "estimated_cost_usd": "0.003166",
+          "reserved_cost_usd": "0.0109975",
+          "latency_ms": 2500,
+          "score": 1.0
+        },
+        {
+          "key": "google",
+          "eligible": true,
+          "exclusion_reason": null,
+          "quality": 0.8,
+          "estimated_cost_usd": "0.0007309",
+          "reserved_cost_usd": "0.0026509",
+          "latency_ms": 1000,
+          "score": 0.2816013897662666
+        },
+        {
+          "key": "openai",
+          "eligible": true,
+          "exclusion_reason": null,
+          "quality": 0.85,
+          "estimated_cost_usd": "0.0005308",
+          "reserved_cost_usd": "0.0017596",
+          "latency_ms": 1500,
+          "score": 0.29735944409349335
+        }
+      ],
+      "reason": "Eligible quality prior; lowest weighted cost/latency.",
+      "source": "priors",
+      "evaluation_reserved": true
+    }
+  ],
+  "attempts": [
+    {
+      "model_key": "google",
+      "provider": "google",
+      "model_id": "gemini-3.5-flash-lite",
+      "text": "42",
+      "finish_reason": "stop",
+      "input_tokens": 17,
+      "output_tokens": 2,
+      "latency_ms": 885,
+      "raw_usage": {
+        "cache_tokens_details": null,
+        "cached_content_token_count": null,
+        "candidates_token_count": 2,
+        "candidates_tokens_details": null,
+        "prompt_token_count": 17,
+        "prompt_tokens_details": [
+          {
+            "modality": "TEXT",
+            "token_count": 17
+          }
+        ],
+        "thoughts_token_count": null,
+        "tool_use_prompt_token_count": null,
+        "tool_use_prompt_tokens_details": null,
+        "total_token_count": 19,
+        "traffic_type": null
+      },
+      "price_snapshot": {
+        "model_id": "gemini-3.5-flash-lite",
+        "input_usd_per_million": "0.30",
+        "output_usd_per_million": "2.50",
+        "additional_pricing": {
+          "cached_input_usd_per_million": "0.03"
+        },
+        "price_verified_at": "2026-10-11",
+        "source_url": "https://ai.google.dev/gemini-api/docs/pricing#gemini-3.5-flash-lite",
+        "reserved_cost_usd": "0.0026509"
+      },
+      "cost_usd": "0.0000101",
+      "cost_source": "observed_usage",
+      "error_category": null
+    }
+  ],
+  "total_latency_ms": 3848,
+  "total_cost_usd": "0.002014434",
+  "known_cost_usd": "0.002014434",
+  "cost_complete": true,
+  "reserved_cost_usd": "0.016465912",
+  "evaluations": [
+    {
+      "status": "pass",
+      "correctness": 4,
+      "relevance": 4,
+      "completeness": 4,
+      "reason": "17 + 25 = 42, and the answer is given as only the number, as requested.",
+      "error_category": null,
+      "rubric_version": "rubric-v1",
+      "attempt": 1,
+      "model_key": "google"
+    }
+  ],
+  "error_category": null,
+  "escalation_reason": null,
+  "warnings": []
+}
