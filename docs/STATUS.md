@@ -10,8 +10,8 @@ Updated: 2026-10-11.
 - Phase 04 PR #5 merged by the review subagent at `b8086ad` after passing current CI.
 - Phase branch: `phase/05-history-jobs`, from updated `origin/master` at `b8086ad`.
 - Authorization: user gives standing authorization for subagent review/merge of passing phase PRs and continuation to the next phase.
-- Previous PR: [#5](https://github.com/1RaghavM/arbiter/pull/5), merged. Phase 05 PR not yet opened.
-- Next action: open Phase 05 PR, delegate final review/merge after current CI passes, then branch Phase 06 from updated master.
+- Current PR: [#6](https://github.com/1RaghavM/arbiter/pull/6), open; current checks passed.
+- Next action: implementation paused at the user’s request while preparing [the concise progress summary](PROGRESS.md). When continuation is requested, finish subagent PR review/merge, then branch Phase 06 from updated master.
 - Testing preference: keep paid checks minimal; reuse successful evidence, use offline fakes for failure paths, and rerun only affected checks after changes. Recorded in AGENTS.md and quality.md.
 
 ## Phase 05 results
@@ -137,7 +137,7 @@ Each commit uses `1RaghavM` as sole author/committer, with no assistant co-autho
 | 02 | merged | phase/02-cloud-models | [#3](https://github.com/1RaghavM/arbiter/pull/3) | Offline gates and all three live checks pass |
 | 03 | merged | phase/03-jev-routing | [#4](https://github.com/1RaghavM/arbiter/pull/4) | Offline checks and live Jev/routing trace pass |
 | 04 | merged | phase/04-evaluation | [#5](https://github.com/1RaghavM/arbiter/pull/5) | 222 offline tests, normal live flow and controlled escalation pass |
-| 05 | ready_for_review | phase/05-history-jobs | — | 259 offline tests and six-case persisted/resumed mock job pass |
+| 05 | ready_for_review | phase/05-history-jobs | [#6](https://github.com/1RaghavM/arbiter/pull/6) | 259 offline tests and six-case persisted/resumed mock job pass |
 | 06 | pending | — | — | — |
 | 07 | pending | — | — | — |
 | 08 | pending | — | — | — |
