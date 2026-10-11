@@ -58,3 +58,13 @@ Documentation verification establishes API contracts and prices, not account acc
 Pinned SDKs: OpenAI 3.28.0, Anthropic 1.13.0, google-genai 2.29.0. Installed signatures and actual SDK serialization/parsing are checked with offline async HTTP transports. The SDK async clients run under `asyncio.wait_for`, with tests proving whole-stage cancellation. Official public API endpoints are explicit. No framework wrappers, model-generated code execution, or provider retry loops were added.
 
 Candidate price differences do not prove quality differences. All three exact configured model IDs returned real `smoke OK` responses on 2026-10-11; sanitized run IDs and usage-based costs are recorded in [STATUS.md](STATUS.md). Priors and capability ranking require development evidence in Phase 03.
+
+
+## Phase 03 verification — 2026-10-11
+
+- [TypeSafe Quick Start](https://docs.typesafe.ai/introduction/quickstart) and [API reference](https://docs.typesafe.ai/api): canonical `POST https://api.typesafe.ai/v1/systemone`, bearer authentication, `model`, structured `state`, and named typed `questions`. Arbiter maps its `JEV_API_KEY` to the bearer header and pins `jev-1.13.0`; no third-party Jev endpoint is used.
+- [State](https://docs.typesafe.ai/concepts/state), [Choice](https://docs.typesafe.ai/primitives/choice), and [confidence](https://docs.typesafe.ai/confidence): three independent choices share full message state; answers provide choices and confidence. Arbiter validates enums and numeric confidence, takes the minimum, and leaves missing values unknown. These questions and confidence aggregation are application policy.
+- [Models](https://docs.typesafe.ai/models): USD 0.042/M input tokens, free output, 64k state+all-questions and 32k state+longest-question limits. The adapter reserves 65,536 input tokens (USD 0.002752512), bounds serialized bytes plus framing to 32,000, and records actual usage when valid. A mismatched returned model has unknown cost because its price is unverified. This reservation is not provider-enforced invoice control.
+- Direct `httpx2==2.13.1` was already present transitively and is now declared explicitly. Async requests have no retries/redirects and a whole-stage cancellation deadline. Offline transports cover the exact JSON contract and failure paths.
+
+Two live Jev calls and two generation calls produced the sanitized [development trace](phase-03-development.json), for a combined usage-based estimate of USD 0.010499268 under a USD 0.10 ceiling. Confidence and routing varied across the two examples. This establishes integration behavior, not calibrated quality priors or savings; the difficult answer was truncated. Future review should reuse this evidence.

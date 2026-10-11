@@ -2,15 +2,28 @@
 
 Updated: 2026-10-11.
 
-- Current phase: 03 — Jev and routing, in progress.
+- Current phase: 03 — Jev and routing, ready for review.
 - Repository/default branch: [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), `master`.
 - Phase 01 [PR #2](https://github.com/1RaghavM/arbiter/pull/2) merged on 2026-10-11 after explicit user authorization. Its checks passed.
 - Phase 02 PR #3 merged by the review subagent at `2793f1b` after all gates passed.
 - Phase branch: `phase/03-jev-routing`, from updated `origin/master` at `2793f1b`.
 - Authorization: user gives standing authorization for subagent review/merge of passing phase PRs and continuation to the next phase.
-- Previous PR: [#3](https://github.com/1RaghavM/arbiter/pull/3), merged. Phase 03 PR not yet opened.
-- Next action: implement verified Jev analysis, deterministic routing, persistence/UI integration and focused offline tests; then minimal bounded live development checks. No further Phase 02 paid checks.
+- Previous PR: [#3](https://github.com/1RaghavM/arbiter/pull/3), merged. Phase 03 PR is opened after the final evidence commit; URL in session handoff.
+- Next action: subagent reviews the current Phase 03 PR head and passing CI, merges if no blockers remain, then main agent starts Phase 04 from updated master under standing authorization. No further paid Phase 03 check is needed.
 - Testing preference: keep paid checks minimal; reuse successful evidence, use offline fakes for failure paths, and rerun only affected checks after changes. Recorded in AGENTS.md and quality.md.
+
+## Phase 03 results
+
+Live chat now classifies with official Jev and selects a model using a pure, inspectable router. Full context, explicit confidence fallback, context/budget/deadline filters, stable ties, and candidate scores are implemented. Classifier usage persists before generation; both costs aggregate, with unknowns retained. Mock remains free and the provider CLI still calls only its selected generators. The UI shows selected model and routing reason.
+
+- Offline suite: `TEST_DATABASE_URL=postgresql://arbiter:arbiter@localhost:5432/arbiter_test .venv/bin/pytest` passed 145 tests before review fixes; 24 affected integration tests then passed including two new regressions. The Jev model-mismatch fix passed four focused cases. [CI on 93dce0f](https://github.com/1RaghavM/arbiter/actions/runs/38162025040) passed the final 147-test suite and frontend checks. Initial local PostgreSQL tests were blocked by sandbox networking; rerunning with approved local access passed.
+- Backend Ruff lint/format passed for 18 files. Frontend typecheck/lint/build passed. Browser keyboard submission and desktop/mobile route labels passed using an explicitly labeled offline replay of existing evidence, avoiding new paid calls. Screenshots: [desktop](screenshots/phase-03-desktop.png), [mobile](screenshots/phase-03-mobile.png). Vite required restart after the branch switch; no code workaround was needed.
+- Two live development examples on 2026-10-11: easy extraction → Jev confidence 1.0 → Google, answer Boston, total USD 0.00003496; difficult reasoning → Jev confidence 0.69 → Anthropic, total USD 0.010464308. Four calls total (two classifier, two generator), no retries, combined USD 0.010499268 under USD 0.10. Full sanitized run IDs, usage, scores and answers are in [phase-03-development.json](phase-03-development.json).
+- The difficult answer reached 1,024 tokens and is labeled truncated/unverified. Priors are engineering assumptions, not measured pass rates; no quality/savings claim or held-out tuning. No evaluator/escalation implementation yet.
+- Delegation: provider agent implemented/tested Jev; UI agent implemented/tested the pure router and independently reviewed Jev; review agent reviewed pipeline/persistence and merged prior PR #3. Root integrated, checked UI, and made the bounded live calls.
+- Reviews fixed unexpected-model pricing (unknown cost), exhausted post-classifier deadline (504), and added persistence-failure coverage before generation. Follow-up review found no blockers. No extra paid checks were used.
+- Commits, each pushed immediately: `809641b` standing workflow/start; `602172a` Jev; `dcb7f82` routing/persistence; `93dce0f` UI/screenshots. Final documentation/evidence commit follows; `git log -1` identifies it. All user-authored, no assistant trailers.
+- Mock API restored at localhost:8000 and Vite at localhost:5173; replay fixture stopped. Keys remain in ignored local .env, never committed or exposed in the frontend.
 
 ## Previous phase evidence (Phase 02)
 
@@ -93,7 +106,7 @@ Each commit uses `1RaghavM` as sole author/committer, with no assistant co-autho
 | 00 | merged | phase/00-foundation | [#1](https://github.com/1RaghavM/arbiter/pull/1) | Foundation checks in merged history |
 | 01 | merged | phase/01-chat-slice | [#2](https://github.com/1RaghavM/arbiter/pull/2) | Merged history and passing CI |
 | 02 | merged | phase/02-cloud-models | [#3](https://github.com/1RaghavM/arbiter/pull/3) | Offline gates and all three live checks pass |
-| 03 | in_progress | phase/03-jev-routing | — | Official Jev contract research underway |
+| 03 | ready_for_review | phase/03-jev-routing | Session handoff | Offline checks and live Jev/routing trace pass |
 | 04 | pending | — | — | — |
 | 05 | pending | — | — | — |
 | 06 | pending | — | — | — |

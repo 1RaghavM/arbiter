@@ -1,0 +1,266 @@
+{
+  "purpose": "Two development smoke examples; not held-out benchmark evidence or calibrated quality estimates.",
+  "date": "2026-10-11",
+  "budget_usd": "0.10",
+  "charged_or_reserved_usd": "0.010499268",
+  "cases": [
+    {
+      "case": "easy-extraction",
+      "prompt": "Extract the city from this text. Reply with only the city name: Mira lives in Boston.",
+      "run_id": "e6357388-c618-4677-8e85-e2296bfb1843",
+      "mode": "live",
+      "answer": "Boston",
+      "final_model": "google",
+      "status": "unverified",
+      "analysis": {
+        "task": "extraction",
+        "difficulty": "easy",
+        "reasoning": "low",
+        "confidence": 1.0,
+        "source": "jev",
+        "model_id": "jev-1.13.0",
+        "classifier_version": "jev-analysis-v1",
+        "latency_ms": 231,
+        "raw_usage": {
+          "input_tokens": 630,
+          "output_tokens": 140
+        },
+        "price_snapshot": {
+          "model_id": "jev-1.13.0",
+          "input_usd_per_million": "0.042",
+          "output_usd_per_million": "0",
+          "price_verified_at": "2026-10-11",
+          "source_url": "https://docs.typesafe.ai/models"
+        },
+        "cost_usd": "0.00002646",
+        "cost_source": "observed_usage",
+        "error_category": null,
+        "called": true
+      },
+      "route_decisions": [
+        {
+          "selected_key": "google",
+          "bucket": "extraction:easy",
+          "policy_version": "priors-v1",
+          "candidates": [
+            {
+              "key": "anthropic",
+              "eligible": true,
+              "exclusion_reason": null,
+              "quality": 0.9,
+              "estimated_cost_usd": "0.003242",
+              "reserved_cost_usd": "0.0110925",
+              "latency_ms": 2500,
+              "score": 1.0
+            },
+            {
+              "key": "google",
+              "eligible": true,
+              "exclusion_reason": null,
+              "quality": 0.8,
+              "estimated_cost_usd": "0.0007423",
+              "reserved_cost_usd": "0.0026623",
+              "latency_ms": 1000,
+              "score": 0.2802745219000617
+            },
+            {
+              "key": "openai",
+              "eligible": true,
+              "exclusion_reason": null,
+              "quality": 0.85,
+              "estimated_cost_usd": "0.000546",
+              "reserved_cost_usd": "0.0017748",
+              "latency_ms": 1500,
+              "score": 0.29789019123997534
+            }
+          ],
+          "reason": "Eligible quality prior; lowest weighted cost/latency.",
+          "source": "priors"
+        }
+      ],
+      "attempts": [
+        {
+          "model_key": "google",
+          "provider": "google",
+          "model_id": "gemini-3.5-flash-lite",
+          "text": "Boston",
+          "finish_reason": "stop",
+          "input_tokens": 20,
+          "output_tokens": 1,
+          "latency_ms": 651,
+          "raw_usage": {
+            "cache_tokens_details": null,
+            "cached_content_token_count": null,
+            "candidates_token_count": 1,
+            "candidates_tokens_details": null,
+            "prompt_token_count": 20,
+            "prompt_tokens_details": [
+              {
+                "modality": "TEXT",
+                "token_count": 20
+              }
+            ],
+            "thoughts_token_count": null,
+            "tool_use_prompt_token_count": null,
+            "tool_use_prompt_tokens_details": null,
+            "total_token_count": 21,
+            "traffic_type": null
+          },
+          "price_snapshot": {
+            "model_id": "gemini-3.5-flash-lite",
+            "input_usd_per_million": "0.30",
+            "output_usd_per_million": "2.50",
+            "additional_pricing": {
+              "cached_input_usd_per_million": "0.03"
+            },
+            "price_verified_at": "2026-10-11",
+            "source_url": "https://ai.google.dev/gemini-api/docs/pricing#gemini-3.5-flash-lite",
+            "reserved_cost_usd": "0.0026623"
+          },
+          "cost_usd": "0.0000085",
+          "cost_source": "observed_usage",
+          "error_category": null
+        }
+      ],
+      "total_latency_ms": 909,
+      "total_cost_usd": "0.00003496",
+      "known_cost_usd": "0.00003496",
+      "cost_complete": true,
+      "reserved_cost_usd": "0.005414812",
+      "error_category": null,
+      "escalation_reason": null,
+      "warnings": [
+        "Live generation; no quality evaluator was called."
+      ]
+    },
+    {
+      "case": "difficult-reasoning",
+      "prompt": "Find all positive integer solutions to x^2 + y^2 + z^2 = 3xyz. Explain a descent argument showing how solutions reduce to (1,1,1), why it terminates, and how reversing it generates every solution. State the role of permutations. Keep the proof concise.",
+      "run_id": "91a1c3ba-cd93-4fc0-8b5c-1576460a4191",
+      "mode": "live",
+      "answer": "**Setup.** Consider x\u00b2 + y\u00b2 + z\u00b2 = 3xyz in positive integers. Note (1,1,1) is a solution, since 3 = 3.\n\n**Vieta flipping.** Fix y, z and view the equation as a quadratic in x:\nx\u00b2 \u2212 3yz\u00b7x + (y\u00b2 + z\u00b2) = 0.\nIf x is a root, the other root is x' = 3yz \u2212 x = (y\u00b2+z\u00b2)/x. The first expression shows x' is an integer, and the second shows x' > 0. So (x', y, z) is again a positive integer solution. The same holds for flipping y or z. Flipping the same variable twice returns the original triple.\n\n**Descent.** Take a solution (x,y,z) and sort it so x \u2265 y \u2265 z. Flip the largest variable: x' = (y\u00b2+z\u00b2)/x. Then:\n\n- If x > y (strictly), then x' = (y\u00b2+z\u00b2)/x < (y\u00b2+z\u00b2)/y \u2264 2y... we need a cleaner comparison. Use the quadratic directly: x' < x \u27fa x'\u00b7x < x\u00b2 \u27fa y\u00b2+z\u00b2 < x\u00b2. Suppose instead x\u00b2 \u2264 y\u00b2+z\u00b2. Then x\u00b2 \u2264 y\u00b2+z\u00b2 \u2264 2y\u00b2 gives x \u2264 \u221a2\u00b7y. From x\u00b2 + y\u00b2 + z\u00b2 = 3xyz we get 3xyz = x\u00b2+y\u00b2+z\u00b2 \u2264 2(y\u00b2+z\u00b2) \u2264 4y\u00b2, so 3xz \u2264 4y \u2264 4x, hence z \u2264 4/3, so z = 1. Then x\u00b2 + y\u00b2 + 1 = 3xy, and the condition x\u00b2 \u2264 y\u00b2+1 with x \u2265 y forces x\u00b2 \u2208 {y\u00b2, y\u00b2+1}, i.e. x = y (or y = 0, impossible). With x = y, z = 1: 2x\u00b2 + 1 = 3x\u00b2, so x = 1. That is the solution (1,1,1).\n\nSo for every solution other than (1,1,1), the largest entry satisfies x\u00b2 > y\u00b2+z\u00b2, so x' < x. Flipping the largest variable strictly decreases the sum x+y+z (and the new triple is still positive integers).\n\n**Termination.** Each step strictly decreases a positive integer, the sum x+y+z, so the process must stop. It stops only at a triple where the flip does not decrease the maximum, and the argument above shows that triple is (1,1,1).\n\n**Generating all solutions (reversal).** Every solution reduces to (1,1,1) by a finite sequence of flips. Since each flip is its own inverse, every solution is obtained from (1,1,1) by a finite sequence of flips, each replacing one coordinate by 3\u00b7(product of the other two) \u2212 itself. Conversely, every such sequence yields a positive integer solution. Thus the solutions are exactly the triples in the orbit of (1,1,1) under the flip operations and permutations of coordinates.\n\n**Role of permutations.** The equation is symmetric in x, y, z, so permuting a solution gives a solution. The descent uses permutation only to arrange x \u2265 y \u2265 z so that the largest variable is flipped. In the tree of solutions, one may think of unordered triples",
+      "final_model": "anthropic",
+      "status": "unverified",
+      "analysis": {
+        "task": "reasoning",
+        "difficulty": "hard",
+        "reasoning": "high",
+        "confidence": 0.69,
+        "source": "jev",
+        "model_id": "jev-1.13.0",
+        "classifier_version": "jev-analysis-v1",
+        "latency_ms": 191,
+        "raw_usage": {
+          "input_tokens": 674,
+          "output_tokens": 140
+        },
+        "price_snapshot": {
+          "model_id": "jev-1.13.0",
+          "input_usd_per_million": "0.042",
+          "output_usd_per_million": "0",
+          "price_verified_at": "2026-10-11",
+          "source_url": "https://docs.typesafe.ai/models"
+        },
+        "cost_usd": "0.000028308",
+        "cost_source": "observed_usage",
+        "error_category": null,
+        "called": true
+      },
+      "route_decisions": [
+        {
+          "selected_key": "anthropic",
+          "bucket": "reasoning:hard",
+          "policy_version": "priors-v1",
+          "candidates": [
+            {
+              "key": "anthropic",
+              "eligible": true,
+              "exclusion_reason": null,
+              "quality": 0.8,
+              "estimated_cost_usd": "0.003576",
+              "reserved_cost_usd": "0.01151",
+              "latency_ms": 2500,
+              "score": 1.0
+            },
+            {
+              "key": "google",
+              "eligible": true,
+              "exclusion_reason": null,
+              "quality": 0.55,
+              "estimated_cost_usd": "0.0007924",
+              "reserved_cost_usd": "0.0027124",
+              "latency_ms": 1000,
+              "score": null
+            },
+            {
+              "key": "openai",
+              "eligible": true,
+              "exclusion_reason": null,
+              "quality": 0.65,
+              "estimated_cost_usd": "0.0006128",
+              "reserved_cost_usd": "0.0018416",
+              "latency_ms": 1500,
+              "score": null
+            }
+          ],
+          "reason": "Eligible quality prior; lowest weighted cost/latency.",
+          "source": "priors"
+        }
+      ],
+      "attempts": [
+        {
+          "model_key": "anthropic",
+          "provider": "anthropic",
+          "model_id": "claude-sonnet-5-5",
+          "text": "**Setup.** Consider x\u00b2 + y\u00b2 + z\u00b2 = 3xyz in positive integers. Note (1,1,1) is a solution, since 3 = 3.\n\n**Vieta flipping.** Fix y, z and view the equation as a quadratic in x:\nx\u00b2 \u2212 3yz\u00b7x + (y\u00b2 + z\u00b2) = 0.\nIf x is a root, the other root is x' = 3yz \u2212 x = (y\u00b2+z\u00b2)/x. The first expression shows x' is an integer, and the second shows x' > 0. So (x', y, z) is again a positive integer solution. The same holds for flipping y or z. Flipping the same variable twice returns the original triple.\n\n**Descent.** Take a solution (x,y,z) and sort it so x \u2265 y \u2265 z. Flip the largest variable: x' = (y\u00b2+z\u00b2)/x. Then:\n\n- If x > y (strictly), then x' = (y\u00b2+z\u00b2)/x < (y\u00b2+z\u00b2)/y \u2264 2y... we need a cleaner comparison. Use the quadratic directly: x' < x \u27fa x'\u00b7x < x\u00b2 \u27fa y\u00b2+z\u00b2 < x\u00b2. Suppose instead x\u00b2 \u2264 y\u00b2+z\u00b2. Then x\u00b2 \u2264 y\u00b2+z\u00b2 \u2264 2y\u00b2 gives x \u2264 \u221a2\u00b7y. From x\u00b2 + y\u00b2 + z\u00b2 = 3xyz we get 3xyz = x\u00b2+y\u00b2+z\u00b2 \u2264 2(y\u00b2+z\u00b2) \u2264 4y\u00b2, so 3xz \u2264 4y \u2264 4x, hence z \u2264 4/3, so z = 1. Then x\u00b2 + y\u00b2 + 1 = 3xy, and the condition x\u00b2 \u2264 y\u00b2+1 with x \u2265 y forces x\u00b2 \u2208 {y\u00b2, y\u00b2+1}, i.e. x = y (or y = 0, impossible). With x = y, z = 1: 2x\u00b2 + 1 = 3x\u00b2, so x = 1. That is the solution (1,1,1).\n\nSo for every solution other than (1,1,1), the largest entry satisfies x\u00b2 > y\u00b2+z\u00b2, so x' < x. Flipping the largest variable strictly decreases the sum x+y+z (and the new triple is still positive integers).\n\n**Termination.** Each step strictly decreases a positive integer, the sum x+y+z, so the process must stop. It stops only at a triple where the flip does not decrease the maximum, and the argument above shows that triple is (1,1,1).\n\n**Generating all solutions (reversal).** Every solution reduces to (1,1,1) by a finite sequence of flips. Since each flip is its own inverse, every solution is obtained from (1,1,1) by a finite sequence of flips, each replacing one coordinate by 3\u00b7(product of the other two) \u2212 itself. Conversely, every such sequence yields a positive integer solution. Thus the solutions are exactly the triples in the orbit of (1,1,1) under the flip operations and permutations of coordinates.\n\n**Role of permutations.** The equation is symmetric in x, y, z, so permuting a solution gives a solution. The descent uses permutation only to arrange x \u2265 y \u2265 z so that the largest variable is flipped. In the tree of solutions, one may think of unordered triples",
+          "finish_reason": "length",
+          "input_tokens": 98,
+          "output_tokens": 1024,
+          "latency_ms": 8584,
+          "raw_usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "inference_geo": "global",
+            "input_tokens": 98,
+            "output_tokens": 1024,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": null,
+            "service_tier": "standard"
+          },
+          "price_snapshot": {
+            "model_id": "claude-sonnet-5-5",
+            "input_usd_per_million": "2.00",
+            "output_usd_per_million": "10.00",
+            "additional_pricing": {
+              "cached_input_usd_per_million": "0.10",
+              "cache_write_usd_per_million": "2.50"
+            },
+            "price_verified_at": "2026-10-11",
+            "source_url": "https://platform.claude.com/docs/en/models/sonnet-5-5/overview",
+            "reserved_cost_usd": "0.01151"
+          },
+          "cost_usd": "0.010436",
+          "cost_source": "observed_usage",
+          "error_category": null
+        }
+      ],
+      "total_latency_ms": 8798,
+      "total_cost_usd": "0.010464308",
+      "known_cost_usd": "0.010464308",
+      "cost_complete": true,
+      "reserved_cost_usd": "0.014262512",
+      "error_category": null,
+      "escalation_reason": null,
+      "warnings": [
+        "Live generation; no quality evaluator was called.",
+        "Output reached its token limit and may be incomplete."
+      ]
+    }
+  ]
+}
