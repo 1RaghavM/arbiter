@@ -5,7 +5,7 @@ from decimal import Decimal
 import pytest
 from fastapi.testclient import TestClient
 
-from app import db, providers
+from app import analysis, db, providers
 from app.config import KEY_ENV, Settings, load_registry
 from app.main import app
 from app.pipeline import prepare_live
@@ -20,7 +20,16 @@ def live_client(monkeypatch):
         pytest.skip("TEST_DATABASE_URL required for real PostgreSQL tests")
     monkeypatch.setenv("DATABASE_URL", url)
     monkeypatch.setenv("CHAT_MODE", "live")
-    monkeypatch.setenv("FIXED_MODEL_KEY", "openai")
+    monkeypatch.delenv("JEV_API_KEY", raising=False)
+    from app import pipeline
+
+    original_route = pipeline.choose_route
+
+    def route(classification, registry, *args):
+        registry = registry.model_copy(update={"strong_baseline_key": "openai"})
+        return original_route(classification, registry, *args)
+
+    monkeypatch.setattr(pipeline, "choose_route", route)
     monkeypatch.setenv("REQUEST_BUDGET_USD", "0.05")
     monkeypatch.setenv("OPENAI_API_KEY", "offline-test")
     db.migrate(url)
@@ -87,7 +96,6 @@ def test_live_result_and_failure_accounting(
         ("OPENAI_API_KEY", ""),
         ("REQUEST_BUDGET_USD", "0.0000001"),
         ("REQUEST_BUDGET_USD", ""),
-        ("FIXED_MODEL_KEY", "missing"),
     ],
 )
 def test_preflight_blocks_provider(live_client, monkeypatch, variable, value):
@@ -129,7 +137,8 @@ def test_config_is_safe_and_unknown_model_is_not_mock(monkeypatch):
         monkeypatch.delenv(key, raising=False)
     with TestClient(app) as client:
         data = client.get("/api/config").json()
-    assert data["mode"] == "live" and data["model_key"] == "missing"
+    assert data["mode"] == "live" and data["model_key"] is None
+    assert data["selection"] == "routed"
     assert all(p["status"] == "missing_credentials" for p in data["providers"])
     assert all("api_key" not in p for p in data["providers"])
 
@@ -213,6 +222,7 @@ def test_expired_deadline_skips_generation(live_client, monkeypatch):
         Settings(mode="live", request_budget_usd="0.05"),
         load_registry(),
         perf_counter() - 91,
+        fixed=True,
     )
     assert not calls and result.status == "error"
     assert result.total_cost_usd == 0
@@ -233,7 +243,7 @@ def test_smoke_charges_unknown_reservation_and_stops_on_budget(monkeypatch):
     budget = Decimal("0.05")
     calls = []
 
-    def run(pool, run_id, body, settings, registry, started):
+    def run(pool, run_id, body, settings, registry, started, *, fixed=False):
         calls.append(settings.fixed_model_key)
         cost = (
             None if len(calls) == 1 else budget - reservations[2] - reservations[0] / 2
@@ -263,7 +273,7 @@ def test_smoke_stops_on_persistence_failure(monkeypatch):
         monkeypatch.setenv(key, "offline-test")
     calls = []
 
-    def fail(*args):
+    def fail(*args, **kwargs):
         calls.append(1)
         raise psycopg.OperationalError("private connection details")
 
@@ -282,3 +292,150 @@ def test_smoke_rejects_invalid_cli_budget(monkeypatch, budget, capsys):
     monkeypatch.setattr("sys.argv", ["smoke", "--budget-usd", budget])
     assert main() == 2
     assert "configuration invalid" in capsys.readouterr().out
+
+
+def test_routing_persists_classifier_and_combined_cost(live_client, monkeypatch):
+    classification = analysis.Analysis(
+        task="coding",
+        difficulty="easy",
+        reasoning="low",
+        confidence=0.95,
+        source="jev",
+        called=True,
+        cost_usd=Decimal("0.00001"),
+        cost_source="observed_usage",
+        raw_usage={"input_tokens": 238, "output_tokens": 0},
+    )
+    monkeypatch.setattr(analysis, "classify", lambda *args: classification)
+    monkeypatch.setattr(
+        providers,
+        "generate",
+        lambda model, *args: GenerationResult(
+            model_key=model.key,
+            provider=model.provider,
+            model_id=model.model_id,
+            text="ok",
+            cost_usd=Decimal("0.0001"),
+            cost_source="observed_usage",
+        ),
+    )
+    response = live_client.post(
+        "/api/chat", json={"messages": [{"role": "user", "content": "test"}]}
+    )
+    assert response.status_code == 200
+    result = response.json()
+    assert result["analysis"]["source"] == "jev"
+    assert result["route_decisions"][0]["selected_key"] == "openai"
+    assert Decimal(result["total_cost_usd"]) == Decimal("0.00011")
+    stored = live_client.get(f"/api/runs/{result['run_id']}").json()
+    assert [c["stage"] for c in stored["calls"]] == ["classify", "generate"]
+    assert stored["analysis"] == result["analysis"]
+    assert stored["route_decisions"] == result["route_decisions"]
+
+
+def test_unknown_classifier_cost_remains_incomplete(live_client, monkeypatch):
+    monkeypatch.setattr(
+        analysis,
+        "classify",
+        lambda *args: analysis.Analysis(
+            source="fallback",
+            called=True,
+            error_category="timeout",
+            cost_usd=None,
+        ),
+    )
+    monkeypatch.setattr(
+        providers,
+        "generate",
+        lambda model, *args: GenerationResult(
+            model_key=model.key,
+            text="ok",
+            cost_usd=Decimal("0.0001"),
+        ),
+    )
+    result = live_client.post(
+        "/api/chat", json={"messages": [{"role": "user", "content": "test"}]}
+    ).json()
+    assert result["total_cost_usd"] is None and not result["cost_complete"]
+    assert Decimal(result["known_cost_usd"]) == Decimal("0.0001")
+    assert "fallback" in " ".join(result["warnings"])
+
+
+def test_classifier_overrun_stops_generation_and_retains_cost(live_client, monkeypatch):
+    monkeypatch.setattr(
+        analysis,
+        "classify",
+        lambda *args: analysis.Analysis(
+            source="jev",
+            confidence=0.9,
+            called=True,
+            cost_usd=Decimal("0.06"),
+            cost_source="observed_usage",
+        ),
+    )
+
+    def unexpected(*args):
+        raise AssertionError("Must not generate after budget exhausted")
+
+    monkeypatch.setattr(providers, "generate", unexpected)
+    response = live_client.post(
+        "/api/chat", json={"messages": [{"role": "user", "content": "test"}]}
+    )
+    assert response.status_code == 503
+    stored = live_client.get(f"/api/runs/{response.json()['run_id']}").json()
+    assert len(stored["calls"]) == 1 and stored["total_cost_usd"] == 0.06
+    assert stored["error"]["code"] == "no_eligible_model"
+
+
+def test_classifier_deadline_retains_usage_without_generation(live_client, monkeypatch):
+    from time import perf_counter
+
+    from app import pipeline
+
+    now = perf_counter()
+
+    def classify(*args):
+        monkeypatch.setattr(pipeline, "perf_counter", lambda: now + 100)
+        return analysis.Analysis(
+            source="jev", confidence=0.9, called=True, cost_usd=Decimal(".00001")
+        )
+
+    monkeypatch.setattr(analysis, "classify", classify)
+
+    def unexpected(*args):
+        raise AssertionError("Must not generate after deadline")
+
+    monkeypatch.setattr(providers, "generate", unexpected)
+    response = live_client.post(
+        "/api/chat", json={"messages": [{"role": "user", "content": "test"}]}
+    )
+    assert response.status_code == 504
+    stored = live_client.get(f"/api/runs/{response.json()['run_id']}").json()
+    assert len(stored["calls"]) == 1 and stored["total_cost_usd"] == 0.00001
+
+
+def test_analysis_write_failure_prevents_generation(live_client, monkeypatch):
+    import psycopg
+
+    monkeypatch.setattr(
+        analysis,
+        "classify",
+        lambda *args: analysis.Analysis(
+            source="jev", confidence=0.9, called=True, cost_usd=Decimal(".00001")
+        ),
+    )
+
+    def fail(*args):
+        raise psycopg.OperationalError("private details")
+
+    def unexpected(*args):
+        raise AssertionError("Must not generate after persistence failure")
+
+    monkeypatch.setattr(db, "record_analysis", fail)
+    monkeypatch.setattr(providers, "generate", unexpected)
+    response = live_client.post(
+        "/api/chat", json={"messages": [{"role": "user", "content": "test"}]}
+    )
+    assert response.status_code == 503
+    assert response.json()["code"] == "persistence_error"
+    assert "private" not in response.text

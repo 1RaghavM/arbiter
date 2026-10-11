@@ -8,6 +8,7 @@ type ChatResult = {
   total_cost_usd: string | null
   cost_complete: boolean
   status: 'unverified'
+  route_decisions: { selected_key: string | null; reason: string }[]
   warnings: string[]
 }
 type Message = { role: 'user' | 'assistant'; content: string; result?: ChatResult }
@@ -47,7 +48,7 @@ function App() {
   const characterCount = [...messages.map(message => message.content).join(''), ...content].length
   const limitReached = messages.length >= 10 || characterCount > 12000
   const canSend = config?.mode === 'mock' || config?.providers.some(provider =>
-    provider.key === config.model_key && provider.status === 'available')
+    provider.status === 'available')
 
   useEffect(() => {
     let active = true
@@ -81,6 +82,10 @@ function App() {
         || typeof result.cost_complete !== 'boolean'
         || !(result.total_cost_usd === null || (typeof result.total_cost_usd === 'string'
           && /^\d+(\.\d+)?([eE][+-]?\d+)?$/.test(result.total_cost_usd)))
+        || !Array.isArray(result.route_decisions)
+        || !result.route_decisions.every((route: ChatResult['route_decisions'][number]) => route
+          && typeof route.reason === 'string'
+          && (route.selected_key === null || typeof route.selected_key === 'string'))
         || !Array.isArray(result.warnings)
         || !result.warnings.every((warning: unknown) => typeof warning === 'string')) {
         throw new Error('The API returned an unexpected reply. Select Send to retry.')
@@ -115,7 +120,7 @@ function App() {
       <main className="mx-auto max-w-3xl px-5 pb-10 pt-6 sm:pt-12">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-medium tracking-widest text-stone-500">PHASE 02 / CHAT</p>
+            <p className="text-xs font-medium tracking-widest text-stone-500">PHASE 03 / CHAT</p>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight">A conversation, with context.</h1>
           </div>
           <Button variant="outline" disabled={sending} onClick={newChat}>New chat</Button>
@@ -124,7 +129,7 @@ function App() {
           {config?.mode === 'mock'
             ? 'Try a message, then a follow-up. Deterministic mock replies echo your context; no AI model is called.'
             : config?.mode === 'live'
-              ? `Messages use the server’s fixed model: ${config.model_key ?? 'not configured'}. Replies have not been quality evaluated.`
+              ? 'Jev analyzes your request, then the server selects a model using provisional quality, cost, and latency estimates. Replies have not been quality evaluated.'
               : 'Checking which mode and model the server is configured to use.'}
         </p>
         {configError && <div role="alert" className="mt-4 text-sm text-red-700">
@@ -133,7 +138,7 @@ function App() {
         </div>}
         {config?.mode === 'live' && <p className="mt-3 text-xs leading-5 text-stone-500">
           {config.providers.map(provider => `${provider.provider}: ${provider.status.replace('_', ' ')}`).join(' · ')}
-          {!canSend && ' · The fixed model is unavailable. Update the server configuration and refresh.'}
+          {!canSend && ' · No generation provider is available. Update the server configuration and refresh.'}
         </p>}
         <section aria-label="Conversation" aria-live="polite" aria-busy={sending}
           className="my-7 space-y-4">
@@ -154,6 +159,7 @@ function App() {
                   : message.result.cost_complete && message.result.total_cost_usd !== null
                     ? `Estimated cost: $${message.result.total_cost_usd}`
                     : 'Cost unknown or incomplete'}</p>
+                {message.result.route_decisions.map((route, routeIndex) => <p key={`route-${routeIndex}`}>Selected {route.selected_key ?? 'none'}: {route.reason}</p>)}
                 {message.result.warnings.map((warning, warningIndex) => <p key={warningIndex}>{warning}</p>)}
               </div>}
             </article>

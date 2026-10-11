@@ -40,7 +40,7 @@ Dockerfile
 compose.yaml
 ```
 
-Phase 01 introduced Message, ChatRequest, GenerationResult, and ChatResult, plus runs/calls/schema_migrations. Analysis/evaluation/route schemas and benchmark tables are added with their owning phases. Mock responses have `mode: mock`, null analysis, empty route decisions, and `unverified` quality status. Phase 02 also supports `mode: live` and adds provider/model ID, raw usage, price snapshot, and reservation metadata; live quality stays `unverified`. A backend setting fixes selection until Phase 03.
+Phase 01 introduced Message, ChatRequest, GenerationResult, and ChatResult, plus runs/calls/schema_migrations. Analysis/evaluation/route schemas and benchmark tables are added with their owning phases. Mock responses have `mode: mock`, null analysis, empty route decisions, and `unverified` quality status. Phase 02 also supports `mode: live` and adds provider/model ID, raw usage, price snapshot, and reservation metadata; live quality stays `unverified`. Phase 03 replaces fixed live-chat selection with Jev analysis and routing; the provider smoke CLI retains fixed selection.
 
 Add modules only as their phase needs them. Do not scaffold empty future layers. Compose is for local PostgreSQL; the Dockerfile builds the frontend and serves it through FastAPI.
 
@@ -61,7 +61,7 @@ Provider fields are translated and validated at the adapter boundary. Unknown co
 | Endpoint | Contract |
 | --- | --- |
 | GET /api/health | Liveness, no secrets |
-| GET /api/config | Mode, fixed model key, and provider availability; no credentials |
+| GET /api/config | Mode, routed selection, and provider availability; no credentials |
 | POST /api/chat | Body `{messages: [{role: "user" or "assistant", content: string}]}`; returns ChatResult |
 | GET /api/runs?limit=20 | Recent metadata only; cap limit at 100 |
 | GET /api/runs/{id} | One full stored run; 404 if absent |
@@ -76,7 +76,7 @@ Use 422 for invalid input, 503 for no configured candidate/DB/provider availabil
 
 ## Model configuration
 
-Phase 02 fixed selection requires verified IDs, limits, and prices, while priors, latency estimates, capability ranks, baseline keys, and the judge remain unset until Phase 03. Missing credentials make a configured candidate unavailable without changing its registry entry.
+Phase 03 populates explicit provisional quality/latency/rank assumptions and baseline/judge keys; these are not calibrated by the two development smoke cases. Quality lookup uses task:difficulty then difficulty, with missing priors excluding the candidate. Missing credentials make a configured candidate unavailable without changing its registry entry.
 
 Each generator entry has stable key, provider, exact model_id, enabled, context_limit, max_output_tokens, input/output pricing plus relevant cached/reasoning pricing rules, price_verified_at, source_url, per-bucket prior quality estimates, prior latency, and a provisional capability_rank. Configure a strong baseline key, cheap baseline key, and fixed judge key separately. Jev has separate settings. Start with 3 generator candidates total, one per provider, with different intended cost/capability profiles.
 
@@ -85,7 +85,7 @@ Never assume a price rank proves a capability rank. Populate priors conservative
 ## Routing algorithm
 
 1. On valid confident classification, use task+difficulty bucket. On malformed, low-confidence (<0.60), or unavailable Jev output, mark fallback and route to the configured strong candidate directly if available; otherwise highest eligible configured rank. Do not pretend fallback is Jev success.
-2. Filter candidates by enabled credentials, text capability, bounded context fit, remaining request budget and time. Use conservative token estimates pre-call with documented assumptions; handle actual context rejection cleanly.
+2. Filter candidates by enabled credentials, text capability, bounded context fit, remaining request budget and time. Candidate eligible records this hard-filter result; the quality floor is applied separately. Use conservative token estimates pre-call with documented assumptions; handle actual context rejection cleanly.
 3. Obtain quality q, latency t, and output-length estimate from history for this bucket. Until at least 5 eligible labels, use priors. With enough labels, smooth quality as `(passes + 5 * prior_q) / (n + 5)`; use median latency and median output tokens. Exclude mocks, held-out test data, baseline-only runs, and incompatible policy/rubric/model versions.
 4. Estimate cost c from estimated input tokens, expected output tokens, and model pricing. Candidate selection is a prediction, not actual billing.
 5. Eligible candidates have q >= 0.80. Within those, normalize cost and latency by the maximum in that eligible set (positive epsilon denominator) and minimize `0.70 * c_norm + 0.30 * t_norm`. Stable key sorts ties.

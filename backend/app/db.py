@@ -54,37 +54,75 @@ def create_run(pool, run_id, request: ChatRequest, mode="mock", version="mock-v1
         )
 
 
-def finish_run(
-    pool, result: ChatResult, generation: GenerationResult, started, error=None
-):
+def record_analysis(pool, run_id, result):
+    payload = result.model_dump(mode="json")
     with pool.connection() as connection:
         connection.execute(
-            "INSERT INTO calls (id, run_id, sequence, stage, provider, model_id, "
-            "attempt, status, latency_ms, cost_usd, cost_source, output, error, "
-            "input_tokens, output_tokens, raw_usage, price_snapshot) "
-            "VALUES (%s, %s, 1, 'generate', %s, %s, 1, %s, %s, %s, %s, "
-            "%s, %s, %s, %s, %s, %s)",
-            (
-                uuid4(),
-                result.run_id,
-                generation.provider,
-                generation.model_id,
-                "error" if error else "done",
-                generation.latency_ms,
-                generation.cost_usd,
-                generation.cost_source,
-                Jsonb(generation.model_dump(mode="json")),
-                Jsonb(error),
-                generation.input_tokens,
-                generation.output_tokens,
-                Jsonb(generation.raw_usage),
-                Jsonb(generation.price_snapshot),
-            ),
+            "UPDATE runs SET analysis=%s WHERE id=%s", (Jsonb(payload), run_id)
         )
+        if result.called:
+            connection.execute(
+                "INSERT INTO calls (id, run_id, sequence, stage, provider, model_id, "
+                "attempt, status, latency_ms, cost_usd, cost_source, output, error, "
+                "input_tokens, output_tokens, raw_usage, price_snapshot) "
+                "VALUES (%s, %s, 1, 'classify', 'jev', %s, 1, %s, %s, %s, %s, "
+                "%s, %s, %s, %s, %s, %s)",
+                (
+                    uuid4(),
+                    run_id,
+                    result.model_id,
+                    "error" if result.error_category else "done",
+                    result.latency_ms,
+                    result.cost_usd,
+                    result.cost_source,
+                    Jsonb(payload),
+                    Jsonb(
+                        {"code": result.error_category}
+                        if result.error_category
+                        else None
+                    ),
+                    (result.raw_usage or {}).get("input_tokens"),
+                    (result.raw_usage or {}).get("output_tokens"),
+                    Jsonb(result.raw_usage),
+                    Jsonb(result.price_snapshot),
+                ),
+            )
+
+
+def finish_run(
+    pool, result: ChatResult, generation: GenerationResult | None, started, error=None
+):
+    with pool.connection() as connection:
+        if generation is not None:
+            connection.execute(
+                "INSERT INTO calls (id, run_id, sequence, stage, provider, model_id, "
+                "attempt, status, latency_ms, cost_usd, cost_source, output, error, "
+                "input_tokens, output_tokens, raw_usage, price_snapshot) "
+                "VALUES (%s, %s, %s, 'generate', %s, %s, 1, %s, %s, %s, %s, "
+                "%s, %s, %s, %s, %s, %s)",
+                (
+                    uuid4(),
+                    result.run_id,
+                    2 if result.analysis and result.analysis.get("called") else 1,
+                    generation.provider,
+                    generation.model_id,
+                    "error" if error else "done",
+                    generation.latency_ms,
+                    generation.cost_usd,
+                    generation.cost_source,
+                    Jsonb(generation.model_dump(mode="json")),
+                    Jsonb(error),
+                    generation.input_tokens,
+                    generation.output_tokens,
+                    Jsonb(generation.raw_usage),
+                    Jsonb(generation.price_snapshot),
+                ),
+            )
         connection.execute(
             "UPDATE runs SET status=%s, final_answer=%s, final_model=%s, "
             "total_latency_ms=%s, total_cost_usd=%s, known_cost_usd=%s, "
-            "cost_complete=%s, error=%s WHERE id=%s",
+            "cost_complete=%s, error=%s, analysis=%s, route_decisions=%s, "
+            "policy_version=%s WHERE id=%s",
             (
                 result.status,
                 result.answer,
@@ -94,6 +132,9 @@ def finish_run(
                 result.known_cost_usd,
                 result.cost_complete,
                 Jsonb(error),
+                Jsonb(result.analysis),
+                Jsonb(result.route_decisions),
+                "priors-v1" if result.route_decisions else None,
                 result.run_id,
             ),
         )

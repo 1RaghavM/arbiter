@@ -63,5 +63,6 @@ class ChatResult(BaseModel):
     known_cost_usd: Decimal = Decimal("0")
     cost_complete: bool = True
     reserved_cost_usd: Decimal = Decimal("0")
+    error_category: str | None = None
     escalation_reason: str | None = None
     warnings: list[str] = Field(default_factory=list)

@@ -119,7 +119,7 @@ def chat(
             },
         ) from None
     if result.status == "error":
-        category = result.attempts[0].error_category
+        category = result.error_category
         status = {
             "timeout": 504,
             "invalid_request": 422,
@@ -157,7 +157,8 @@ def public_config():
     settings, registry = runtime_config()
     return {
         "mode": settings.mode,
-        "model_key": settings.fixed_model_key if settings.mode == "live" else None,
+        "model_key": None,
+        "selection": "routed",
         "providers": [
             {
                 "key": m.key,
