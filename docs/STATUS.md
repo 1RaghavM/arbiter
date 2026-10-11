@@ -2,16 +2,19 @@
 
 Updated: 2026-10-11.
 
-- Current phase: 02 — cloud generation. Offline checks and all three required live smoke checks pass; **ready for review**.
+- Current phase: 03 — Jev and routing, in progress.
 - Repository/default branch: [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), `master`.
 - Phase 01 [PR #2](https://github.com/1RaghavM/arbiter/pull/2) merged on 2026-10-11 after explicit user authorization. Its checks passed.
-- Phase branch: `phase/02-cloud-models`, based on updated `origin/master` at `f0ec6b1`.
-- Authorization: user approved merging Phase 01 and starting Phase 02, requesting frequent commits, subagent delegation, and comprehensive reviews.
-- PR: [#3](https://github.com/1RaghavM/arbiter/pull/3), ready for review after the live-evidence update is pushed.
-- Next action: review and merge PR #3 with user authorization, then separately authorize Phase 03. No further paid Phase 02 check is needed.
+- Phase 02 PR #3 merged by the review subagent at `2793f1b` after all gates passed.
+- Phase branch: `phase/03-jev-routing`, from updated `origin/master` at `2793f1b`.
+- Authorization: user gives standing authorization for subagent review/merge of passing phase PRs and continuation to the next phase.
+- Previous PR: [#3](https://github.com/1RaghavM/arbiter/pull/3), merged. Phase 03 PR not yet opened.
+- Next action: implement verified Jev analysis, deterministic routing, persistence/UI integration and focused offline tests; then minimal bounded live development checks. No further Phase 02 paid checks.
 - Testing preference: keep paid checks minimal; reuse successful evidence, use offline fakes for failure paths, and rerun only affected checks after changes. Recorded in AGENTS.md and quality.md.
 
-## What works
+## Previous phase evidence (Phase 02)
+
+### What works
 
 Three official SDK adapters normalize text, finish reason, tokens, raw usage, price snapshots, latency, and safe error categories. OpenAI cached input, Anthropic separate cache usage, and Google thinking output have distinct accounting. Costs use Decimal; unknown usage stays unknown. No retries occur. Async SDK calls have a whole-stage cancellation deadline as well as network timeouts.
 
@@ -89,8 +92,8 @@ Each commit uses `1RaghavM` as sole author/committer, with no assistant co-autho
 | --- | --- | --- | --- | --- |
 | 00 | merged | phase/00-foundation | [#1](https://github.com/1RaghavM/arbiter/pull/1) | Foundation checks in merged history |
 | 01 | merged | phase/01-chat-slice | [#2](https://github.com/1RaghavM/arbiter/pull/2) | Merged history and passing CI |
-| 02 | ready_for_review | phase/02-cloud-models | [#3](https://github.com/1RaghavM/arbiter/pull/3) | Offline gates and all three live checks pass |
-| 03 | pending | — | — | — |
+| 02 | merged | phase/02-cloud-models | [#3](https://github.com/1RaghavM/arbiter/pull/3) | Offline gates and all three live checks pass |
+| 03 | in_progress | phase/03-jev-routing | — | Official Jev contract research underway |
 | 04 | pending | — | — | — |
 | 05 | pending | — | — | — |
 | 06 | pending | — | — | — |

@@ -8,7 +8,7 @@ Follow the user's current instructions first. Read this file, `docs/STATUS.md`, 
 
 ## Repository setup boundary
 
-The user has authorized Phase 00. Follow `docs/STATUS.md` for progress; later phases require separate authorization after the preceding phase is merged. The prompts in `docs/HANDOFF.md` are instructions to use later, not current authorization. Keep specifications in `docs/`; the root README is the repository entry point.
+The user has given standing authorization (2026-10-11) for a subagent to review and merge each phase PR once required gates pass, then for the main agent to start the next phase from the updated default branch. Follow `docs/STATUS.md` for progress. The prompts in `docs/HANDOFF.md` are instructions to use later, not current authorization. Keep specifications in `docs/`; the root README is the repository entry point.
 
 ## Session procedure
 
@@ -19,7 +19,7 @@ The user has authorized Phase 00. Follow `docs/STATUS.md` for progress; later ph
 5. Run the relevant gates. Fix failures caused by your changes. Record unrelated failures accurately.
 6. Update STATUS with actual commands/results, remaining blockers, branch, commits, and next action. Commit and immediately push this update before opening the PR.
 7. Push the phase branch and create the PR when remote access permits. Record its URL in the session's final handoff; update STATUS in a follow-up commit if useful. Do not fabricate a PR URL.
-8. Stop at the phase PR for review. Do not auto-merge or start the next phase unless the user explicitly authorizes it. This review boundary is an intentional project requirement.
+8. Delegate the phase PR review and merge to a subagent. The reviewer verifies the current head, required gates, and unresolved findings, and merges only after blockers are fixed. Then start the next phase from the updated default branch. Do not bypass review or merge a blocked phase.
 
 ## Git workflow
 

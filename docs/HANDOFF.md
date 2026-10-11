@@ -1,6 +1,6 @@
-# Start implementation only when authorized
+# Phase handoff prompts
 
-Repository setup is complete. These prompts are for a later, explicitly authorized phase session; their presence does not authorize starting a phase.
+Follow the standing user authorization in AGENTS.md: a subagent reviews and merges passing phase PRs, then the main agent starts the next phase. The prompts below do not waive dependency or quality gates.
 
 Copy the following into a Codex session opened at the target repository root:
 
@@ -22,8 +22,8 @@ meaningful incremental commits (usually 3–6 per phase), checking each slice
 and pushing immediately after every commit. Use my configured Git identity as
 sole author/committer, with no Codex or assistant co-author trailers. If push
 access is missing, finish local edits and checks but do not create more commits.
-Run the phase gates, update STATUS, commit and push that update, and create one PR. Stop at the PR review boundary; do not
-merge or begin the next phase without authorization. Later phases begin from
+Run the phase gates, update STATUS, commit and push that update, and create one PR. Delegate review and merge to a subagent under the standing authorization; do not
+merge with unresolved findings or missing required gates. Later phases begin from
 the updated default branch after the preceding PR is merged.
 
 Verify exact provider APIs, model IDs, pricing, and SDK versions from official
@@ -42,7 +42,7 @@ The previous phase PR is merged. Read AGENTS.md and docs/STATUS.md, verify the a
 git state, update the default branch safely, and implement the next eligible
 phase on its own branch. Check each slice, commit with my sole authorship and
 no assistant co-author trailers, and immediately push before the next commit.
-Run its gates, update STATUS, and create its PR. Stop for review afterward.
+Run its gates, update STATUS, and create its PR. Delegate review and merge, then continue under the standing authorization.
 ```
 
 ## Inputs the implementation environment must supply
