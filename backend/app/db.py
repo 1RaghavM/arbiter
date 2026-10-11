@@ -45,12 +45,12 @@ def migrate(url):
                 )
 
 
-def create_run(pool, run_id, request: ChatRequest):
+def create_run(pool, run_id, request: ChatRequest, mode="mock", version="mock-v1"):
     with pool.connection() as connection:
         connection.execute(
             "INSERT INTO runs (id, mode, status, messages, config_version) "
-            "VALUES (%s, 'mock', 'running', %s, 'mock-v1')",
-            (run_id, Jsonb(request.model_dump()["messages"])),
+            "VALUES (%s, %s, 'running', %s, %s)",
+            (run_id, mode, Jsonb(request.model_dump()["messages"]), version),
         )
 
 
@@ -60,18 +60,25 @@ def finish_run(
     with pool.connection() as connection:
         connection.execute(
             "INSERT INTO calls (id, run_id, sequence, stage, provider, model_id, "
-            "attempt, status, latency_ms, cost_usd, cost_source, output, error) "
-            "VALUES (%s, %s, 1, 'generate', 'mock', %s, 1, %s, %s, %s, %s, %s, %s)",
+            "attempt, status, latency_ms, cost_usd, cost_source, output, error, "
+            "input_tokens, output_tokens, raw_usage, price_snapshot) "
+            "VALUES (%s, %s, 1, 'generate', %s, %s, 1, %s, %s, %s, %s, "
+            "%s, %s, %s, %s, %s, %s)",
             (
                 uuid4(),
                 result.run_id,
-                generation.model_key,
+                generation.provider,
+                generation.model_id,
                 "error" if error else "done",
                 generation.latency_ms,
                 generation.cost_usd,
                 generation.cost_source,
                 Jsonb(generation.model_dump(mode="json")),
                 Jsonb(error),
+                generation.input_tokens,
+                generation.output_tokens,
+                Jsonb(generation.raw_usage),
+                Jsonb(generation.price_snapshot),
             ),
         )
         connection.execute(
