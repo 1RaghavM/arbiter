@@ -9,7 +9,13 @@ import psycopg
 from psycopg_pool import PoolTimeout
 
 from app import db
-from app.config import Settings, load_registry, model_status, reserve_cost
+from app.config import (
+    Settings,
+    load_environment,
+    load_registry,
+    model_status,
+    reserve_cost,
+)
 from app.pipeline import run_chat
 from app.schemas import ChatRequest
 
@@ -83,6 +89,7 @@ def main():
         "--models", nargs="+", default=["openai", "anthropic", "google"]
     )
     args = parser.parse_args()
+    load_environment()
     try:
         budget = Settings(request_budget_usd=args.budget_usd).request_budget_usd
         registry = load_registry()

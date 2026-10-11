@@ -38,6 +38,7 @@ def route(
     available=None,
     budget=Decimal("1"),
     remaining=30,
+    history=None,
     **registry,
 ):
     return choose_route(
@@ -50,6 +51,7 @@ def route(
         available if available is not None else {m.key for m in models},
         budget,
         remaining,
+        history,
     )
 
 
@@ -60,7 +62,7 @@ def test_hand_calculated_scores_and_separate_spend_reservation():
     # 260 input + 256 expected output: costs 0.000516 and 0.001032.
     assert decision["selected_key"] == "cheap"
     assert decision["bucket"] == "general:easy" and decision["source"] == "priors"
-    assert decision["policy_version"] == "priors-v1"
+    assert decision["policy_version"] == "history-v1"
     cheap_log, fast_log = decision["candidates"]
     assert cheap_log["estimated_cost_usd"] == "0.000516"
     assert cheap_log["reserved_cost_usd"] == "0.001284"
@@ -167,3 +169,106 @@ def test_short_output_limit_and_cache_write_price_affect_different_estimates():
     result = route([candidate])["candidates"][0]
     assert Decimal(result["estimated_cost_usd"]) == Decimal("0.000360")
     assert Decimal(result["reserved_cost_usd"]) == Decimal("0.000620")
+
+
+def history_entry(key="cheap", **changes):
+    entry = dict(
+        bucket="general:easy",
+        model_key=key,
+        provider="openai",
+        model_id="offline",
+        n=5,
+        passes=0,
+        failures=5,
+        unknown_count=2,
+        latency_ms=500,
+        output_tokens=50,
+    )
+    entry.update(changes)
+    return {
+        "id": "frozen",
+        "policy_version": "history-v1",
+        "rubric_version": "rubric-v1",
+        "judge": None,
+        "entries": [entry],
+    }
+
+
+def test_history_changes_selection_with_smoothed_quality_and_median_estimates():
+    models = [model("cheap"), model("strong", price="2", quality=0.9)]
+    assert route(models)["selected_key"] == "cheap"
+    result = route(models, history=history_entry())
+    assert result["selected_key"] == "strong"
+    assert result["source"] == "history" and result["history_snapshot_id"] == "frozen"
+    candidate = result["candidates"][0]
+    assert candidate["quality"] == pytest.approx(0.425)
+    assert candidate["history_n"] == 5 and candidate["unknown_count"] == 2
+    assert candidate["latency_ms"] == 500 and candidate["expected_output_tokens"] == 50
+    assert Decimal(candidate["estimated_cost_usd"]) == Decimal(".000310")
+    assert Decimal(candidate["reserved_cost_usd"]) == Decimal(".001284")
+
+
+def test_four_labels_and_many_unknowns_keep_priors():
+    result = route(
+        [model("cheap")], history=history_entry(n=4, failures=4, unknown_count=100)
+    )
+    candidate = result["candidates"][0]
+    assert candidate["quality"] == 0.85 and candidate["estimate_source"] == "priors"
+    assert candidate["history_n"] == 4 and candidate["unknown_count"] == 100
+    assert (
+        candidate["latency_ms"] == 1000 and candidate["expected_output_tokens"] == 256
+    )
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"bucket": "general:hard"},
+        {"model_id": "old"},
+        {"provider": "google"},
+        {"model_key": "other"},
+    ],
+)
+def test_incompatible_history_entry_is_ignored(change):
+    result = route([model("cheap")], history=history_entry(**change))
+    assert result["candidates"][0]["history_n"] == 0
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"policy_version": "priors-v1"},
+        {"rubric_version": "old"},
+        {"judge": {"provider": "anthropic", "model_id": "old"}},
+    ],
+)
+def test_incompatible_snapshot_is_ignored(change):
+    snapshot = history_entry()
+    snapshot.update(change)
+    result = route([model("cheap")], history=snapshot)
+    assert result["history_snapshot_id"] is None
+    assert result["candidates"][0]["history_n"] == 0
+
+
+def test_medians_are_bounded_and_missing_output_uses_prior():
+    result = route(
+        [model("cheap")], history=history_entry(latency_ms=0, output_tokens=9000)
+    )
+    assert result["candidates"][0]["latency_ms"] == 1
+    assert result["candidates"][0]["expected_output_tokens"] == 1024
+    result = route(
+        [model("cheap")], history=history_entry(latency_ms=None, output_tokens=None)
+    )
+    assert result["candidates"][0]["latency_ms"] == 1000
+    assert result["candidates"][0]["expected_output_tokens"] == 256
+
+
+def test_history_latency_controls_deadline_without_mutating_snapshot():
+    import copy
+
+    snapshot = history_entry(latency_ms=4000)
+    original = copy.deepcopy(snapshot)
+    result = route([model("cheap")], history=snapshot, remaining=3)
+    assert result["selected_key"] is None
+    assert result["candidates"][0]["exclusion_reason"] == "deadline"
+    assert snapshot == original

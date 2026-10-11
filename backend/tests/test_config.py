@@ -1,10 +1,59 @@
 import json
+import os
 from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
 
 from app.config import ModelRegistry
+
+
+def test_env_file_loads_at_api_startup(monkeypatch, tmp_path):
+    from fastapi.testclient import TestClient
+
+    from app import config, db
+    from app.main import app
+
+    monkeypatch.setattr(os, "environ", os.environ.copy())
+    values = {
+        "DATABASE_URL": "postgresql://fake-host/env-test",
+        "CHAT_MODE": "live",
+        "REQUEST_BUDGET_USD": "0.05",
+        "JEV_API_KEY": "fake-jev",
+        "OPENAI_API_KEY": "fake-${LITERAL}-key",
+        "ANTHROPIC_API_KEY": "fake-anthropic",
+        "GOOGLE_API_KEY": "fake-google",
+    }
+    for key in values:
+        monkeypatch.delenv(key, raising=False)
+    config.ENV_PATH.write_text(
+        "\n".join(f'{key}="{value}"' for key, value in values.items())
+    )
+    monkeypatch.chdir(tmp_path.parent)
+    database_urls = []
+    monkeypatch.setattr(db, "create_pool", lambda url: database_urls.append(url))
+    with TestClient(app) as client:
+        response = client.get("/api/config")
+    assert response.status_code == 200
+    assert database_urls == [values["DATABASE_URL"]]
+    assert response.json()["mode"] == "live"
+    assert all(p["status"] == "available" for p in response.json()["providers"])
+    assert str(config.load_settings().request_budget_usd) == "0.05"
+    assert all(os.environ[key] == value for key, value in values.items())
+    assert all(
+        value not in response.text for key, value in values.items() if "KEY" in key
+    )
+
+
+def test_env_file_preserves_shell_overrides_and_is_optional(monkeypatch):
+    from app import config
+
+    monkeypatch.setenv("CHAT_MODE", "mock")
+    config.load_environment()
+    assert config.load_settings().mode == "mock"
+    config.ENV_PATH.write_text("CHAT_MODE=live\n")
+    config.load_environment()
+    assert config.load_settings().mode == "mock"
 
 
 @pytest.fixture

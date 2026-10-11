@@ -7,14 +7,14 @@ Use Node.js 24 (`nvm use` if available), uv 0.8.0 or newer, Python 3.12, and Doc
 From the repository root:
 
 ```sh
-cp .env.example .env
+cp -n .env.example .env
 cd backend
 uv sync --locked
 cd ../frontend
 npm ci
 ```
 
-Keep `.env` local. Its database credentials are for the local demo container only. Provider keys may stay blank in default mock mode. Live mode requires explicit provider credentials and a positive request budget; benchmark budgets remain Phase 05 work.
+Keep `.env` local. Its database credentials are for the local demo container only. Provider keys may stay blank in default mock mode. Live mode requires explicit provider credentials and a positive request budget; benchmark jobs also require a separate positive total ceiling.
 
 ## Start PostgreSQL and migrate
 
@@ -22,18 +22,17 @@ From the repository root, with Docker running:
 
 ```sh
 docker compose up -d --wait db
-export DATABASE_URL=postgresql://arbiter:arbiter@localhost:5432/arbiter
 cd backend
 uv run --frozen python -m app.db
 ```
 
-The application reads environment variables; it does not automatically load `.env`. Export `DATABASE_URL` in each terminal that runs migrations or the API. The command above uses the bundled local demo credentials. For another database, set its URL privately.
+The API, migrations, smoke CLI, and benchmark/report CLI automatically load the repository-root `.env` at startup, including when launched from `backend/`. Existing shell variables take precedence. Values are literal (no `${VARIABLE}` expansion). A missing `.env` is allowed when configuration is supplied by the environment. Restart the backend after changing `.env`; for another database, set `DATABASE_URL` privately.
 
 Migrations are numbered SQL files, applied in filename order in a transaction and tracked in `schema_migrations`. Running the migration command twice is safe. Run it before starting the API; startup never drops data or automatically changes the schema. The pool holds at most four connections, waits at most three seconds for one, and limits SQL statements to five seconds.
 
 ## Develop and try the chat
 
-Start the API from `backend/`, in the terminal with `DATABASE_URL` exported:
+Start the API from `backend/`:
 
 ```sh
 uv run --frozen uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
@@ -101,18 +100,22 @@ This preserves `postgres_data`. Do not add `--volumes` if you want to retain you
 
 ## Live analysis, generation, and evaluation (Phase 04)
 
-Mock mode is still the default. For live chat, configure Jev and the available generation keys privately in the backend environment, then start the API with:
+Mock mode is still the template default. For live chat, put `JEV_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `GOOGLE_API_KEY` in the root `.env`, then set these values there:
+
+```dotenv
+CHAT_MODE=live
+REQUEST_BUDGET_USD=0.25
+```
+
+The USD 0.25 ceiling accommodates the conservative generation and judge reservations; it is not expected spend. A USD 0.05 ceiling currently blocks even a short evaluated request before any paid call. Longer conversations can require more reservation and will fail safely if they do not fit.
+
+Start the API from `backend/`:
 
 ```sh
-export CHAT_MODE=live
-export CLASSIFICATION_TIMEOUT_SECONDS=10
-export EVALUATION_TIMEOUT_SECONDS=15
-export REQUEST_BUDGET_USD=0.25
-export GENERATION_TIMEOUT_SECONDS=30
 uv run --frozen uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-Credentials are `JEV_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `GOOGLE_API_KEY`. Keep them backend-only; never use `VITE_` variables. The app does not load `.env` automatically; export values in the process that starts it. Restart with `CHAT_MODE=mock` for free deterministic replies. Live chat now routes automatically; fixed selection is confined to the provider smoke CLI.
+Credentials are `JEV_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `GOOGLE_API_KEY`. Keep them backend-only; never use `VITE_` variables. The root `.env` loads automatically on startup. A previously exported `CHAT_MODE=mock` overrides the file; run `unset CHAT_MODE` before starting live mode. To test for free, use `CHAT_MODE=mock uv run --frozen uvicorn app.main:app --host 127.0.0.1 --port 8000`. Live chat now routes automatically; fixed selection is confined to the provider smoke CLI.
 
 `config/models.json` records exact documented model IDs, context/output limits, Decimal prices, source URLs, and verification dates. Enabled entries still become unavailable without their credentials. Unavailable generators are excluded; live requests never silently switch to mock. `GET /api/config` exposes mode, routed selection, and generation credential availability labels, never key values. The frontend checks it before enabling Send. No model selector is added.
 
@@ -145,7 +148,7 @@ Jev receives the complete bounded conversation plus three independent Choice que
 
 The pure router first filters credentials, context, full generation reservation, priors, and remaining time. Eligible means these hard checks pass; the quality floor applies separately to the scoring pool. It reads `task:difficulty` quality priors when present, otherwise the difficulty prior. Scores normalize projected costs and latency across models meeting the 0.80 floor, then apply weights 0.70/0.30 and a stable key tie-break. If none meet the floor, highest available quality wins with a below-target label. Classifier fallback selects the configured strong model or highest available rank. No fit produces a saved error without generation.
 
-Initial easy/medium/hard priors are OpenAI 0.85/0.80/0.65, Anthropic 0.90/0.85/0.80, Google 0.80/0.70/0.55; latency assumptions are 1500/2500/1000 ms and ranks 2/3/1. These express a provisional policy, not measured pass rates. The cheap baseline is OpenAI for the configured 256-output-token estimate; strong and fixed judge are Anthropic. History will replace assumptions in Phase 05. Development evidence in `phase-03-development.json` produced Google for easy extraction and Anthropic for hard reasoning; the latter hit the output cap, so this is not a quality-success claim. Do not tune on held-out examples.
+Initial easy/medium/hard priors are OpenAI 0.85/0.80/0.65, Anthropic 0.90/0.85/0.80, Google 0.80/0.70/0.55; latency assumptions are 1500/2500/1000 ms and ranks 2/3/1. These express a provisional policy, not measured pass rates. The cheap baseline is OpenAI for the configured 256-output-token estimate; strong and fixed judge are Anthropic. Compatible history replaces assumptions once five labeled attempts exist for a model/bucket. Development evidence in `phase-03-development.json` produced Google for easy extraction and Anthropic for hard reasoning; the latter hit the output cap, so this is not a quality-success claim. Do not tune on held-out examples.
 
 The provider smoke CLI keeps its fixed-provider behavior and does not call Jev. Phase 03 already has live evidence; use offline fixtures for further reviews. No additional paid check is needed absent a relevant change.
 
@@ -157,3 +160,23 @@ The fixed Anthropic judge sees the original bounded conversation and candidate a
 At most one escalation follows a valid failure, to a strictly higher configured capability rank; transient generation failures may instead try another available candidate of equal/higher rank. Every retry uses the original conversation. Two failures select the better minimum score, then total score, then later attempt. Every classifier, generation and paid evaluation attempt is committed before the next paid stage; final aggregates include all of them. Unknown costs consume reservations and remain incomplete. The total cap is five paid calls (one classifier, two generators, two judges).
 
 Each judge response is capped at 256 tokens and its stage at 15 seconds. Candidate judge input is bounded to 8,192 UTF-8 bytes; oversized candidates remain unverified. Before generation, the pipeline reserves the worst-case candidate JSON encoding plus schema/framing and judge output, and reserves evaluation time. With an available judge, insufficient combined reservation stops generation; use the explicit USD 0.25 request ceiling shown above for the conservative default bounds. This is a ceiling, not expected spend. A missing judge can still return a best-effort unverified answer. No additional paid check is needed once recorded phase evidence passes.
+
+
+## History and resumable development jobs (Phase 05)
+
+Normal live chat loads one compatible history snapshot before any paid work. At least five known per-attempt labels are required per task/difficulty/model bucket. Quality is smoothed with five prior observations; latency and output tokens use medians. Failed generators count against quality; unknown judgments remain separately counted. History excludes mocks, held-out/baseline runs, unfinished runs and incompatible model/judge/policy/rubric versions. The `history-v1` policy intentionally starts fresh: earlier `priors-v1` data remains visible but is not used. Online labels are biased proxies, not independent benchmark grades.
+
+Jobs run from a terminal, never from an HTTP endpoint. Apply migrations first. From `backend/`, run the small six-case synthetic development dataset without paid calls:
+
+```sh
+DATABASE_URL=postgresql://arbiter:arbiter@localhost:5432/arbiter_test \
+  uv run --frozen python -m app.jobs benchmark \
+  --dataset ../benchmarks/dev.jsonl --budget-usd 0.25 \
+  --request-budget-usd 0.25 --mock
+uv run --frozen python -m app.jobs report JOB_ID
+uv run --frozen python -m app.jobs benchmark --resume JOB_ID
+```
+
+Use the same `DATABASE_URL` for all three commands. The job stores its dataset/hash, settings, exact registry and history snapshot. Resuming reads these frozen values; changing environment settings does not alter the saved experiment. Mock jobs stay mock on resume. To deliberately run development cases live, omit `--mock`, export the provider keys privately and `REQUEST_BUDGET_USD=0.25`, and choose a separate explicit total `--budget-usd`. Do not repeat existing live evidence just for testing this runner.
+
+Each case reserves its complete request cap before any call. Completed cases are skipped on resume. A crash leaves running cases uncertain and retains their reservations, since they may have been billed. `benchmark --resume JOB_ID --retry-uncertain` explicitly allocates another reservation; old uncertain spend is not refunded. Concurrent runners for the same job are rejected. Known complete costs release unused reservation; incomplete costs retain a conservative charge. A depleted ceiling stops new cases. Reports label mock data and online judge outcomes; the three-strategy held-out research comparison comes in Phase 07.

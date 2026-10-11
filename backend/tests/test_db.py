@@ -50,7 +50,7 @@ def test_round_trip_and_reconnect(pool):
                     connection.execute(
                         "SELECT count(*) AS n FROM schema_migrations"
                     ).fetchone()["n"]
-                    == 2
+                    == 3
                 )
     finally:
         with pool.connection() as connection:

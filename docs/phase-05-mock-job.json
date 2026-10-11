@@ -1,0 +1,128 @@
+{
+  "purpose": "Offline mock development job in arbiter_test; no paid calls or research quality evidence.",
+  "resume_verified_unchanged": true,
+  "job_id": "f5b544f2-221f-4f0f-8926-e5a93dbba501",
+  "status": "completed",
+  "strategy": "routed",
+  "mode": "mock",
+  "dataset_hash": "5c41f623c4aee54be86c47b3c0bd4a3b3e69b08feeca844a26bede0cd86d6d97",
+  "history_snapshot_id": "4b23f47e7f96bcf60e889900aba92856a77f5c6bb538e52f7fda92d2acfc12a5",
+  "budget_usd": "0.25",
+  "budget_used_usd": "0.00",
+  "known_cost_usd": "0",
+  "cost_complete": true,
+  "quality_basis": "Online judge proxy only; no independent benchmark grading.",
+  "case_count": 6,
+  "states": {
+    "pending": 0,
+    "running": 0,
+    "done": 6,
+    "error": 0,
+    "uncertain": 0
+  },
+  "online_pass_count": 0,
+  "cases": [
+    {
+      "case_id": "extract-color",
+      "state": "done",
+      "run_id": "cb12d6fe-ca30-4d32-a8c5-a079c07b6f39",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "unverified",
+        "final_model": "mock-v1",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0",
+        "total_cost_usd": "0",
+        "total_latency_ms": 5
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "case_id": "summarize-meeting",
+      "state": "done",
+      "run_id": "44d900fd-9849-411b-90d8-873fec092dcd",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "unverified",
+        "final_model": "mock-v1",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0",
+        "total_cost_usd": "0",
+        "total_latency_ms": 3
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "case_id": "write-reminder",
+      "state": "done",
+      "run_id": "12b8e7cd-3c21-4e60-a80f-83392b6910d4",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "unverified",
+        "final_model": "mock-v1",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0",
+        "total_cost_usd": "0",
+        "total_latency_ms": 4
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "case_id": "code-add",
+      "state": "done",
+      "run_id": "ba9f2c43-a2d5-4d1f-b8a0-a5ba29ea7228",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "unverified",
+        "final_model": "mock-v1",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0",
+        "total_cost_usd": "0",
+        "total_latency_ms": 5
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "case_id": "reason-marble",
+      "state": "done",
+      "run_id": "e3caaa50-ca47-4d4a-ad62-78109e31852d",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "unverified",
+        "final_model": "mock-v1",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0",
+        "total_cost_usd": "0",
+        "total_latency_ms": 4
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "case_id": "general-context",
+      "state": "done",
+      "run_id": "040bd096-db2e-430d-9934-922a085c63fe",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "unverified",
+        "final_model": "mock-v1",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0",
+        "total_cost_usd": "0",
+        "total_latency_ms": 4
+      },
+      "uncertain_attempts": []
+    }
+  ]
+}
