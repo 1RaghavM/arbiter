@@ -39,3 +39,22 @@ For each enabled provider record: actual docs URL, verified date, SDK version, e
 
 - [Psycopg installation](https://www.psycopg.org/psycopg3/docs/basic/install.html) and [connection pools](https://www.psycopg.org/psycopg3/docs/advanced/pool.html): direct parameterized SQL, JSONB adaptation, short connection-context transactions, explicit pool lifecycle, and finite connection/statement waits. Installed exact `psycopg[binary,pool]==3.3.6`; the lockfile pins `psycopg-pool==3.3.3`.
 - PostgreSQL 17.6 was exercised locally through Compose and is now a CI service. No provider endpoint/model/pricing claim was added. Mock zero-cost records describe the absence of paid calls, not live billing measurements.
+
+## Phase 02 verification — 2026-10-11
+
+Documentation verification establishes API contracts and prices, not account access. No live response is claimed without a recorded smoke check.
+
+| Provider | Exact model ID | Standard input / output USD per million | Cached input | Context |
+| --- | --- | --- | --- | --- |
+| OpenAI | gpt-4.1-mini-2025-04-14 | 0.40 / 1.60 | 0.10 | 1,047,576 |
+| Anthropic | claude-sonnet-5-5 | 2.00 / 10.00 | 0.10 | 1,000,000 |
+| Google | gemini-3.5-flash-lite | 0.30 / 2.50 | 0.03 | 1,048,576 input |
+
+- [OpenAI model page](https://developers.openai.com/api/docs/models/gpt-4.1-mini), [text generation](https://developers.openai.com/api/docs/guides/text), and [Python SDK reference](https://developers.openai.com/api/reference/python): snapshot ID, prices/context, Responses input roles, usage, incomplete status, and output text. Requests use `store=false`, no tools, `max_output_tokens=1024`, `max_retries=0`. Cached tokens are a subset of input tokens. This candidate has no separate reasoning step.
+- [Sonnet 5.5 overview](https://platform.claude.com/docs/en/models/sonnet-5-5/overview), [thinking](https://platform.claude.com/docs/en/build-with-claude/thinking), [Messages API](https://platform.claude.com/docs/en/api/messages/create), and [Python SDK](https://platform.claude.com/docs/en/cli-sdks-libraries/sdks/python): `thinking={"type":"between_tools"}` suppresses up-front reasoning with no tools supplied; `disabled` is not supported for this model. `max_tokens=1024` bounds output. Cache reads/writes are separate from uncached input; five-minute writes cost 2.50/M. No cache writes are requested. Unexpected one-hour cache usage is unpriced by this adapter and leaves cost unknown.
+- [Gemini 3.5 Flash-Lite model](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite), [pricing](https://ai.google.dev/gemini-api/docs/pricing#gemini-3.5-flash-lite), [thinking](https://ai.google.dev/gemini-api/docs/thinking), and [usage metadata](https://ai.google.dev/api/generate-content#UsageMetadata): minimal thinking is configured, not disabled. The 1,024 output cap includes thoughts; billed output sums candidate and thought tokens. Cached input is a subset of prompt tokens. No tools/cache storage are requested; prices use the paid tier even if an account has free quota.
+- [Google SDK source](https://github.com/googleapis/python-genai): `HttpRetryOptions(attempts=1)` includes the initial request and disables retries. HTTP timeout uses milliseconds. Public Gemini API is explicitly selected instead of ambient Vertex/Enterprise settings.
+
+Pinned SDKs: OpenAI 3.28.0, Anthropic 1.13.0, google-genai 2.29.0. Installed signatures and actual SDK serialization/parsing are checked with offline async HTTP transports. The SDK async clients run under `asyncio.wait_for`, with tests proving whole-stage cancellation. Official public API endpoints are explicit. No framework wrappers, model-generated code execution, or provider retry loops were added.
+
+Candidate price differences do not prove quality differences. Account/model eligibility remains unverified until the live gate. Priors and capability ranking require development evidence in Phase 03.

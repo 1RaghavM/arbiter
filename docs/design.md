@@ -40,7 +40,7 @@ Dockerfile
 compose.yaml
 ```
 
-Phase 01 implements Message, ChatRequest, GenerationResult, and ChatResult, plus runs/calls/schema_migrations. Analysis/evaluation/route schemas and benchmark tables are added with their owning phases. Mock responses have `mode: mock`, null analysis, empty route decisions, and `unverified` quality status.
+Phase 01 introduced Message, ChatRequest, GenerationResult, and ChatResult, plus runs/calls/schema_migrations. Analysis/evaluation/route schemas and benchmark tables are added with their owning phases. Mock responses have `mode: mock`, null analysis, empty route decisions, and `unverified` quality status. Phase 02 also supports `mode: live` and adds provider/model ID, raw usage, price snapshot, and reservation metadata; live quality stays `unverified`. A backend setting fixes selection until Phase 03.
 
 Add modules only as their phase needs them. Do not scaffold empty future layers. Compose is for local PostgreSQL; the Dockerfile builds the frontend and serves it through FastAPI.
 
@@ -61,6 +61,7 @@ Provider fields are translated and validated at the adapter boundary. Unknown co
 | Endpoint | Contract |
 | --- | --- |
 | GET /api/health | Liveness, no secrets |
+| GET /api/config | Mode, fixed model key, and provider availability; no credentials |
 | POST /api/chat | Body `{messages: [{role: "user" or "assistant", content: string}]}`; returns ChatResult |
 | GET /api/runs?limit=20 | Recent metadata only; cap limit at 100 |
 | GET /api/runs/{id} | One full stored run; 404 if absent |
@@ -74,6 +75,8 @@ Phase 01 additionally caps the raw chat JSON body at 160,000 bytes before parsin
 Use 422 for invalid input, 503 for no configured candidate/DB/provider availability failure, 504 for exhausted deadline, and 502 for unrecoverable upstream invalid response. A completed answer with failed or unknown quality returns 200 with explicit status. Error bodies include code, safe message, and run_id when allocated. Never expose raw SDK exception strings or keys. Protect all data/paid endpoints in deployed demo mode. Add only a simple per-process request limit and small concurrency cap because deployment is explicitly one process.
 
 ## Model configuration
+
+Phase 02 fixed selection requires verified IDs, limits, and prices, while priors, latency estimates, capability ranks, baseline keys, and the judge remain unset until Phase 03. Missing credentials make a configured candidate unavailable without changing its registry entry.
 
 Each generator entry has stable key, provider, exact model_id, enabled, context_limit, max_output_tokens, input/output pricing plus relevant cached/reasoning pricing rules, price_verified_at, source_url, per-bucket prior quality estimates, prior latency, and a provisional capability_rank. Configure a strong baseline key, cheap baseline key, and fixed judge key separately. Jev has separate settings. Start with 3 generator candidates total, one per provider, with different intended cost/capability profiles.
 
