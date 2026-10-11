@@ -439,3 +439,72 @@ def test_analysis_write_failure_prevents_generation(live_client, monkeypatch):
     assert response.status_code == 503
     assert response.json()["code"] == "persistence_error"
     assert "private" not in response.text
+
+
+def test_five_paid_stages_and_attempt_labels_persist(live_client, monkeypatch):
+    from app import evaluation
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "offline-test")
+    monkeypatch.setenv("REQUEST_BUDGET_USD", "1")
+    monkeypatch.setattr(
+        analysis,
+        "classify",
+        lambda *args: analysis.Analysis(
+            source="jev",
+            task="general",
+            difficulty="easy",
+            reasoning="low",
+            confidence=0.9,
+            called=True,
+            cost_usd=Decimal(".00001"),
+        ),
+    )
+    monkeypatch.setattr(
+        providers,
+        "generate",
+        lambda model, *args: GenerationResult(
+            model_key=model.key,
+            provider=model.provider,
+            model_id=model.model_id,
+            text=f"answer from {model.key}",
+            cost_usd=Decimal(".001"),
+        ),
+    )
+
+    def evaluate(model, messages, generated, timeout):
+        passed = generated.model_key == "anthropic"
+        return evaluation.Evaluation(
+            status="pass" if passed else "fail",
+            correctness=4 if passed else 1,
+            relevance=4,
+            completeness=4,
+            reason="offline fixture",
+        ), GenerationResult(
+            model_key=model.key,
+            provider=model.provider,
+            model_id=model.model_id,
+            text="offline scores",
+            cost_usd=Decimal(".002"),
+        )
+
+    monkeypatch.setattr(evaluation, "evaluate", evaluate)
+    response = live_client.post(
+        "/api/chat", json={"messages": [{"role": "user", "content": "test"}]}
+    )
+    assert response.status_code == 200
+    result = response.json()
+    assert result["status"] == "passed" and result["final_model"] == "anthropic"
+    assert result["escalation_reason"] == "quality_failed"
+    assert Decimal(result["total_cost_usd"]) == Decimal(".00601")
+    stored = live_client.get(f"/api/runs/{result['run_id']}").json()
+    assert [call["stage"] for call in stored["calls"]] == [
+        "classify",
+        "generate",
+        "evaluate",
+        "generate",
+        "evaluate",
+    ]
+    assert [grade["attempt"] for grade in stored["evaluations"]] == [1, 2]
+    assert [grade["status"] for grade in stored["evaluations"]] == ["fail", "pass"]
+    assert stored["calls"][2]["attempt"] == 1 and stored["calls"][4]["attempt"] == 2
+    assert stored["rubric_version"] == "rubric-v1"

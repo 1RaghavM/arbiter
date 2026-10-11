@@ -362,3 +362,36 @@ def test_partially_parsed_invalid_text_is_still_cleared(monkeypatch):
     result = run("openai")
     assert result.error_category == "malformed_response" and result.text == ""
     assert result.raw_usage and result.cost_usd is not None
+
+
+def test_anthropic_native_schema_is_sent_without_changing_generation(monkeypatch):
+    requests, _ = install_transport(monkeypatch, "anthropic")
+    schema = {
+        "type": "object",
+        "properties": {"score": {"type": "integer"}},
+        "required": ["score"],
+        "additionalProperties": False,
+    }
+    result = providers.generate(
+        model("anthropic"),
+        [Message(role="user", content="Grade")],
+        2,
+        output_schema=schema,
+    )
+    assert result.error_category is None
+    assert json.loads(requests[0].content)["output_config"] == {
+        "format": {"type": "json_schema", "schema": schema}
+    }
+
+
+@pytest.mark.parametrize("provider", ["openai", "google"])
+def test_unsupported_schema_provider_is_rejected_before_network(monkeypatch, provider):
+    requests, _ = install_transport(monkeypatch, provider)
+    with pytest.raises(ValueError, match="Anthropic"):
+        providers.generate(
+            model(provider),
+            [Message(role="user", content="Grade")],
+            2,
+            output_schema={"type": "object"},
+        )
+    assert not requests

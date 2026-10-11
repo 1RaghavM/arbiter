@@ -1,0 +1,3 @@
+ALTER TABLE runs ADD COLUMN evaluations JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE runs ADD COLUMN escalation_reason TEXT;
+ALTER TABLE runs ADD COLUMN reserved_cost_usd NUMERIC NOT NULL DEFAULT 0;

@@ -71,8 +71,13 @@ def _account(result: GenerationResult, model: ModelConfig) -> None:
 
 
 def generate(
-    model: ModelConfig, messages: list[Message], timeout: float
+    model: ModelConfig,
+    messages: list[Message],
+    timeout: float,
+    output_schema: dict | None = None,
 ) -> GenerationResult:
+    if output_schema is not None and model.provider != "anthropic":
+        raise ValueError("Structured outputs require the configured Anthropic judge")
     started = perf_counter()
     result = GenerationResult(
         model_key=model.key,
@@ -94,7 +99,9 @@ def generate(
     )
 
     async def run():
-        await asyncio.wait_for(_generate(model, messages, timeout, result), timeout)
+        await asyncio.wait_for(
+            _generate(model, messages, timeout, result, output_schema), timeout
+        )
 
     try:
         asyncio.run(run())
@@ -113,7 +120,7 @@ def generate(
     return result
 
 
-async def _generate(model, messages, timeout, result):
+async def _generate(model, messages, timeout, result, output_schema):
     try:
         history = [message.model_dump() for message in messages]
         if model.provider == "openai":
@@ -153,6 +160,11 @@ async def _generate(model, messages, timeout, result):
             else:
                 result.error_category = "malformed_response"
         elif model.provider == "anthropic":
+            options = {}
+            if output_schema is not None:
+                options["output_config"] = {
+                    "format": {"type": "json_schema", "schema": output_schema}
+                }
             async with anthropic.AsyncAnthropic(
                 api_key=os.environ["ANTHROPIC_API_KEY"],
                 base_url="https://api.anthropic.com",
@@ -165,6 +177,7 @@ async def _generate(model, messages, timeout, result):
                         messages=history,
                         max_tokens=model.max_output_tokens,
                         thinking={"type": "between_tools"},
+                        **options,
                     )
                 ).model_dump(mode="json")
             result.raw_usage = response.get("usage")

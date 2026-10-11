@@ -50,9 +50,67 @@ def test_round_trip_and_reconnect(pool):
                     connection.execute(
                         "SELECT count(*) AS n FROM schema_migrations"
                     ).fetchone()["n"]
-                    == 1
+                    == 2
                 )
     finally:
         with pool.connection() as connection:
             connection.execute("DELETE FROM calls WHERE run_id=%s", (run_id,))
             connection.execute("DELETE FROM runs WHERE id=%s", (run_id,))
+
+
+def test_evaluation_calls_survive_reconnect_before_finalization(pool):
+    from decimal import Decimal
+
+    run_id = uuid4()
+    db.create_run(
+        pool,
+        run_id,
+        ChatRequest(messages=[{"role": "user", "content": "test"}]),
+        "live",
+    )
+    generation = GenerationResult(
+        text="answer",
+        model_key="openai",
+        provider="openai",
+        model_id="model",
+        cost_usd=Decimal(".001"),
+    )
+    judge = GenerationResult(
+        text='{"correctness":3}',
+        model_key="anthropic",
+        provider="anthropic",
+        model_id="judge",
+        cost_usd=Decimal(".002"),
+    )
+    evaluation = {
+        "status": "pass",
+        "correctness": 3,
+        "relevance": 4,
+        "completeness": 4,
+        "reason": "ok",
+    }
+    db.record_call(pool, run_id, 1, "generate", 1, generation)
+    db.record_call(pool, run_id, 2, "evaluate", 1, judge, evaluation)
+    with db.create_pool(os.environ["TEST_DATABASE_URL"]) as reconnected:
+        partial = db.read_run(reconnected, run_id)
+        assert partial["status"] == "running"
+        assert [c["stage"] for c in partial["calls"]] == ["generate", "evaluate"]
+        assert partial["calls"][1]["output"]["evaluation"] == evaluation
+    result = ChatResult(
+        run_id=run_id,
+        mode="live",
+        answer="answer",
+        final_model="openai",
+        status="passed",
+        attempts=[generation],
+        evaluations=[evaluation],
+        total_cost_usd=Decimal(".003"),
+        known_cost_usd=Decimal(".003"),
+        reserved_cost_usd=Decimal(".04"),
+    )
+    db.finish_run(pool, result, None, perf_counter())
+    stored = db.read_run(pool, run_id)
+    assert stored["evaluations"] == [evaluation]
+    assert stored["rubric_version"] == "rubric-v1"
+    assert stored["reserved_cost_usd"] == Decimal(".04")
+    assert len(stored["calls"]) == 2
