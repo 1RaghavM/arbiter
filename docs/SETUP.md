@@ -14,7 +14,7 @@ cd ../frontend
 npm ci
 ```
 
-Keep `.env` local. Its database credentials are for the local demo container only. Provider keys may stay blank in default mock mode. Live mode requires explicit provider credentials and a positive request budget; benchmark budgets remain Phase 05 work.
+Keep `.env` local. Its database credentials are for the local demo container only. Provider keys may stay blank in default mock mode. Live mode requires explicit provider credentials and a positive request budget; benchmark jobs also require a separate positive total ceiling.
 
 ## Start PostgreSQL and migrate
 
@@ -145,7 +145,7 @@ Jev receives the complete bounded conversation plus three independent Choice que
 
 The pure router first filters credentials, context, full generation reservation, priors, and remaining time. Eligible means these hard checks pass; the quality floor applies separately to the scoring pool. It reads `task:difficulty` quality priors when present, otherwise the difficulty prior. Scores normalize projected costs and latency across models meeting the 0.80 floor, then apply weights 0.70/0.30 and a stable key tie-break. If none meet the floor, highest available quality wins with a below-target label. Classifier fallback selects the configured strong model or highest available rank. No fit produces a saved error without generation.
 
-Initial easy/medium/hard priors are OpenAI 0.85/0.80/0.65, Anthropic 0.90/0.85/0.80, Google 0.80/0.70/0.55; latency assumptions are 1500/2500/1000 ms and ranks 2/3/1. These express a provisional policy, not measured pass rates. The cheap baseline is OpenAI for the configured 256-output-token estimate; strong and fixed judge are Anthropic. History will replace assumptions in Phase 05. Development evidence in `phase-03-development.json` produced Google for easy extraction and Anthropic for hard reasoning; the latter hit the output cap, so this is not a quality-success claim. Do not tune on held-out examples.
+Initial easy/medium/hard priors are OpenAI 0.85/0.80/0.65, Anthropic 0.90/0.85/0.80, Google 0.80/0.70/0.55; latency assumptions are 1500/2500/1000 ms and ranks 2/3/1. These express a provisional policy, not measured pass rates. The cheap baseline is OpenAI for the configured 256-output-token estimate; strong and fixed judge are Anthropic. Compatible history replaces assumptions once five labeled attempts exist for a model/bucket. Development evidence in `phase-03-development.json` produced Google for easy extraction and Anthropic for hard reasoning; the latter hit the output cap, so this is not a quality-success claim. Do not tune on held-out examples.
 
 The provider smoke CLI keeps its fixed-provider behavior and does not call Jev. Phase 03 already has live evidence; use offline fixtures for further reviews. No additional paid check is needed absent a relevant change.
 
@@ -157,3 +157,23 @@ The fixed Anthropic judge sees the original bounded conversation and candidate a
 At most one escalation follows a valid failure, to a strictly higher configured capability rank; transient generation failures may instead try another available candidate of equal/higher rank. Every retry uses the original conversation. Two failures select the better minimum score, then total score, then later attempt. Every classifier, generation and paid evaluation attempt is committed before the next paid stage; final aggregates include all of them. Unknown costs consume reservations and remain incomplete. The total cap is five paid calls (one classifier, two generators, two judges).
 
 Each judge response is capped at 256 tokens and its stage at 15 seconds. Candidate judge input is bounded to 8,192 UTF-8 bytes; oversized candidates remain unverified. Before generation, the pipeline reserves the worst-case candidate JSON encoding plus schema/framing and judge output, and reserves evaluation time. With an available judge, insufficient combined reservation stops generation; use the explicit USD 0.25 request ceiling shown above for the conservative default bounds. This is a ceiling, not expected spend. A missing judge can still return a best-effort unverified answer. No additional paid check is needed once recorded phase evidence passes.
+
+
+## History and resumable development jobs (Phase 05)
+
+Normal live chat loads one compatible history snapshot before any paid work. At least five known per-attempt labels are required per task/difficulty/model bucket. Quality is smoothed with five prior observations; latency and output tokens use medians. Failed generators count against quality; unknown judgments remain separately counted. History excludes mocks, held-out/baseline runs, unfinished runs and incompatible model/judge/policy/rubric versions. The `history-v1` policy intentionally starts fresh: earlier `priors-v1` data remains visible but is not used. Online labels are biased proxies, not independent benchmark grades.
+
+Jobs run from a terminal, never from an HTTP endpoint. Apply migrations first. From `backend/`, run the small six-case synthetic development dataset without paid calls:
+
+```sh
+DATABASE_URL=postgresql://arbiter:arbiter@localhost:5432/arbiter_test \
+  uv run --frozen python -m app.jobs benchmark \
+  --dataset ../benchmarks/dev.jsonl --budget-usd 0.25 \
+  --request-budget-usd 0.25 --mock
+uv run --frozen python -m app.jobs report JOB_ID
+uv run --frozen python -m app.jobs benchmark --resume JOB_ID
+```
+
+Use the same `DATABASE_URL` for all three commands. The job stores its dataset/hash, settings, exact registry and history snapshot. Resuming reads these frozen values; changing environment settings does not alter the saved experiment. Mock jobs stay mock on resume. To deliberately run development cases live, omit `--mock`, export the provider keys privately and `REQUEST_BUDGET_USD=0.25`, and choose a separate explicit total `--budget-usd`. Do not repeat existing live evidence just for testing this runner.
+
+Each case reserves its complete request cap before any call. Completed cases are skipped on resume. A crash leaves running cases uncertain and retains their reservations, since they may have been billed. `benchmark --resume JOB_ID --retry-uncertain` explicitly allocates another reservation; old uncertain spend is not refunded. Concurrent runners for the same job are rejected. Known complete costs release unused reservation; incomplete costs retain a conservative charge. A depleted ceiling stops new cases. Reports label mock data and online judge outcomes; the three-strategy held-out research comparison comes in Phase 07.

@@ -2,7 +2,7 @@
 
 Updated: 2026-10-11.
 
-- Current phase: 05 — historical routing and resumable jobs, in progress.
+- Current phase: 05 — historical routing and resumable jobs, ready for review.
 - Repository/default branch: [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), `master`.
 - Phase 01 [PR #2](https://github.com/1RaghavM/arbiter/pull/2) merged on 2026-10-11 after explicit user authorization. Its checks passed.
 - Phase 02 PR #3 merged by the review subagent at `2793f1b` after all gates passed.
@@ -11,8 +11,22 @@ Updated: 2026-10-11.
 - Phase branch: `phase/05-history-jobs`, from updated `origin/master` at `b8086ad`.
 - Authorization: user gives standing authorization for subagent review/merge of passing phase PRs and continuation to the next phase.
 - Previous PR: [#5](https://github.com/1RaghavM/arbiter/pull/5), merged. Phase 05 PR not yet opened.
-- Next action: add compatible attempt history, frozen resumable CLI jobs and PostgreSQL/offline evidence, then delegate PR review/merge.
+- Next action: open Phase 05 PR, delegate final review/merge after current CI passes, then branch Phase 06 from updated master.
 - Testing preference: keep paid checks minimal; reuse successful evidence, use offline fakes for failure paths, and rerun only affected checks after changes. Recorded in AGENTS.md and quality.md.
+
+## Phase 05 results
+
+Live requests load one content-addressed compatible history snapshot. Routing uses per-attempt smoothed quality and median latency/output after five known labels. Unknown judgments remain unknown; provider errors count against reliability. The sequential benchmark/report CLI freezes dataset, settings, registry, history and runtime versions, reserves before calls, skips completed cases, retains uncertain spend and requires explicit uncertain retries.
+
+- `TEST_DATABASE_URL=postgresql://arbiter:arbiter@localhost:5432/arbiter_test .venv/bin/pytest`: **259 passed** with real PostgreSQL and offline providers. `.venv/bin/ruff check .` / `.venv/bin/ruff format --check .`: passed, 25 files. Prior focused checks: 38 history/routing, 57 integration/pipeline, 12 jobs tests passed. No extra paid checks.
+- History tests prove seeded compatible attempts change selection, threshold fallback, per-attempt failures versus later success, unknown denominators, exact model/judge compatibility and excluded mock/held-out/baseline/old-policy records. `history-v1` intentionally excludes `priors-v1`; the policy starts cold instead of silently mixing versions.
+- Jobs tests cover persisted reservation caps, unknown costs, crash/uncertain recovery, immutable settings/history, incompatible runtime versions, concurrent-run rejection, no completed-case replay, and retained prior run IDs/known partial costs after an explicit retry.
+- One actual CLI job: `DATABASE_URL=postgresql://arbiter:arbiter@localhost:5432/arbiter_test .venv/bin/python -m app.jobs benchmark --dataset ../benchmarks/dev.jsonl --budget-usd 0.25 --request-budget-usd 0.25 --mock`. Job `f5b544f2-221f-4f0f-8926-e5a93dbba501` completed all six cases, all mock/unverified, USD 0. Separate `benchmark --resume ID` and `report ID` processes returned the identical report with one attempt per case. [Sanitized evidence](phase-05-mock-job.json). This is persistence/runner evidence, not a live research benchmark.
+- Independent reviews fixed SQL bucket precedence, frozen policy/rubric/classifier validation before resume, retention of uncertain attempt provenance and partial known costs, and incorrect complete-cost reporting before crash recovery. Reviewers found no remaining material code issue; final PR CI/head remains the merge gate.
+- Delegation: history agent implemented history/router with PostgreSQL tests and independently reviewed job transaction/accounting logic; jobs agent implemented CLI/schema/dataset/tests; reviewer audited both and owns merge. Root integrated storage/pipeline, ran full gates and CLI evidence.
+- Commits, each immediately pushed: `19b694b` historical routing, `a960305` frozen resumable jobs/integration. Documentation/evidence follows; `git log -1` identifies that commit. User remains sole author/committer.
+- [CI on a960305](https://github.com/1RaghavM/arbiter/actions/runs/38163774356) passed backend and frontend. Secret-value and whitespace checks passed. Demo database migrated and ordinary API restored in mock mode.
+- No frontend behavior changed in this phase; prior browser evidence applies and CI reruns frontend gates. No paid API calls. The job command has no HTTP trigger; independent scoring/three-strategy held-out experiment remains Phase 07. Online history is a biased proxy and reservations are not invoice guarantees.
 
 ## Phase 04 results
 
@@ -123,7 +137,7 @@ Each commit uses `1RaghavM` as sole author/committer, with no assistant co-autho
 | 02 | merged | phase/02-cloud-models | [#3](https://github.com/1RaghavM/arbiter/pull/3) | Offline gates and all three live checks pass |
 | 03 | merged | phase/03-jev-routing | [#4](https://github.com/1RaghavM/arbiter/pull/4) | Offline checks and live Jev/routing trace pass |
 | 04 | merged | phase/04-evaluation | [#5](https://github.com/1RaghavM/arbiter/pull/5) | 222 offline tests, normal live flow and controlled escalation pass |
-| 05 | in_progress | phase/05-history-jobs | — | Implementation underway |
+| 05 | ready_for_review | phase/05-history-jobs | — | 259 offline tests and six-case persisted/resumed mock job pass |
 | 06 | pending | — | — | — |
 | 07 | pending | — | — | — |
 | 08 | pending | — | — | — |
