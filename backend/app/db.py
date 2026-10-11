@@ -89,40 +89,65 @@ def record_analysis(pool, run_id, result):
             )
 
 
+def record_call(pool, run_id, sequence, stage, attempt, generation, evaluation=None):
+    payload = generation.model_dump(mode="json")
+    if evaluation is not None:
+        payload["evaluation"] = (
+            evaluation.model_dump(mode="json")
+            if hasattr(evaluation, "model_dump")
+            else evaluation
+        )
+    error_category = generation.error_category or (
+        payload.get("evaluation", {}).get("error_category")
+    )
+    with pool.connection() as connection:
+        connection.execute(
+            "INSERT INTO calls (id, run_id, sequence, stage, provider, model_id, "
+            "attempt, status, latency_ms, cost_usd, cost_source, output, error, "
+            "input_tokens, output_tokens, raw_usage, price_snapshot) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "
+            "%s, %s, %s, %s, %s, %s)",
+            (
+                uuid4(),
+                run_id,
+                sequence,
+                stage,
+                generation.provider,
+                generation.model_id,
+                attempt,
+                "error" if error_category else "done",
+                generation.latency_ms,
+                generation.cost_usd,
+                generation.cost_source,
+                Jsonb(payload),
+                Jsonb({"code": error_category} if error_category else None),
+                generation.input_tokens,
+                generation.output_tokens,
+                Jsonb(generation.raw_usage),
+                Jsonb(generation.price_snapshot),
+            ),
+        )
+
+
 def finish_run(
     pool, result: ChatResult, generation: GenerationResult | None, started, error=None
 ):
+    if generation is not None:
+        record_call(
+            pool,
+            result.run_id,
+            2 if result.analysis and result.analysis.get("called") else 1,
+            "generate",
+            1,
+            generation,
+        )
     with pool.connection() as connection:
-        if generation is not None:
-            connection.execute(
-                "INSERT INTO calls (id, run_id, sequence, stage, provider, model_id, "
-                "attempt, status, latency_ms, cost_usd, cost_source, output, error, "
-                "input_tokens, output_tokens, raw_usage, price_snapshot) "
-                "VALUES (%s, %s, %s, 'generate', %s, %s, 1, %s, %s, %s, %s, "
-                "%s, %s, %s, %s, %s, %s)",
-                (
-                    uuid4(),
-                    result.run_id,
-                    2 if result.analysis and result.analysis.get("called") else 1,
-                    generation.provider,
-                    generation.model_id,
-                    "error" if error else "done",
-                    generation.latency_ms,
-                    generation.cost_usd,
-                    generation.cost_source,
-                    Jsonb(generation.model_dump(mode="json")),
-                    Jsonb(error),
-                    generation.input_tokens,
-                    generation.output_tokens,
-                    Jsonb(generation.raw_usage),
-                    Jsonb(generation.price_snapshot),
-                ),
-            )
         connection.execute(
             "UPDATE runs SET status=%s, final_answer=%s, final_model=%s, "
             "total_latency_ms=%s, total_cost_usd=%s, known_cost_usd=%s, "
             "cost_complete=%s, error=%s, analysis=%s, route_decisions=%s, "
-            "policy_version=%s WHERE id=%s",
+            "policy_version=%s, evaluations=%s, escalation_reason=%s, "
+            "reserved_cost_usd=%s, rubric_version=%s WHERE id=%s",
             (
                 result.status,
                 result.answer,
@@ -135,6 +160,10 @@ def finish_run(
                 Jsonb(result.analysis),
                 Jsonb(result.route_decisions),
                 "priors-v1" if result.route_decisions else None,
+                Jsonb(result.evaluations),
+                result.escalation_reason,
+                result.reserved_cost_usd,
+                "rubric-v1" if result.evaluations else None,
                 result.run_id,
             ),
         )

@@ -2,14 +2,15 @@
 
 Updated: 2026-10-11.
 
-- Current phase: 03 — Jev and routing, ready for review.
+- Current phase: 04 — evaluation and escalation, in progress.
 - Repository/default branch: [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), `master`.
 - Phase 01 [PR #2](https://github.com/1RaghavM/arbiter/pull/2) merged on 2026-10-11 after explicit user authorization. Its checks passed.
 - Phase 02 PR #3 merged by the review subagent at `2793f1b` after all gates passed.
-- Phase branch: `phase/03-jev-routing`, from updated `origin/master` at `2793f1b`.
+- Phase 03 PR #4 merged by the review subagent at `4377819` after fixes and passing CI.
+- Phase branch: `phase/04-evaluation`, from updated `origin/master` at `4377819`.
 - Authorization: user gives standing authorization for subagent review/merge of passing phase PRs and continuation to the next phase.
-- Previous PR: [#3](https://github.com/1RaghavM/arbiter/pull/3), merged. Phase 03 PR is opened after the final evidence commit; URL in session handoff.
-- Next action: subagent reviews the current Phase 03 PR head and passing CI, merges if no blockers remain, then main agent starts Phase 04 from updated master under standing authorization. No further paid Phase 03 check is needed.
+- Previous PR: [#4](https://github.com/1RaghavM/arbiter/pull/4), merged. Phase 04 PR not yet opened.
+- Next action: implement fixed structured judge, at-most-one escalation, complete call accounting, offline branch tests, then one bounded normal live flow and controlled escalation evidence. Reuse existing provider/classifier smoke evidence.
 - Testing preference: keep paid checks minimal; reuse successful evidence, use offline fakes for failure paths, and rerun only affected checks after changes. Recorded in AGENTS.md and quality.md.
 
 ## Phase 03 results
@@ -106,8 +107,8 @@ Each commit uses `1RaghavM` as sole author/committer, with no assistant co-autho
 | 00 | merged | phase/00-foundation | [#1](https://github.com/1RaghavM/arbiter/pull/1) | Foundation checks in merged history |
 | 01 | merged | phase/01-chat-slice | [#2](https://github.com/1RaghavM/arbiter/pull/2) | Merged history and passing CI |
 | 02 | merged | phase/02-cloud-models | [#3](https://github.com/1RaghavM/arbiter/pull/3) | Offline gates and all three live checks pass |
-| 03 | ready_for_review | phase/03-jev-routing | Session handoff | Offline checks and live Jev/routing trace pass |
-| 04 | pending | — | — | — |
+| 03 | merged | phase/03-jev-routing | [#4](https://github.com/1RaghavM/arbiter/pull/4) | Offline checks and live Jev/routing trace pass |
+| 04 | in_progress | phase/04-evaluation | — | Judge API contract verified; implementation underway |
 | 05 | pending | — | — | — |
 | 06 | pending | — | — | — |
 | 07 | pending | — | — | — |

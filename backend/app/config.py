@@ -86,6 +86,9 @@ REGISTRY_PATH = Path(__file__).resolve().parents[2] / "config/models.json"
 class Settings(BaseModel):
     mode: Literal["mock", "live"] = "mock"
     fixed_model_key: str = "openai"
+    evaluation_timeout_seconds: Annotated[
+        float, Field(gt=0, le=30, allow_inf_nan=False)
+    ] = 15
     classification_timeout_seconds: Annotated[
         float, Field(gt=0, le=30, allow_inf_nan=False)
     ] = 10
@@ -100,6 +103,7 @@ class Settings(BaseModel):
 def load_settings():
     return Settings(
         mode=os.environ.get("CHAT_MODE", "mock"),
+        evaluation_timeout_seconds=os.environ.get("EVALUATION_TIMEOUT_SECONDS", "15"),
         fixed_model_key=os.environ.get("FIXED_MODEL_KEY", "openai"),
         classification_timeout_seconds=os.environ.get(
             "CLASSIFICATION_TIMEOUT_SECONDS", "10"
