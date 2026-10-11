@@ -7,7 +7,8 @@ type ChatResult = {
   final_model: string
   total_cost_usd: string | null
   cost_complete: boolean
-  status: 'unverified'
+  status: 'passed' | 'quality_failed' | 'unverified'
+  escalation_reason: string | null
   route_decisions: { selected_key: string | null; reason: string }[]
   warnings: string[]
 }
@@ -78,7 +79,9 @@ function App() {
       }
       const result = await response.json()
       if (typeof result.answer !== 'string' || !['mock', 'live'].includes(result.mode)
-        || typeof result.final_model !== 'string' || result.status !== 'unverified'
+        || typeof result.final_model !== 'string'
+        || !['passed', 'quality_failed', 'unverified'].includes(result.status)
+        || !(result.escalation_reason === null || typeof result.escalation_reason === 'string')
         || typeof result.cost_complete !== 'boolean'
         || !(result.total_cost_usd === null || (typeof result.total_cost_usd === 'string'
           && /^\d+(\.\d+)?([eE][+-]?\d+)?$/.test(result.total_cost_usd)))
@@ -120,7 +123,7 @@ function App() {
       <main className="mx-auto max-w-3xl px-5 pb-10 pt-6 sm:pt-12">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-medium tracking-widest text-stone-500">PHASE 03 / CHAT</p>
+            <p className="text-xs font-medium tracking-widest text-stone-500">PHASE 04 / CHAT</p>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight">A conversation, with context.</h1>
           </div>
           <Button variant="outline" disabled={sending} onClick={newChat}>New chat</Button>
@@ -129,7 +132,7 @@ function App() {
           {config?.mode === 'mock'
             ? 'Try a message, then a follow-up. Deterministic mock replies echo your context; no AI model is called.'
             : config?.mode === 'live'
-              ? 'Jev analyzes your request, then the server selects a model using provisional quality, cost, and latency estimates. Replies have not been quality evaluated.'
+              ? 'Jev analyzes your request, then the server selects a model using provisional quality, cost, and latency estimates. A fixed judge checks the reply and may request one stronger attempt. Its approval does not guarantee correctness.'
               : 'Checking which mode and model the server is configured to use.'}
         </p>
         {configError && <div role="alert" className="mt-4 text-sm text-red-700">
@@ -154,11 +157,12 @@ function App() {
               </h2>
               <p className="whitespace-pre-wrap break-words text-sm leading-6">{message.content}</p>
               {message.result && <div className="mt-3 text-xs leading-5 text-stone-500">
-                <p>Unverified · {message.result.final_model} · {message.result.mode === 'mock'
+                <p>{message.result.status === 'passed' ? 'Judge passed' : message.result.status === 'quality_failed' ? 'Quality check failed' : 'Unverified'} · {message.result.final_model} · {message.result.mode === 'mock'
                   ? 'No API charge'
                   : message.result.cost_complete && message.result.total_cost_usd !== null
                     ? `Estimated cost: $${message.result.total_cost_usd}`
                     : 'Cost unknown or incomplete'}</p>
+                {message.result.escalation_reason && <p>Escalation: {message.result.escalation_reason}</p>}
                 {message.result.route_decisions.map((route, routeIndex) => <p key={`route-${routeIndex}`}>Selected {route.selected_key ?? 'none'}: {route.reason}</p>)}
                 {message.result.warnings.map((warning, warningIndex) => <p key={warningIndex}>{warning}</p>)}
               </div>}
