@@ -35,19 +35,23 @@ class ChatRequest(BaseModel):
 
 class GenerationResult(BaseModel):
     model_key: str = "mock-v1"
+    provider: str = "mock"
+    model_id: str = "mock-v1"
     text: str
     finish_reason: str = "stop"
     input_tokens: int | None = None
     output_tokens: int | None = None
     latency_ms: int = 0
-    cost_usd: Decimal | None = Decimal("0")
-    cost_source: Literal["observed_usage", "estimated", "unknown"] = "estimated"
+    raw_usage: dict | None = None
+    price_snapshot: dict | None = None
+    cost_usd: Decimal | None = None
+    cost_source: Literal["observed_usage", "estimated", "unknown"] = "unknown"
     error_category: str | None = None
 
 
 class ChatResult(BaseModel):
     run_id: UUID
-    mode: Literal["mock"] = "mock"
+    mode: Literal["mock", "live"] = "mock"
     answer: str | None = None
     final_model: str | None = None
     status: Literal["passed", "quality_failed", "unverified", "error"]
@@ -58,5 +62,6 @@ class ChatResult(BaseModel):
     total_cost_usd: Decimal | None = Decimal("0")
     known_cost_usd: Decimal = Decimal("0")
     cost_complete: bool = True
+    reserved_cost_usd: Decimal = Decimal("0")
     escalation_reason: str | None = None
     warnings: list[str] = Field(default_factory=list)

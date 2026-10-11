@@ -11,6 +11,7 @@ from app.main import app
 
 @pytest.fixture
 def client(monkeypatch):
+    monkeypatch.setenv("CHAT_MODE", "mock")
     url = os.environ.get("TEST_DATABASE_URL")
     if not url:
         pytest.skip("TEST_DATABASE_URL is required for real PostgreSQL tests")

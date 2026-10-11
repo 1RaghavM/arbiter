@@ -1,71 +1,95 @@
 # Arbiter implementation status
 
-Updated: 2026-10-05.
+Updated: 2026-10-11.
 
-- Current phase: 01 — mocked vertical slice, ready for review.
+- Current phase: 02 — cloud generation. Offline checks and all three required live smoke checks pass; **ready for review**.
 - Repository/default branch: [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), `master`.
-- Dependency: Phase 00 [PR #1](https://github.com/1RaghavM/arbiter/pull/1) merged on 2026-10-05; verified through GitHub and fetched history.
-- Authorization: user explicitly authorized the phase after 00 in this session.
-- Phase branch: `phase/01-chat-slice`, based on `origin/master` at `3282aa4`.
-- PR: opened after this status commit is pushed; see the session handoff for its URL.
-- Next action: review and merge the Phase 01 PR. Then obtain separate Phase 02 authorization before branching from updated `master`.
+- Phase 01 [PR #2](https://github.com/1RaghavM/arbiter/pull/2) merged on 2026-10-11 after explicit user authorization. Its checks passed.
+- Phase branch: `phase/02-cloud-models`, based on updated `origin/master` at `f0ec6b1`.
+- Authorization: user approved merging Phase 01 and starting Phase 02, requesting frequent commits, subagent delegation, and comprehensive reviews.
+- PR: [#3](https://github.com/1RaghavM/arbiter/pull/3), ready for review after the live-evidence update is pushed.
+- Next action: review and merge PR #3 with user authorization, then separately authorize Phase 03. No further paid Phase 02 check is needed.
+- Testing preference: keep paid checks minimal; reuse successful evidence, use offline fakes for failure paths, and rerun only affected checks after changes. Recorded in AGENTS.md and quality.md.
 
 ## What works
 
-The React chat uses native fetch with bounded conversation history, keyboard send/multiline input, pending controls, visible errors, explicit retry, and New chat. Refresh/New chat clear browser memory; database records remain. The deterministic mock echoes the latest user message and the previous user message, with excerpts capped at 200 characters. It is explicitly labeled mock and unverified.
+Three official SDK adapters normalize text, finish reason, tokens, raw usage, price snapshots, latency, and safe error categories. OpenAI cached input, Anthropic separate cache usage, and Google thinking output have distinct accounting. Costs use Decimal; unknown usage stays unknown. No retries occur. Async SDK calls have a whole-stage cancellation deadline as well as network timeouts.
 
-FastAPI validates 1–10 nonblank messages, allowed roles, final user role, 12,000 total Unicode characters, and a 160,000-byte raw body limit. PostgreSQL has ordered transactional migrations and run/call persistence via parameterized SQL and a four-connection pool. Recent-run metadata and full-run detail endpoints work. Generation errors are retained. Missing database access fails before generation; persistence errors include the allocated run ID and never expose raw exception text. Health stays independent of PostgreSQL. CI now runs a real PostgreSQL service with offline model behavior.
+The backend selects one configured model for temporary live chat. It checks credentials, context, explicit spend ceiling, and remaining generation time. It creates the run before paid work and stores successes and failures in the existing PostgreSQL schema. A shared small pipeline serves the API and sequential smoke CLI. Mock mode remains the default and never silently substitutes for unavailable live models. The UI loads safe server configuration, shows missing credentials, distinguishes mock/live replies, and displays unverified quality, estimated/unknown cost, and truncation warnings.
+
+Official model IDs/prices and current SDK behavior are documented in [SOURCES.md](SOURCES.md). Setup, environment, local smoke, and shutdown commands are in [SETUP.md](SETUP.md). No routing, Jev, evaluator, escalation, benchmark jobs, or deployment was added.
 
 ## Evidence
 
-Commands run from `backend/` unless otherwise indicated. `.venv/bin` commands use the environment installed by `uv sync --locked`.
+Commands run from `backend/` unless otherwise indicated. `.venv/bin` uses the lockfile-installed environment.
 
 | Check | Result |
 | --- | --- |
-| `uv sync --locked` | PASS: 29 resolved packages, installed environment audited; exact driver and transitive lock |
-| `.venv/bin/ruff check .` / `.venv/bin/ruff format --check .` | PASS: 10 Python files |
-| `TEST_DATABASE_URL=postgresql://arbiter:arbiter@localhost:5432/arbiter_test .venv/bin/pytest` | PASS: 26 tests, none skipped; one existing upstream TestClient/httpx deprecation warning |
-| `DATABASE_URL=postgresql://arbiter:arbiter@localhost:5432/arbiter_test .venv/bin/python -m app.db`, run twice | PASS: ordered migration replay safe; round-trip test also verifies one migration record |
+| `UV_PROJECT_ENVIRONMENT=/tmp/arbiter-phase02-runtime uv sync --locked --no-dev` | PASS: clean runtime-only install; app import and three registry entries validate without test packages |
+| `.venv/bin/ruff check .` / `.venv/bin/ruff format --check .` | PASS: 14 Python files |
+| `TEST_DATABASE_URL=postgresql://arbiter:arbiter@localhost:5432/arbiter_test .venv/bin/pytest` | PASS: 97 tests, none skipped |
+| Provider tests within that suite | PASS: 46 tests using real SDK serialization/parsing with offline async HTTP transports; all three roles/usage/cache/thinking mappings, timeout/auth/rate-limit/invalid/blocked/empty/truncated paths, and cancellation |
+| Real PostgreSQL integration | PASS: existing migrations/round trip, mock chat, fixed-live fixtures, known/unknown costs and failed calls, no call before DB success, invalid output cleared while usage persists |
+| Smoke safety tests | PASS: aggregate preflight, missing credentials, invalid CLI budgets, unknown-cost reservations, observed-cost exhaustion, stop after persistence failure, expired pre-call deadline |
+| Initial smoke with `--budget-usd 0.05` | BLOCKED: all three credentials initially missing; no paid calls made |
+| `.venv/bin/python -m app.smoke --budget-usd 0.01 --models openai`, with local `.env` values supplied privately | BLOCKED: real OpenAI request returned `rate_limit`, no answer; run `2d6fb547-3d42-44ff-8319-478fc39097d2` persisted, cost unknown, reservation USD 0.00175; no retry |
+| User-authorized OpenAI retry with the same `--budget-usd 0.01 --models openai` command after access was resolved | PASS: `smoke OK`; run `a96f5fec-c598-4d4a-8167-1c2abe75c8ff`; observed-usage cost estimate USD 0.0000112, complete usage; reservation USD 0.00175. Exactly one call, no automatic retries |
+| `.venv/bin/python -m app.smoke --budget-usd 0.05 --models anthropic google`, after the user supplied keys | PASS: one call each, both returned `smoke OK`; complete usage. Anthropic USD 0.000106, Google USD 0.0000068; combined estimate USD 0.0001128, no retries |
 | `npm run typecheck`, `npm run lint`, `npm run build` from frontend | PASS |
-| `docker compose up -d --wait db`, `docker compose config --quiet` from root | PASS: real PostgreSQL 17.6, healthy local container |
-| Browser, 1280×900 and 390×844 | PASS: two context-dependent turns, Enter/Shift+Enter, error with retained draft, successful explicit retry, New chat, refresh |
-| Browser limits/loading | PASS: 12,001-character draft disables Send; five turns reach history limit; temporary DB table lock exposes Sending state and disables Send/New chat, then returns a recoverable error |
-| Actual API process restart | PASS: retrieved saved run `2f445cae-7778-4cbc-8261-bd8baf9d5034` after stopping/restarting Uvicorn; independent new-pool round trip is automated |
-| `git diff --check`, reviewed staged files/attribution | PASS: named files staged, no credentials/private artifacts, sole configured user author/committer |
-| GitHub CI on `60254f1` | [PASS: backend/PostgreSQL and frontend](https://github.com/1RaghavM/arbiter/actions/runs/37359191836) |
+| `docker compose up -d --wait db` from root | PASS: local PostgreSQL 17.6 healthy; existing arbiter_test database reused |
+| Browser, 1280×900 and 390×844 | PASS: mock two-turn context, pending controls, live missing-key disablement, config failure/retry, factual known/unknown cost and truncation labels using an explicitly labeled offline UI fixture |
+| `git diff --check`, relative documentation links, staged files/attribution | PASS: named files reviewed; sole configured user author/committer, no assistant trailers or private artifacts |
+| [GitHub CI on UI commit 01bce09](https://github.com/1RaghavM/arbiter/actions/runs/38159114544) | PASS: backend with PostgreSQL and frontend; final documentation commit also runs CI |
 
-Screenshots: [desktop](screenshots/phase-01-desktop.png), [mobile](screenshots/phase-01-mobile.png), [API unavailable](screenshots/phase-01-error.png).
+Screenshots: [desktop mock](screenshots/phase-02-desktop.png), [mobile mock](screenshots/phase-02-mobile.png), [live credentials blocked](screenshots/phase-02-live-blocked.png), [configuration error](screenshots/phase-02-config-error.png), [offline UI fixture](screenshots/phase-02-offline-fixture.png). The last screenshot is **not** live provider evidence; its synthetic records are confined to `arbiter_test`.
 
-The sandbox blocked uv's default cache access; direct `.venv/bin` checks and an approved `uv sync --locked` succeeded. One combined write/test approval request timed out before execution; local edits and the narrower approved test command succeeded. Initial npm checks invoked from the root found no package.json; all three checks passed from `frontend/`. No gate was waived.
+## Delegation and review
 
-## Limits and blockers
+- Provider subagent researched current Anthropic/Google official contracts and implemented the three adapters with offline SDK transport tests.
+- UI subagent implemented the minimal mock/live-compatible screen, ran frontend gates, then independently reviewed the other agent's provider code.
+- Review subagent independently reviewed configuration, pipeline, API, persistence, smoke budgets, and connected tests; reran eight smoke-focused tests.
+- Root integrated the work, reviewed connected code, ran the complete PostgreSQL suite and browser checks, and owns every commit/push.
 
-- No Phase 01 blocker remains. No provider credentials or paid API calls were required.
-- All answers, runs, and calls are mock. No live generation, Jev classification, routing, evaluation, benchmark jobs, or deployment protection is implemented. Unknown token counts remain null; zero mock cost means no paid calls.
-- Run status stays `running` if a process is interrupted before finalization. A persistence failure may leave partial or completed data; its 503 means persistence could not be confirmed. Automatic recovery/resume is outside Phase 01.
-- Latency covers body-read start through the final run/call commit, excluding the final timing-metadata write and HTTP serialization. These mock measurements are not benchmark evidence.
-- Integration tests explicitly skip without `TEST_DATABASE_URL`; a configured but unreachable database fails. Use the separate test database because tests add synthetic records.
-- UI history is memory-only. There is no conversation restore or recent-run screen yet; the read API is available. The committed Playwright regression flow remains Phase 06 scope.
-- The local API/frontend and PostgreSQL were left running for inspection at `http://127.0.0.1:5173`. Setup and shutdown instructions are in [SETUP.md](SETUP.md).
+Reviews found and fixed: inactivity timeouts that did not bound the whole call; NUL/surrogate output that could lose usage during persistence; a second partial-parse path bypassing that sanitation; nullable disabled model IDs rejected by the UI; and invalid CLI budgets producing a traceback. Regression tests cover each backend finding, and the UI nullable contract passes type/lint/build checks. Final independent reviews reported no remaining blocking code findings. An initial surrogate test fixture failed while encoding its fake HTTP response; emitting escaped JSON corrected the fixture and all 97 tests passed. No required check was waived.
+
+## Live evidence and limits
+
+All three configured generation providers returned real `smoke OK` responses on 2026-10-11. Keys were supplied privately from the ignored local `.env`; no values were printed or committed. Jev remains Phase 03 work.
+
+| Provider/model | Persisted run ID | Usage-based cost estimate (USD) | Reservation (USD) |
+| --- | --- | --- | --- |
+| OpenAI / gpt-4.1-mini-2025-04-14 | `a96f5fec-c598-4d4a-8167-1c2abe75c8ff` | 0.0000112 | 0.00175 |
+| Anthropic / claude-sonnet-5-5 | `3306785c-99cf-41db-a981-c1ccaac4e469` | 0.000106 | 0.0109375 |
+| Google / gemini-3.5-flash-lite | `86e0af99-6638-4742-9671-36318233d299` | 0.0000068 | 0.0026437 |
+
+Each successful check used exactly one call with complete reported usage and no automatic retries. OpenAI used a USD 0.01 command ceiling; Anthropic/Google shared USD 0.05. Their combined new cost estimate is USD 0.0001128; the three successful checks total USD 0.0001240. The earlier failed OpenAI rate-limit attempt remains recorded with unknown cost, so these totals exclude that unknown charge. Reuse this evidence instead of making more paid calls.
+
+Record sanitized output/run IDs and actual costs or access failures. Unknown billing after timeout consumes a reservation and stays incomplete. Reservations and API-usage prices are estimates; use provider-side limits too. The async generation cap is at most 60 seconds and reduced by the remaining 90-second request allowance; separate DB finalization can extend beyond it. No claim of a hard HTTP request deadline is made in this phase.
+
+All live-shaped test records are synthetic and remain in the test database, which must never feed benchmark/history evidence. Capability ranks/quality priors are unset until Phase 03 development evidence. All answers remain unverified. Process crashes may leave a running record; persistence errors can leave partial records, with no automatic retry. Local access remains unauthenticated and bound to localhost; deployment protection belongs to Phase 08.
+
+The ordinary mock API/frontend and PostgreSQL were restored and left running at `http://127.0.0.1:5173`. The temporary offline fixture server is stopped.
 
 ## Commits and publishing
 
-Every commit uses `1RaghavM` as sole author/committer, with no assistant co-author trailers, and is pushed immediately before another commit.
+Each commit uses `1RaghavM` as sole author/committer, with no assistant co-author trailers, and was immediately pushed before making another commit.
 
 | Commit | Change |
 | --- | --- |
-| `d91e0aa` | Bounded schemas, PostgreSQL migration/persistence, driver lock, schema/round-trip tests |
-| `60254f1` | Mock API/chat UI, failure tests, screenshot evidence, real PostgreSQL CI |
+| `7e2d784` | Verified model registry, Decimal pricing, safe settings/reservations, SDK locks |
+| `970f0e5` | Official provider adapters, whole-stage deadlines, usage accounting, offline transport tests |
+| `b1eeb46` | Fixed-model pipeline, persistence, bounded smoke CLI, integration/safety tests |
+| `01bce09` | Availability-aware UI, honest cost/quality labels, labeled browser evidence |
 
-The final handoff commit includes setup/source/contract/status documentation, request-start timing, and precise persistence-error wording; its hash is available with `git log -1 --oneline`. PR checks include that commit.
+`ce42a33` recorded the initial handoff; `fdc337e` recorded OpenAI success and the minimal-paid-testing preference. The final evidence update records Anthropic/Google success; its hash is available with `git log -1 --oneline`. These updates change no runtime code, so prior 97-test/frontend results remain applicable. Documentation diff review and a secret-value check are the relevant local checks. CI on `fdc337e` passed both backend and frontend.
 
 ## Phase ledger
 
 | Phase | State | Branch | PR | Evidence |
 | --- | --- | --- | --- | --- |
 | 00 | merged | phase/00-foundation | [#1](https://github.com/1RaghavM/arbiter/pull/1) | Foundation checks in merged history |
-| 01 | ready_for_review | phase/01-chat-slice | Session handoff | Gates above |
-| 02 | pending | — | — | — |
+| 01 | merged | phase/01-chat-slice | [#2](https://github.com/1RaghavM/arbiter/pull/2) | Merged history and passing CI |
+| 02 | ready_for_review | phase/02-cloud-models | [#3](https://github.com/1RaghavM/arbiter/pull/3) | Offline gates and all three live checks pass |
 | 03 | pending | — | — | — |
 | 04 | pending | — | — | — |
 | 05 | pending | — | — | — |

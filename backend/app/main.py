@@ -11,8 +11,10 @@ from fastapi.responses import JSONResponse
 from psycopg_pool import PoolTimeout
 from pydantic import ValidationError
 
-from app import db, providers
-from app.schemas import ChatRequest, ChatResult, GenerationResult
+from app import db
+from app.config import load_registry, load_settings, model_status
+from app.pipeline import run_chat
+from app.schemas import ChatRequest, ChatResult
 
 logger = logging.getLogger(__name__)
 
@@ -102,31 +104,70 @@ def chat(
     body: Annotated[ChatRequest, Depends(read_chat)],
     pool=Depends(get_pool),
 ):
-    started = request.state.started
+    settings, registry = runtime_config()
     run_id = uuid4()
     request.state.run_id = run_id
-    db.create_run(pool, run_id, body)
-    call_started = perf_counter()
-    error = None
     try:
-        generation = providers.generate_mock(body.messages)
-    except Exception:
-        error = {"code": "generation_failed", "message": "Mock generation failed."}
-        generation = GenerationResult(text="", error_category="generation_failed")
-    generation.latency_ms = round((perf_counter() - call_started) * 1000)
-    result = ChatResult(
-        run_id=run_id,
-        answer=generation.text if not error else None,
-        final_model=generation.model_key,
-        status="error" if error else "unverified",
-        attempts=[generation],
-        total_latency_ms=round((perf_counter() - started) * 1000),
-        warnings=["Mock output. No live model, classifier, or evaluator was called."],
-    )
-    db.finish_run(pool, result, generation, started, error)
-    if error:
-        raise HTTPException(503, {**error, "run_id": str(run_id)})
+        result = run_chat(pool, run_id, body, settings, registry, request.state.started)
+    except ValueError as error:
+        raise HTTPException(
+            503,
+            {
+                "code": "configuration_or_budget",
+                "message": str(error),
+                "run_id": None,
+            },
+        ) from None
+    if result.status == "error":
+        category = result.attempts[0].error_category
+        status = {
+            "timeout": 504,
+            "invalid_request": 422,
+            "malformed_response": 502,
+            "empty_response": 502,
+            "blocked": 502,
+        }.get(category, 503)
+        raise HTTPException(
+            status,
+            {
+                "code": category,
+                "message": "Generation failed; retry is a new request.",
+                "run_id": str(run_id),
+            },
+        )
     return result
+
+
+def runtime_config():
+    try:
+        return load_settings(), load_registry()
+    except (ValueError, OSError):
+        raise HTTPException(
+            503,
+            {
+                "code": "invalid_configuration",
+                "message": "Check the server model configuration and request limits.",
+                "run_id": None,
+            },
+        ) from None
+
+
+@app.get("/api/config")
+def public_config():
+    settings, registry = runtime_config()
+    return {
+        "mode": settings.mode,
+        "model_key": settings.fixed_model_key if settings.mode == "live" else None,
+        "providers": [
+            {
+                "key": m.key,
+                "provider": m.provider,
+                "model_id": m.model_id,
+                "status": model_status(m),
+            }
+            for m in registry.models
+        ],
+    }
 
 
 @app.get("/api/runs")

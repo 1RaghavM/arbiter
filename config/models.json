@@ -3,15 +3,17 @@
     {
       "key": "openai",
       "provider": "openai",
-      "model_id": null,
-      "enabled": false,
-      "context_limit": null,
+      "model_id": "gpt-4.1-mini-2025-04-14",
+      "enabled": true,
+      "context_limit": 1047576,
       "max_output_tokens": 1024,
-      "input_usd_per_million": null,
-      "output_usd_per_million": null,
-      "additional_pricing": {},
-      "price_verified_at": null,
-      "source_url": null,
+      "input_usd_per_million": "0.40",
+      "output_usd_per_million": "1.60",
+      "additional_pricing": {
+        "cached_input_usd_per_million": "0.10"
+      },
+      "price_verified_at": "2026-10-11",
+      "source_url": "https://developers.openai.com/api/docs/models/gpt-4.1-mini",
       "prior_quality": {},
       "prior_latency_ms": null,
       "capability_rank": null
@@ -19,15 +21,18 @@
     {
       "key": "anthropic",
       "provider": "anthropic",
-      "model_id": null,
-      "enabled": false,
-      "context_limit": null,
+      "model_id": "claude-sonnet-5-5",
+      "enabled": true,
+      "context_limit": 1000000,
       "max_output_tokens": 1024,
-      "input_usd_per_million": null,
-      "output_usd_per_million": null,
-      "additional_pricing": {},
-      "price_verified_at": null,
-      "source_url": null,
+      "input_usd_per_million": "2.00",
+      "output_usd_per_million": "10.00",
+      "additional_pricing": {
+        "cached_input_usd_per_million": "0.10",
+        "cache_write_usd_per_million": "2.50"
+      },
+      "price_verified_at": "2026-10-11",
+      "source_url": "https://platform.claude.com/docs/en/models/sonnet-5-5/overview",
       "prior_quality": {},
       "prior_latency_ms": null,
       "capability_rank": null
@@ -35,15 +40,17 @@
     {
       "key": "google",
       "provider": "google",
-      "model_id": null,
-      "enabled": false,
-      "context_limit": null,
+      "model_id": "gemini-3.5-flash-lite",
+      "enabled": true,
+      "context_limit": 1048576,
       "max_output_tokens": 1024,
-      "input_usd_per_million": null,
-      "output_usd_per_million": null,
-      "additional_pricing": {},
-      "price_verified_at": null,
-      "source_url": null,
+      "input_usd_per_million": "0.30",
+      "output_usd_per_million": "2.50",
+      "additional_pricing": {
+        "cached_input_usd_per_million": "0.03"
+      },
+      "price_verified_at": "2026-10-11",
+      "source_url": "https://ai.google.dev/gemini-api/docs/pricing#gemini-3.5-flash-lite",
       "prior_quality": {},
       "prior_latency_ms": null,
       "capability_rank": null

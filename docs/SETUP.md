@@ -14,7 +14,7 @@ cd ../frontend
 npm ci
 ```
 
-Keep `.env` local. Its database credentials are for the local demo container only. Provider keys may stay blank: Phase 01 makes no external model calls. Request and benchmark budget values are placeholders for later paid-call enforcement.
+Keep `.env` local. Its database credentials are for the local demo container only. Provider keys may stay blank in default mock mode. Live mode requires explicit provider credentials and a positive request budget; benchmark budgets remain Phase 05 work.
 
 ## Start PostgreSQL and migrate
 
@@ -56,7 +56,7 @@ curl 'http://127.0.0.1:8000/api/runs?limit=20'
 curl 'http://127.0.0.1:8000/api/runs/REPLACE_WITH_RUN_ID'
 ```
 
-The list returns metadata only (limit 1–100); the detail includes messages and call output. All records are labeled mock, with provider `mock`, model `mock-v1`, zero simulated API cost, unknown token counts, and status `unverified`. No analysis, routing, or quality success is fabricated. Failed generation attempts are saved. Missing/unreachable/unmigrated PostgreSQL returns 503 before generation. A write failure after generation returns a persistence error with the allocated run ID; a partial record can remain, so the error does not guarantee absence of data.
+The list returns metadata only (limit 1–100); the detail includes messages and call output. In mock mode records have provider `mock`, model `mock-v1`, zero simulated API cost, unknown token counts, and status `unverified`. No analysis, routing, or quality success is fabricated. Failed generation attempts are saved. Missing/unreachable/unmigrated PostgreSQL returns 503 before generation. A write failure after generation returns a persistence error with the allocated run ID; a partial record can remain, so the error does not guarantee absence of data.
 
 Vite proxies `/api` to port 8000. `GET /api/health` remains a liveness check independent of database availability. Keep this unauthenticated phase bound to localhost; deployment access protection belongs to Phase 08.
 
@@ -87,7 +87,7 @@ npm run lint
 npm run build
 ```
 
-The build writes `frontend/dist/`. `npm run preview` serves the build; use the development server for the API proxy. Phase 01 browser checks cover two turns, keyboard input, error/retry, clearing chat, limits, and desktop/mobile layouts. A committed Playwright regression flow remains Phase 06 scope.
+The build writes `frontend/dist/`. `npm run preview` serves the build; use the development server for the API proxy. Browser checks cover two turns, keyboard input, error/retry, clearing chat, limits, and desktop/mobile layouts. A committed Playwright regression flow remains Phase 06 scope.
 
 ## Stop local services
 
@@ -99,6 +99,40 @@ docker compose down
 
 This preserves `postgres_data`. Do not add `--volumes` if you want to retain your runs.
 
-## Model configuration
+## Cloud generation (Phase 02)
 
-`config/models.json` still has three disabled provider entries with null model IDs/prices/limits/ranks and empty priors. It is not wired into mock generation. Verify model IDs, pricing, limits, and access before enabling providers in Phase 02; Jev remains Phase 03 work.
+Mock mode is still the default. For live chat, configure the chosen key privately in the backend environment, then start the API with:
+
+```sh
+export CHAT_MODE=live
+export FIXED_MODEL_KEY=openai
+export REQUEST_BUDGET_USD=0.05
+export GENERATION_TIMEOUT_SECONDS=30
+uv run --frozen uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+`FIXED_MODEL_KEY` accepts `openai`, `anthropic`, or `google`. The corresponding credential is `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `GOOGLE_API_KEY`. Do not paste secrets into chat, commit them, or use `VITE_` variables. The app does not load `.env` automatically; export values in the process that starts it. To return to mock mode, restart with `CHAT_MODE=mock`.
+
+`config/models.json` records exact documented model IDs, context/output limits, Decimal prices, source URLs, and verification dates. Enabled entries still become unavailable without their credentials. No automatic fallback switches a missing provider to another provider or to mock. `GET /api/config` exposes mode, fixed model key, and credential availability labels, never key values. The frontend checks it before enabling Send. No model selector is added.
+
+The selected models are `gpt-4.1-mini-2025-04-14`, `claude-sonnet-5-5`, and `gemini-3.5-flash-lite`. All three returned `smoke OK` on 2026-10-11. Usage-based cost estimates were USD 0.0000112 (OpenAI), 0.000106 (Anthropic), and 0.0000068 (Google); persisted run IDs are in STATUS.md. Routing priors/ranks/baselines/judge are deliberately unset until Phase 03. See [SOURCES.md](SOURCES.md) for pricing and provider-specific usage assumptions.
+
+Before each paid call, the pipeline reserves input UTF-8 bytes plus 256 framing tokens per message, multiplied by the highest applicable input/write rate, plus the full 1,024-token output cap. It rejects insufficient budgets or context before generation, and commits a run before calling a provider. SDK retries are disabled. Async requests have both network timeouts and a cancellation deadline (`GENERATION_TIMEOUT_SECONDS`, positive and at most 60 seconds), further reduced by the remaining 90-second request allowance. Database work uses its separate short timeouts; finalization can extend beyond that generation allowance. No transaction stays open during generation. Provider-side cancellation does not guarantee that a timed-out request was unbilled.
+
+Every generation remains `unverified`: no Jev/router/evaluator runs in Phase 02. Truncated text is returned with a warning. Usage, provider/model IDs, price snapshots, reservation, finish reason, and safe error categories are persisted. Unknown usage/cost stays null with `cost_complete=false`; known costs use Decimal and reflect usage-based estimates, not reconciled invoices. OpenAI cached input, Anthropic separate cache tokens, and Google thought tokens are accounted for. No tools or explicit cache writes are requested. Provider-side spend limits are still recommended because token reservations cannot guarantee final invoices.
+
+## Bounded live smoke check
+
+From `backend/`, with migrations applied and the intended provider keys exported:
+
+```sh
+uv run --frozen python -m app.smoke --budget-usd 0.05
+# Or test one provider within a separate explicit ceiling:
+uv run --frozen python -m app.smoke --budget-usd 0.01 --models openai
+```
+
+The CLI sends only “Reply exactly: smoke OK”, once per selected available model, sequentially. It checks the combined reservations against the explicit total ceiling before paid work; it then charges known cost or the full reservation when cost is unknown. It stops on persistence failure and blocks additional calls when the remaining ceiling is insufficient. Missing credentials are printed as `blocked`; failures are not silently retried. Outcomes include the run ID, answer, estimated/unknown cost, and any safe error category. Exit 0 means all selected models returned text; 1 means blocked/error outcomes; 2 means invalid configuration. Never execute response text.
+
+Avoid repeated paid checks: reuse recorded successful evidence and use `--models` to check only unverified or affected providers. All three Phase 02 providers already passed; no further paid check is needed for this phase. Repeat a successful provider check only after a relevant code/config/access change or explicit user request.
+
+All three providers must return a real response to satisfy the Phase 02 live gate. Offline SDK transport fixtures and UI fixtures do not satisfy it. Integration/browser fixtures that mimic live responses belong only in `arbiter_test`, which must never feed research history.
