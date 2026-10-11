@@ -2,13 +2,13 @@
 
 Updated: 2026-10-11.
 
-- Current phase: 02 — cloud generation. Offline implementation is reviewed and passing; the required live gate is **BLOCKED**.
+- Current phase: 02 — cloud generation. Offline checks and all three required live smoke checks pass; **ready for review**.
 - Repository/default branch: [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), `master`.
 - Phase 01 [PR #2](https://github.com/1RaghavM/arbiter/pull/2) merged on 2026-10-11 after explicit user authorization. Its checks passed.
 - Phase branch: `phase/02-cloud-models`, based on updated `origin/master` at `f0ec6b1`.
 - Authorization: user approved merging Phase 01 and starting Phase 02, requesting frequent commits, subagent delegation, and comprehensive reviews.
-- PR: [draft #3](https://github.com/1RaghavM/arbiter/pull/3). It is not ready to merge while the live gate is blocked.
-- Next action: configure Anthropic/Google keys, then run only their bounded smoke checks below. Reuse the successful OpenAI evidence. Finish this same phase PR before Phase 03.
+- PR: [#3](https://github.com/1RaghavM/arbiter/pull/3), ready for review after the live-evidence update is pushed.
+- Next action: review and merge PR #3 with user authorization, then separately authorize Phase 03. No further paid Phase 02 check is needed.
 - Testing preference: keep paid checks minimal; reuse successful evidence, use offline fakes for failure paths, and rerun only affected checks after changes. Recorded in AGENTS.md and quality.md.
 
 ## What works
@@ -34,6 +34,7 @@ Commands run from `backend/` unless otherwise indicated. `.venv/bin` uses the lo
 | Initial smoke with `--budget-usd 0.05` | BLOCKED: all three credentials initially missing; no paid calls made |
 | `.venv/bin/python -m app.smoke --budget-usd 0.01 --models openai`, with local `.env` values supplied privately | BLOCKED: real OpenAI request returned `rate_limit`, no answer; run `2d6fb547-3d42-44ff-8319-478fc39097d2` persisted, cost unknown, reservation USD 0.00175; no retry |
 | User-authorized OpenAI retry with the same `--budget-usd 0.01 --models openai` command after access was resolved | PASS: `smoke OK`; run `a96f5fec-c598-4d4a-8167-1c2abe75c8ff`; observed-usage cost estimate USD 0.0000112, complete usage; reservation USD 0.00175. Exactly one call, no automatic retries |
+| `.venv/bin/python -m app.smoke --budget-usd 0.05 --models anthropic google`, after the user supplied keys | PASS: one call each, both returned `smoke OK`; complete usage. Anthropic USD 0.000106, Google USD 0.0000068; combined estimate USD 0.0001128, no retries |
 | `npm run typecheck`, `npm run lint`, `npm run build` from frontend | PASS |
 | `docker compose up -d --wait db` from root | PASS: local PostgreSQL 17.6 healthy; existing arbiter_test database reused |
 | Browser, 1280×900 and 390×844 | PASS: mock two-turn context, pending controls, live missing-key disablement, config failure/retry, factual known/unknown cost and truncation labels using an explicitly labeled offline UI fixture |
@@ -51,16 +52,17 @@ Screenshots: [desktop mock](screenshots/phase-02-desktop.png), [mobile mock](scr
 
 Reviews found and fixed: inactivity timeouts that did not bound the whole call; NUL/surrogate output that could lose usage during persistence; a second partial-parse path bypassing that sanitation; nullable disabled model IDs rejected by the UI; and invalid CLI budgets producing a traceback. Regression tests cover each backend finding, and the UI nullable contract passes type/lint/build checks. Final independent reviews reported no remaining blocking code findings. An initial surrogate test fixture failed while encoding its fake HTTP response; emitting escaped JSON corrected the fixture and all 97 tests passed. No required check was waived.
 
-## Live gate and limits
+## Live evidence and limits
 
-The user added `OPENAI_API_KEY` and `JEV_API_KEY` to the ignored local `.env`. Only OpenAI and database settings were supplied privately to the one-provider smoke subprocess; values were not printed or committed. The initial OpenAI request returned `rate_limit` without text, with unknown cost. After the user reported access resolved and requested continuation, one bounded retry returned `smoke OK` on 2026-10-11, with complete usage and an estimated cost of USD 0.0000112. The old failed attempt remains recorded; its cost is still unknown. No further OpenAI check is needed for this phase. Anthropic/Google keys are still absent. Jev is not called until Phase 03. Phase 02 is **not complete** until all three generation providers return real text.
+All three configured generation providers returned real `smoke OK` responses on 2026-10-11. Keys were supplied privately from the ignored local `.env`; no values were printed or committed. Jev remains Phase 03 work.
 
-After privately exporting those keys and DATABASE_URL and applying migrations:
+| Provider/model | Persisted run ID | Usage-based cost estimate (USD) | Reservation (USD) |
+| --- | --- | --- | --- |
+| OpenAI / gpt-4.1-mini-2025-04-14 | `a96f5fec-c598-4d4a-8167-1c2abe75c8ff` | 0.0000112 | 0.00175 |
+| Anthropic / claude-sonnet-5-5 | `3306785c-99cf-41db-a981-c1ccaac4e469` | 0.000106 | 0.0109375 |
+| Google / gemini-3.5-flash-lite | `86e0af99-6638-4742-9671-36318233d299` | 0.0000068 | 0.0026437 |
 
-```sh
-cd backend
-uv run --frozen python -m app.smoke --budget-usd 0.05 --models anthropic google
-```
+Each successful check used exactly one call with complete reported usage and no automatic retries. OpenAI used a USD 0.01 command ceiling; Anthropic/Google shared USD 0.05. Their combined new cost estimate is USD 0.0001128; the three successful checks total USD 0.0001240. The earlier failed OpenAI rate-limit attempt remains recorded with unknown cost, so these totals exclude that unknown charge. Reuse this evidence instead of making more paid calls.
 
 Record sanitized output/run IDs and actual costs or access failures. Unknown billing after timeout consumes a reservation and stays incomplete. Reservations and API-usage prices are estimates; use provider-side limits too. The async generation cap is at most 60 seconds and reduced by the remaining 90-second request allowance; separate DB finalization can extend beyond it. No claim of a hard HTTP request deadline is made in this phase.
 
@@ -79,7 +81,7 @@ Each commit uses `1RaghavM` as sole author/committer, with no assistant co-autho
 | `b1eeb46` | Fixed-model pipeline, persistence, bounded smoke CLI, integration/safety tests |
 | `01bce09` | Availability-aware UI, honest cost/quality labels, labeled browser evidence |
 
-`ce42a33` recorded the initial handoff, setup, contracts, and sources. A follow-up documentation commit records the successful OpenAI retry and the user’s minimal-paid-testing preference; its hash is available with `git log -1 --oneline`. This update changes no runtime code, so prior 97-test/frontend results remain applicable; review the documentation diff instead of rerunning those suites.
+`ce42a33` recorded the initial handoff; `fdc337e` recorded OpenAI success and the minimal-paid-testing preference. The final evidence update records Anthropic/Google success; its hash is available with `git log -1 --oneline`. These updates change no runtime code, so prior 97-test/frontend results remain applicable. Documentation diff review and a secret-value check are the relevant local checks. CI on `fdc337e` passed both backend and frontend.
 
 ## Phase ledger
 
@@ -87,7 +89,7 @@ Each commit uses `1RaghavM` as sole author/committer, with no assistant co-autho
 | --- | --- | --- | --- | --- |
 | 00 | merged | phase/00-foundation | [#1](https://github.com/1RaghavM/arbiter/pull/1) | Foundation checks in merged history |
 | 01 | merged | phase/01-chat-slice | [#2](https://github.com/1RaghavM/arbiter/pull/2) | Merged history and passing CI |
-| 02 | blocked | phase/02-cloud-models | [#3](https://github.com/1RaghavM/arbiter/pull/3) | Offline gates and OpenAI live check pass; Anthropic/Google keys missing |
+| 02 | ready_for_review | phase/02-cloud-models | [#3](https://github.com/1RaghavM/arbiter/pull/3) | Offline gates and all three live checks pass |
 | 03 | pending | — | — | — |
 | 04 | pending | — | — | — |
 | 05 | pending | — | — | — |

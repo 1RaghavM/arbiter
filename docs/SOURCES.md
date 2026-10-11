@@ -57,4 +57,4 @@ Documentation verification establishes API contracts and prices, not account acc
 
 Pinned SDKs: OpenAI 3.28.0, Anthropic 1.13.0, google-genai 2.29.0. Installed signatures and actual SDK serialization/parsing are checked with offline async HTTP transports. The SDK async clients run under `asyncio.wait_for`, with tests proving whole-stage cancellation. Official public API endpoints are explicit. No framework wrappers, model-generated code execution, or provider retry loops were added.
 
-Candidate price differences do not prove quality differences. Account/model eligibility remains unverified until the live gate. Priors and capability ranking require development evidence in Phase 03.
+Candidate price differences do not prove quality differences. All three exact configured model IDs returned real `smoke OK` responses on 2026-10-11; sanitized run IDs and usage-based costs are recorded in [STATUS.md](STATUS.md). Priors and capability ranking require development evidence in Phase 03.
