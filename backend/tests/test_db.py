@@ -22,7 +22,9 @@ def pool():
 def test_round_trip_and_reconnect(pool):
     run_id = uuid4()
     request = ChatRequest(messages=[{"role": "user", "content": "It's mock 🧪"}])
-    generation = GenerationResult(text="Mock reply")
+    generation = GenerationResult(
+        text="Mock reply", cost_usd=0, cost_source="estimated"
+    )
     result = ChatResult(
         run_id=run_id,
         answer=generation.text,
