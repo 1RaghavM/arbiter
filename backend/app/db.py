@@ -45,12 +45,26 @@ def migrate(url):
                 )
 
 
-def create_run(pool, run_id, request: ChatRequest, mode="mock", version="mock-v1"):
+def create_run(
+    pool,
+    run_id,
+    request: ChatRequest,
+    mode="mock",
+    version="mock-v1",
+    benchmark_job_id=None,
+):
     with pool.connection() as connection:
         connection.execute(
-            "INSERT INTO runs (id, mode, status, messages, config_version) "
-            "VALUES (%s, %s, 'running', %s, %s)",
-            (run_id, mode, Jsonb(request.model_dump()["messages"]), version),
+            "INSERT INTO runs (id, mode, status, messages, config_version, "
+            "benchmark_job_id) "
+            "VALUES (%s, %s, 'running', %s, %s, %s)",
+            (
+                run_id,
+                mode,
+                Jsonb(request.model_dump()["messages"]),
+                version,
+                benchmark_job_id,
+            ),
         )
 
 
@@ -159,11 +173,13 @@ def finish_run(
                 Jsonb(error),
                 Jsonb(result.analysis),
                 Jsonb(result.route_decisions),
-                "priors-v1" if result.route_decisions else None,
+                result.route_decisions[0].get("policy_version")
+                if result.route_decisions
+                else None,
                 Jsonb(result.evaluations),
                 result.escalation_reason,
                 result.reserved_cost_usd,
-                "rubric-v1" if result.evaluations else None,
+                "rubric-v1" if result.evaluations or result.route_decisions else None,
                 result.run_id,
             ),
         )

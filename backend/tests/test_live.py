@@ -23,6 +23,9 @@ def live_client(monkeypatch):
     monkeypatch.delenv("JEV_API_KEY", raising=False)
     from app import pipeline
 
+    monkeypatch.setattr(
+        pipeline.history, "load_history", lambda *a: {"id": "offline", "entries": []}
+    )
     original_route = pipeline.choose_route
 
     def route(classification, registry, *args):
@@ -77,6 +80,8 @@ def test_live_result_and_failure_accounting(
     stored = live_client.get(f"/api/runs/{result['run_id']}").json()
     call = stored["calls"][0]
     assert stored["mode"] == "live" and stored["config_version"] != "mock-v1"
+    assert stored["policy_version"] == "history-v1"
+    assert stored["rubric_version"] == "rubric-v1"
     assert call["model_id"] == "gpt-4.1-mini-2025-04-14"
     assert call["provider"] == "openai" and call["input_tokens"] == (
         10 if cost else None

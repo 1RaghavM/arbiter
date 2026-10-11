@@ -59,6 +59,9 @@ def setup(monkeypatch):
     )
     settings = Settings(mode="live", fixed_model_key="cheap", request_budget_usd="1")
     monkeypatch.setattr(pipeline, "model_status", lambda m: "available")
+    monkeypatch.setattr(
+        pipeline.history, "load_history", lambda *a: {"id": "offline", "entries": []}
+    )
     monkeypatch.setattr(pipeline.db, "create_run", lambda *a: events.append("create"))
     monkeypatch.setattr(
         pipeline.db, "record_analysis", lambda *a: events.append("record_classify")
@@ -392,3 +395,42 @@ def test_unavailable_retry_retains_original_generation_error(
     result = run()
     assert result.status == "error" and result.error_category == category
     assert len(result.attempts) == 1 and result.answer is None
+
+
+def test_one_history_snapshot_is_reused_for_preflight_and_escalation(
+    setup, monkeypatch
+):
+    run, _, _, outcomes, _, _ = setup
+    outcomes.extend([grade("fail"), grade("pass")])
+    snapshot = {"id": "frozen", "entries": []}
+    loads, routes = [], []
+    monkeypatch.setattr(
+        pipeline.history, "load_history", lambda *a: loads.append(True) or snapshot
+    )
+    original_route = pipeline.choose_route
+
+    def route(*args):
+        routes.append(args[-1])
+        return original_route(*args)
+
+    monkeypatch.setattr(pipeline, "choose_route", route)
+    run()
+    assert loads == [True] and len(routes) == 3
+    assert all(item is snapshot for item in routes)
+    loads.clear()
+    run(history_snapshot=snapshot)
+    assert loads == []
+
+
+def test_history_read_failure_stops_before_paid_work(setup, monkeypatch):
+    import psycopg
+
+    run, events, *_ = setup
+
+    def unavailable(*args):
+        raise psycopg.OperationalError("offline database failure")
+
+    monkeypatch.setattr(pipeline.history, "load_history", unavailable)
+    with pytest.raises(psycopg.OperationalError):
+        run()
+    assert events == []

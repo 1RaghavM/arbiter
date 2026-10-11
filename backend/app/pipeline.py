@@ -1,7 +1,7 @@
 from decimal import Decimal
 from time import perf_counter
 
-from app import analysis, db, evaluation, providers
+from app import analysis, db, evaluation, history, providers
 from app.config import config_version, fixed_model, model_status, reserve_cost
 from app.routing import choose_route
 from app.schemas import ChatResult, GenerationResult
@@ -18,7 +18,15 @@ def prepare_live(settings, registry, messages):
 
 
 def _route(
-    classifier, registry, messages, available, budget, remaining, judge_cost, judge_time
+    classifier,
+    registry,
+    messages,
+    available,
+    budget,
+    remaining,
+    judge_cost,
+    judge_time,
+    history_snapshot,
 ):
     decision = choose_route(
         classifier,
@@ -27,6 +35,7 @@ def _route(
         available,
         budget - judge_cost,
         remaining - judge_time,
+        history_snapshot,
     )
     decision["evaluation_reserved"] = (
         decision["selected_key"] is not None and judge_time > 0
@@ -34,7 +43,19 @@ def _route(
     return decision
 
 
-def run_chat(pool, run_id, body, settings, registry, started, *, fixed=False):
+def run_chat(
+    pool,
+    run_id,
+    body,
+    settings,
+    registry,
+    started,
+    *,
+    fixed=False,
+    history_snapshot=None,
+    benchmark_job_id=None,
+    run_mode=None,
+):
     classifier = None
     decisions, attempts, grades, answers, calls, warnings = [], [], [], [], [], []
     spent = reserved = Decimal(0)
@@ -64,7 +85,14 @@ def run_chat(pool, run_id, body, settings, registry, started, *, fixed=False):
             except ValueError:
                 judge_error = "judge_context_or_configuration"
                 judge = None
-    db.create_run(pool, run_id, body, settings.mode, config_version(settings, registry))
+    mode = "mock" if settings.mode == "mock" else (run_mode or "live")
+    if mode not in {"mock", "live", "dev", "heldout", "baseline"}:
+        raise ValueError("Invalid run storage mode.")
+    if settings.mode == "live" and not fixed and history_snapshot is None:
+        history_snapshot = history.load_history(pool, registry)
+    db.create_run(
+        pool, run_id, body, mode, config_version(settings, registry), benchmark_job_id
+    )
 
     def record(stage, attempt, call, cap, grade=None):
         nonlocal sequence, spent, reserved
@@ -109,6 +137,7 @@ def run_chat(pool, run_id, body, settings, registry, started, *, fixed=False):
                 remaining - settings.classification_timeout_seconds,
                 judge_cost,
                 judge_time,
+                history_snapshot,
             )
             if preflight["selected_key"] and remaining > 0:
                 classifier = analysis.classify(
@@ -156,6 +185,7 @@ def run_chat(pool, run_id, body, settings, registry, started, *, fixed=False):
                     remaining,
                     judge_cost,
                     judge_time,
+                    history_snapshot,
                 )
                 if attempt == 2 and decision["selected_key"]:
                     eligible = [c for c in decision["candidates"] if c["eligible"]]
@@ -169,7 +199,7 @@ def run_chat(pool, run_id, body, settings, registry, started, *, fixed=False):
                     )
                     decision["selected_key"] = chosen["key"]
                     decision["reason"] = (
-                        "Escalation: highest quality prior among eligible ranks."
+                        "Escalation: highest quality estimate among eligible ranks."
                     )
                 decisions.append(decision)
                 model = models.get(decision["selected_key"])
