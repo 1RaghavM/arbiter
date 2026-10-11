@@ -7,8 +7,9 @@ Updated: 2026-10-11.
 - Phase 01 [PR #2](https://github.com/1RaghavM/arbiter/pull/2) merged on 2026-10-11 after explicit user authorization. Its checks passed.
 - Phase branch: `phase/02-cloud-models`, based on updated `origin/master` at `f0ec6b1`.
 - Authorization: user approved merging Phase 01 and starting Phase 02, requesting frequent commits, subagent delegation, and comprehensive reviews.
-- PR: draft opened after this handoff commit is pushed; its URL is recorded in the session handoff. It is not ready to merge while the live gate is blocked.
-- Next action: resolve the OpenAI rate-limit response and configure Anthropic/Google keys, then run the bounded three-provider smoke check below. Record real outcomes, rerun relevant gates, and finish this same phase PR before Phase 03.
+- PR: [draft #3](https://github.com/1RaghavM/arbiter/pull/3). It is not ready to merge while the live gate is blocked.
+- Next action: configure Anthropic/Google keys, then run only their bounded smoke checks below. Reuse the successful OpenAI evidence. Finish this same phase PR before Phase 03.
+- Testing preference: keep paid checks minimal; reuse successful evidence, use offline fakes for failure paths, and rerun only affected checks after changes. Recorded in AGENTS.md and quality.md.
 
 ## What works
 
@@ -32,6 +33,7 @@ Commands run from `backend/` unless otherwise indicated. `.venv/bin` uses the lo
 | Smoke safety tests | PASS: aggregate preflight, missing credentials, invalid CLI budgets, unknown-cost reservations, observed-cost exhaustion, stop after persistence failure, expired pre-call deadline |
 | Initial smoke with `--budget-usd 0.05` | BLOCKED: all three credentials initially missing; no paid calls made |
 | `.venv/bin/python -m app.smoke --budget-usd 0.01 --models openai`, with local `.env` values supplied privately | BLOCKED: real OpenAI request returned `rate_limit`, no answer; run `2d6fb547-3d42-44ff-8319-478fc39097d2` persisted, cost unknown, reservation USD 0.00175; no retry |
+| User-authorized OpenAI retry with the same `--budget-usd 0.01 --models openai` command after access was resolved | PASS: `smoke OK`; run `a96f5fec-c598-4d4a-8167-1c2abe75c8ff`; observed-usage cost estimate USD 0.0000112, complete usage; reservation USD 0.00175. Exactly one call, no automatic retries |
 | `npm run typecheck`, `npm run lint`, `npm run build` from frontend | PASS |
 | `docker compose up -d --wait db` from root | PASS: local PostgreSQL 17.6 healthy; existing arbiter_test database reused |
 | Browser, 1280×900 and 390×844 | PASS: mock two-turn context, pending controls, live missing-key disablement, config failure/retry, factual known/unknown cost and truncation labels using an explicitly labeled offline UI fixture |
@@ -51,13 +53,13 @@ Reviews found and fixed: inactivity timeouts that did not bound the whole call; 
 
 ## Live gate and limits
 
-The user added `OPENAI_API_KEY` and `JEV_API_KEY` to the ignored local `.env`. Only OpenAI and database settings were supplied privately to the one-provider smoke subprocess; values were not printed or committed. The real OpenAI request returned `rate_limit` without text. This safe category alone does not establish whether the cause is account quota or a transient limit; inspect the provider account before retrying. Cost remains unknown. Anthropic/Google keys are still absent. Jev is not called until Phase 03. Phase 02 is **not complete** until all three generation providers return real text.
+The user added `OPENAI_API_KEY` and `JEV_API_KEY` to the ignored local `.env`. Only OpenAI and database settings were supplied privately to the one-provider smoke subprocess; values were not printed or committed. The initial OpenAI request returned `rate_limit` without text, with unknown cost. After the user reported access resolved and requested continuation, one bounded retry returned `smoke OK` on 2026-10-11, with complete usage and an estimated cost of USD 0.0000112. The old failed attempt remains recorded; its cost is still unknown. No further OpenAI check is needed for this phase. Anthropic/Google keys are still absent. Jev is not called until Phase 03. Phase 02 is **not complete** until all three generation providers return real text.
 
 After privately exporting those keys and DATABASE_URL and applying migrations:
 
 ```sh
 cd backend
-uv run --frozen python -m app.smoke --budget-usd 0.05
+uv run --frozen python -m app.smoke --budget-usd 0.05 --models anthropic google
 ```
 
 Record sanitized output/run IDs and actual costs or access failures. Unknown billing after timeout consumes a reservation and stays incomplete. Reservations and API-usage prices are estimates; use provider-side limits too. The async generation cap is at most 60 seconds and reduced by the remaining 90-second request allowance; separate DB finalization can extend beyond it. No claim of a hard HTTP request deadline is made in this phase.
@@ -77,7 +79,7 @@ Each commit uses `1RaghavM` as sole author/committer, with no assistant co-autho
 | `b1eeb46` | Fixed-model pipeline, persistence, bounded smoke CLI, integration/safety tests |
 | `01bce09` | Availability-aware UI, honest cost/quality labels, labeled browser evidence |
 
-The final documentation commit records this handoff, setup, contracts, and sources; its hash is available with `git log -1 --oneline` after commit.
+`ce42a33` recorded the initial handoff, setup, contracts, and sources. A follow-up documentation commit records the successful OpenAI retry and the user’s minimal-paid-testing preference; its hash is available with `git log -1 --oneline`. This update changes no runtime code, so prior 97-test/frontend results remain applicable; review the documentation diff instead of rerunning those suites.
 
 ## Phase ledger
 
@@ -85,7 +87,7 @@ The final documentation commit records this handoff, setup, contracts, and sourc
 | --- | --- | --- | --- | --- |
 | 00 | merged | phase/00-foundation | [#1](https://github.com/1RaghavM/arbiter/pull/1) | Foundation checks in merged history |
 | 01 | merged | phase/01-chat-slice | [#2](https://github.com/1RaghavM/arbiter/pull/2) | Merged history and passing CI |
-| 02 | blocked | phase/02-cloud-models | Session handoff | Offline gates pass; OpenAI rate-limited; Anthropic/Google keys missing |
+| 02 | blocked | phase/02-cloud-models | [#3](https://github.com/1RaghavM/arbiter/pull/3) | Offline gates and OpenAI live check pass; Anthropic/Google keys missing |
 | 03 | pending | — | — | — |
 | 04 | pending | — | — | — |
 | 05 | pending | — | — | — |
