@@ -42,7 +42,9 @@ def smoke(pool, registry, budget, model_keys):
         settings.fixed_model_key = model.key
         settings.request_budget_usd = min(budget - used, reservations[model.key])
         try:
-            result = run_chat(pool, run_id, body, settings, registry, perf_counter())
+            result = run_chat(
+                pool, run_id, body, settings, registry, perf_counter(), fixed=True
+            )
         except (psycopg.Error, PoolTimeout):
             outcomes.append(
                 {
@@ -68,7 +70,7 @@ def smoke(pool, registry, budget, model_keys):
                 else None,
                 "cost_complete": result.cost_complete,
                 "reserved_cost_usd": str(reservations[model.key]),
-                "error": result.attempts[0].error_category,
+                "error": result.error_category,
             }
         )
     return outcomes

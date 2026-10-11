@@ -140,7 +140,11 @@ def test_invalid_answer_keeps_usage_and_conservative_defaults(monkeypatch, chang
         response["model"] = "unverified-model\x00"
     install_transport(monkeypatch, response)
     result = analysis.classify(MESSAGES, 2)
-    assert result.source == "fallback" and result.cost_usd is not None
+    assert result.source == "fallback" and result.raw_usage == RESPONSE["usage"]
+    if change == "model":
+        assert result.cost_usd is None and result.cost_source == "unknown"
+    else:
+        assert result.cost_usd is not None and result.cost_source == "observed_usage"
     assert result.error_category in {"malformed_response", "model_mismatch"}
     assert result.task == "general" and result.difficulty == "hard"
     assert "secrets" not in result.model_dump_json()

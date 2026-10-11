@@ -135,6 +135,8 @@ def classify(messages: list[Message], timeout: float) -> Analysis:
                     result.cost_source = "observed_usage"
             if body.get("model") != MODEL_ID:
                 result.error_category = "model_mismatch"
+                result.cost_usd = None
+                result.cost_source = "unknown"
                 return
             answers = body["answers"]
             choices = {}
