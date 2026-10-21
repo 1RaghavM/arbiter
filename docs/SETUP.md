@@ -84,9 +84,11 @@ From `frontend/`:
 npm run typecheck
 npm run lint
 npm run build
+npx playwright install chromium
+npm run test:e2e
 ```
 
-The build writes `frontend/dist/`. `npm run preview` serves the build; use the development server for the API proxy. Browser checks cover two turns, keyboard input, error/retry, clearing chat, limits, and desktop/mobile layouts. A committed Playwright regression flow remains Phase 06 scope.
+The build writes `frontend/dist/`. `npm run preview` serves the build; use the development server for the API proxy. The Playwright checks intercept API requests with explicit offline fixtures and never call paid providers. They start an isolated Vite server and exercise chat, keyboard input, error/retry, and result views at desktop and narrow widths. CI installs Chromium and runs the same browser suite.
 
 ## Stop local services
 
@@ -180,3 +182,19 @@ uv run --frozen python -m app.jobs benchmark --resume JOB_ID
 Use the same `DATABASE_URL` for all three commands. The job stores its dataset/hash, settings, exact registry and history snapshot. Resuming reads these frozen values; changing environment settings does not alter the saved experiment. Mock jobs stay mock on resume. To deliberately run development cases live, omit `--mock`, export the provider keys privately and `REQUEST_BUDGET_USD=0.25`, and choose a separate explicit total `--budget-usd`. Do not repeat existing live evidence just for testing this runner.
 
 Each case reserves its complete request cap before any call. Completed cases are skipped on resume. A crash leaves running cases uncertain and retains their reservations, since they may have been billed. `benchmark --resume JOB_ID --retry-uncertain` explicitly allocates another reservation; old uncertain spend is not refunded. Concurrent runners for the same job are rejected. Known complete costs release unused reservation; incomplete costs retain a conservative charge. A depleted ceiling stops new cases. Reports label mock data and online judge outcomes; the three-strategy held-out research comparison comes in Phase 07.
+
+
+## Demo interface (Phase 06)
+
+The chat keeps the simple layout and adds expandable answer details: task/difficulty, first/final model, routing reason, attempts, evaluator status, elapsed time, and complete or incomplete cost. Mock answers remain explicitly unverified. A known cost subtotal is not presented as a complete total.
+
+Use the results view for recent runs and persisted benchmark job summaries. Opening the view loads records; refresh is manual, with no background polling or paid job trigger. Empty and unavailable results have explicit states. Benchmark summaries distinguish mock data and online-judge counts from independent research grading, which remains Phase 07.
+
+Read-only benchmark API endpoints:
+
+```sh
+curl 'http://127.0.0.1:8000/api/benchmarks?limit=20'
+curl 'http://127.0.0.1:8000/api/benchmarks/REPLACE_WITH_JOB_ID'
+```
+
+The list accepts a limit from 1 to 100 and omits per-case payloads. The detail report includes persisted case states/results and preserves unknown costs. Neither endpoint exposes frozen settings or starts jobs.

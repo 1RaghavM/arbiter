@@ -2,12 +2,15 @@ import json
 import os
 from decimal import Decimal
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
+from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from app import db, jobs
 from app.config import Settings, load_registry
+from app.main import app
 from app.schemas import ChatResult, GenerationResult
 
 
@@ -250,3 +253,61 @@ def test_partial_call_cost_and_run_id_survive_crash_and_repeated_resume(
     assert Decimal(retried["known_cost_usd"]) == Decimal(".04")
     assert Decimal(retried["budget_used_usd"]) == Decimal(".26")
     assert not retried["cost_complete"]
+
+
+def test_benchmark_read_endpoints_return_safe_summaries_and_real_mock_results(
+    pool, monkeypatch
+):
+    monkeypatch.setenv("DATABASE_URL", os.environ["TEST_DATABASE_URL"])
+    new_job(pool, n=1, mode="mock")
+    job_id = new_job(pool, n=1, mode="mock")
+    jobs.run_job(pool, job_id)
+    with TestClient(app) as client:
+        response = client.get("/api/benchmarks?limit=1")
+        assert response.status_code == 200
+        summary = response.json()[0]
+        assert len(response.json()) == 1 and summary["job_id"] == str(job_id)
+        assert summary["created_at"]
+        assert summary["mode"] == "mock" and summary["status"] == "completed"
+        assert summary["case_count"] == 1 and summary["states"]["done"] == 1
+        assert summary["online_pass_count"] == 0
+        assert summary["known_cost_usd"] == "0" and summary["cost_complete"]
+        assert "no independent benchmark grading" in summary["quality_basis"]
+        detail = client.get(f"/api/benchmarks/{job_id}")
+        assert detail.status_code == 200
+        report = detail.json()
+        cases = report.pop("cases")
+        assert report == summary
+        assert cases[0]["state"] == "done"
+        assert cases[0]["result"]["status"] == "unverified"
+        assert cases[0]["attempts"] == 1
+        assert not {"dataset", "config_snapshot", "history_snapshot"} & report.keys()
+        assert "Return blue." not in detail.text
+        for limit in (0, 101):
+            assert client.get(f"/api/benchmarks?limit={limit}").status_code == 422
+        assert client.get("/api/benchmarks/not-a-uuid").status_code == 422
+        missing = client.get(f"/api/benchmarks/{uuid4()}")
+        assert missing.status_code == 404 and missing.json()["code"] == "not_found"
+        assert client.post("/api/benchmarks", json={}).status_code == 405
+
+
+def test_benchmark_http_preserves_unknown_costs(pool, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", os.environ["TEST_DATABASE_URL"])
+    install_runner(monkeypatch, cost=None)
+    job_id = new_job(pool, n=1)
+    jobs.run_job(pool, job_id)
+    with TestClient(app) as client:
+        report = client.get(f"/api/benchmarks/{job_id}").json()
+        assert not report["cost_complete"]
+        assert Decimal(report["known_cost_usd"]) == Decimal(".005")
+        assert report["cases"][0]["result"]["total_cost_usd"] is None
+        assert not client.get("/api/benchmarks?limit=1").json()[0]["cost_complete"]
+
+
+def test_benchmark_reads_without_database_return_safe_error(monkeypatch):
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    with TestClient(app) as client:
+        for path in ("/api/benchmarks", f"/api/benchmarks/{uuid4()}"):
+            response = client.get(path)
+            assert response.status_code == 503
+            assert response.json()["code"] == "database_unavailable"
