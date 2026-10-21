@@ -1,18 +1,31 @@
 # Arbiter implementation status
 
-Updated: 2026-10-11.
+Updated: 2026-10-21.
 
-- Current phase: 05 — historical routing and resumable jobs, ready for review.
+- Current phase: 06 — demo interface, implemented; final CI/review pending.
 - Repository/default branch: [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), `master`.
-- Phase 01 [PR #2](https://github.com/1RaghavM/arbiter/pull/2) merged on 2026-10-11 after explicit user authorization. Its checks passed.
-- Phase 02 PR #3 merged by the review subagent at `2793f1b` after all gates passed.
-- Phase 03 PR #4 merged by the review subagent at `4377819` after fixes and passing CI.
-- Phase 04 PR #5 merged by the review subagent at `b8086ad` after passing current CI.
-- Phase branch: `phase/05-history-jobs`, from updated `origin/master` at `b8086ad`.
-- Authorization: user gives standing authorization for subagent review/merge of passing phase PRs and continuation to the next phase.
-- Current PR: [#6](https://github.com/1RaghavM/arbiter/pull/6), open; current checks passed.
-- Next action: implementation paused at the user’s request while preparing [the concise progress summary](PROGRESS.md). When continuation is requested, finish subagent PR review/merge, then branch Phase 06 from updated master.
-- Testing preference: keep paid checks minimal; reuse successful evidence, use offline fakes for failure paths, and rerun only affected checks after changes. Recorded in AGENTS.md and quality.md.
+- Phases 01–04 merged through PRs #2–#5; recorded checks are below.
+- Phase 05 [PR #6](https://github.com/1RaghavM/arbiter/pull/6) merged on 2026-10-11 at `15dc2b4`; confirmed against GitHub and fetched Git history on 2026-10-21.
+- Phase branch: `phase/06-demo-ui`, from updated `origin/master` at `15dc2b4`.
+- Authorization: user resumed phase progression on 2026-10-21 and authorized delegated implementation. Standing authorization permits independent subagent review/merge after required gates pass, then continuation from updated master.
+- Current PR: not opened yet.
+- Next action: independent subagent verifies final PR head and required CI, then merges. Start Phase 07 from updated master only after merge. Benchmark spending ceiling and hosting destination have been requested; no paid work or deployment has begun.
+- Existing uncommitted UI copy/layout cleanup from `codex/frontend-copy` is preserved and incorporated into Phase 06.
+- Testing preference: reuse successful live evidence, use offline fakes for failure paths, and rerun only affected checks. No paid calls are needed for Phase 06.
+- Local PostgreSQL is unavailable: `docker compose up -d --wait db` reports “Docker Desktop is unable to start.” Local full pytest: **218 passed, 46 skipped**; Ruff lint/format passed. [CI on e5e4389](https://github.com/1RaghavM/arbiter/actions/runs/39680222921) passed **264 tests with real PostgreSQL**, plus backend/frontend checks. Final UI/browser head still needs CI.
+
+## Phase 06 results
+
+Expanded answer details show task/difficulty/source/confidence, first/final model, attempt count and outcomes, routing reasons, escalation, latency, cost completeness and run ID. Recent-run and benchmark tables load on first visit and explicit refresh, retain chat state, handle empty/error states, and label mock data and online judge proxies. Read-only benchmark endpoints use persisted accounting and bounded list limits; no HTTP route starts jobs.
+
+- Local `env -u TEST_DATABASE_URL .venv/bin/pytest`: **218 passed, 46 skipped**. `.venv/bin/ruff check .` and `.venv/bin/ruff format --check .`: passed, 26 files. Docker Desktop could not start; no local PostgreSQL pass is claimed.
+- [CI e5e4389](https://github.com/1RaghavM/arbiter/actions/runs/39680222921): **264 passed**, real PostgreSQL; lint/format and frontend checks passed. Final UI/browser head CI remains the merge gate.
+- Frontend `npm run typecheck`, `npm run lint`, `npm run build`: passed, zero lint warnings. Pinned Playwright 1.64.1; Vite patched from 8.3.0 to 8.3.5 after npm audit identified advisories; install audit reports zero vulnerabilities.
+- Final serial `CAPTURE_SCREENSHOTS=1 npm run test:e2e`: **6 passed** (three flows at 1280px desktop and 390px mobile). Covers two-turn context, keyboard input, duplicate prevention, new chat, invalid input, 503/retry, incomplete cost/escalation metadata, result empty/populated/error states, manual refresh and narrow-table keyboard scrolling. A preceding concurrent test attempt collided in temporary trace artifacts; the serial rerun passed. All API traffic is intercepted, including an unmatched-request blocker; no paid calls.
+- Eight screenshots visually inspected: [chat desktop](screenshots/phase-06-chat-desktop.png), [mobile](screenshots/phase-06-chat-mobile.png), [details desktop](screenshots/phase-06-details-desktop.png), [mobile](screenshots/phase-06-details-mobile.png), [error desktop](screenshots/phase-06-error-desktop.png), [mobile](screenshots/phase-06-error-mobile.png), [results desktop](screenshots/phase-06-results-desktop.png), [mobile](screenshots/phase-06-results-mobile.png). Fixtures are explicit offline evidence, not live research results. Earlier cleanup screenshots are preserved.
+- Delegation: API agent implemented benchmark reads/tests; UI agent implemented components; browser agent implemented regression suite and CI; separate reviewer audits the full PR and owns merge. API agent's independent frontend review and separate reviewer's initial full review found no blockers.
+- Commits, each immediately pushed with configured user as sole author/committer: `e5e4389` benchmark API, `2bc74b9` interface, `a299293` browser suite/evidence. Documentation follows in its own immediately pushed commit.
+- Requirements advanced: R01, R10, R13, R14. No changes to provider integrations, routing policy, or paid checks. Independent scoring/three-strategy results remain Phase 07; deployment access protection remains Phase 08.
 
 ## Local live setup fix (2026-10-11)
 
