@@ -117,7 +117,7 @@ Use PostgreSQL UUIDs, UTC timestamps, JSONB for variable stage payloads, and NUM
 - `runs`: id, created_at, mode (live/mock/dev/heldout/baseline), status, messages JSONB, analysis JSONB, route_decisions JSONB, final_answer, final_model, total_latency_ms, total_cost_usd nullable, known_cost_usd, cost_complete, config/rubric/policy versions, evaluations JSONB, escalation_reason, reserved_cost_usd, benchmark_job_id nullable, error JSONB.
 - `calls`: id, run_id FK, sequence, stage (classify/generate/evaluate), provider, model_id, attempt number, status, latency_ms, input/output tokens nullable, raw usage JSONB, price snapshot JSONB, cost_usd nullable, cost_source, output JSONB, error JSONB. Unique run_id+sequence.
 - `benchmark_jobs`: id, status, dataset hash, config snapshot, history snapshot, strategy list, spend ceiling, progress/report JSONB, started_at, finished_at.
-- `benchmark_cases`: job_id FK, case_id, strategy, state pending/running/done/error/uncertain, run_id nullable, grading JSONB; unique job_id+case_id+strategy.
+- `benchmark_cases`: job_id FK, case_id, strategy, stage runtime/grading, ordinal, state pending/running/done/error/uncertain, run_id nullable, result JSONB, reservation and uncertain-attempt provenance; unique job_id+case_id+strategy+stage. Grading rows reuse the same durable reservation/recovery mechanism as runtime rows.
 - `schema_migrations`: version, applied_at.
 
 Index runs created_at and calls run_id. Derive task/model aggregates with a small SQL query, not a warehouse. Store rubric outputs with their associated generation call. Write run/call updates in short transactions, never hold a transaction across a model request. Migrations apply once in order; never drop demo data on startup.
@@ -135,3 +135,12 @@ History uses the `history-v1` policy and `rubric-v1` only. Earlier `priors-v1` r
 A request loads one content-addressed history snapshot before paid work and reuses it for every selection. Jobs freeze dataset contents/hash, settings, model registry and that snapshot in PostgreSQL; resume uses those stored inputs. Development live records can enter future history; mock, held-out and baseline records cannot. The current development job reports online quality status only; independent comparison grading belongs to Phase 07.
 
 Before a case starts, persist its run ID, running state and full request reservation. Known complete costs release unused reservation; unknown/crashed work retains the cap. Resume skips finished cases and marks interrupted running cases uncertain. Only an explicit uncertain retry may allocate another reservation; the original charge remains. A per-job advisory lock prevents concurrent workers from mistaking active work for a crash. No database transaction spans provider work and no HTTP endpoint starts a job.
+
+
+## Phase 07 comparison contract
+
+A comparison freezes one held-out dataset, registry/settings, compatible development history, scoring identity/rules, targets and seeded order. It schedules one runtime row for each case/strategy (fixed-cheap, fixed-strong, routed), then a separate shuffled grading row for each final answer. Fixed strategies use the existing one-generation path; they do not call Jev or the online evaluator. Routed held-out and baseline records never enter historical routing.
+
+Both runtime and grading stages use the existing job lock, committed reservation, uncertain recovery and explicit retry rules. Grading run/call records preserve independent research usage; job accounting keeps runtime and scoring subtotals/completeness separate while charging both to a shared job ceiling. A failed or incomplete answer remains in the comparison; an unavailable independent grade does not become a pass. Objective grading makes no provider call. Rubric grading sees prompt/reference/answer data without strategy or generator identity and never executes generated code.
+
+CLI preparation and execution are separate so the frozen experiment can be inspected before paid work. HTTP remains read-only. Exports include frozen inputs and per-case results; summaries compare matched cases and mark incomplete cost conclusions inconclusive. Blinded triplet review is a separate artifact, with reviewer identity/type recorded. The exact experiment protocol and approved aggregate budget are in [benchmark-protocol.md](benchmark-protocol.md).

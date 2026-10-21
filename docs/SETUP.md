@@ -168,7 +168,7 @@ Each judge response is capped at 256 tokens and its stage at 15 seconds. Candida
 
 Normal live chat loads one compatible history snapshot before any paid work. At least five known per-attempt labels are required per task/difficulty/model bucket. Quality is smoothed with five prior observations; latency and output tokens use medians. Failed generators count against quality; unknown judgments remain separately counted. History excludes mocks, held-out/baseline runs, unfinished runs and incompatible model/judge/policy/rubric versions. The `history-v1` policy intentionally starts fresh: earlier `priors-v1` data remains visible but is not used. Online labels are biased proxies, not independent benchmark grades.
 
-Jobs run from a terminal, never from an HTTP endpoint. Apply migrations first. From `backend/`, run the small six-case synthetic development dataset without paid calls:
+Jobs run from a terminal, never from an HTTP endpoint. Apply migrations first. From `backend/`, run the 30-case synthetic development dataset without paid calls:
 
 ```sh
 DATABASE_URL=postgresql://arbiter:arbiter@localhost:5432/arbiter_test \
@@ -198,3 +198,24 @@ curl 'http://127.0.0.1:8000/api/benchmarks/REPLACE_WITH_JOB_ID'
 ```
 
 The list accepts a limit from 1 to 100 and omits per-case payloads. The detail report includes persisted case states/results and preserves unknown costs. Neither endpoint exposes frozen settings or starts jobs.
+
+
+## Frozen three-strategy comparison (Phase 07)
+
+Read [benchmark-protocol.md](benchmark-protocol.md) before a live experiment. `benchmarks/dev.jsonl` and `benchmarks/test.jsonl` contain 30 synthetic cases each, with five per task type. Do not tune settings or rubrics on held-out outcomes. Keep test fixtures and research in separate PostgreSQL databases. The normal development command remains routed-only and rejects held-out cases.
+
+Prepare a free rehearsal, then execute and export it from `backend/`:
+
+```sh
+uv run --frozen python -m app.jobs freeze --dataset ../benchmarks/test.jsonl \
+  --budget-usd 4.50 --request-budget-usd 0.25 --scorer anthropic \
+  --seed 20261021 --mock
+uv run --frozen python -m app.jobs benchmark --resume JOB_ID
+uv run --frozen python -m app.jobs export JOB_ID --output /tmp/arbiter-rehearsal
+```
+
+`freeze` persists the dataset/hash, settings, registry, history, scorer, source revision/fingerprint, targets and seeded strategy order without calling providers. Commit the implementation first, inspect the frozen inputs, then resume to execute. Changed runtime/scoring source or lockfile rejects resume. Keep `DATABASE_URL` consistent across commands. A live job deliberately omits `--mock`; its total ceiling includes both runtime and independent grading. Never run the held-out experiment with test fixtures in its history database.
+
+Fixed-cheap and fixed-strong each generate once, without classification or online evaluation. Routed uses the complete pipeline. Grading runs separately after generation, using fixed exact/JSON checks or a blinded rubric. Runtime and grading share one persisted budget but have separate usage subtotals and completeness flags. Interrupted work retains reservations; ordinary resume skips completed work and does not retry uncertain calls. `--retry-uncertain` is an explicit additional-spend action within the same ceiling.
+
+Exports produce `benchmark.md`, `benchmark.json`, a blinded `manual-review.json`, and a separate `manual-key.json`. Complete verdicts, notes and reviewer identity for at least ten triplets before the final export; do not consult the answer key before judging. Export preserves existing review entries and validates them against the actual answers. An explicit `--manual-reviews PATH` can supply the completed JSON. Agent review must be labeled as agent review, never human review. Unknown grades are nonpasses; unknown runtime costs make cost savings inconclusive. The UI shows compact independent per-strategy results for comparison jobs.

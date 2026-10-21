@@ -80,9 +80,9 @@ def install_runner(monkeypatch, cost=".01", crash_at=None):
     return calls
 
 
-def test_dataset_validation_and_six_synthetic_cases():
+def test_dataset_validation_and_development_cases():
     rows = jobs.read_cases(Path(__file__).parents[2] / "benchmarks/dev.jsonl")
-    assert len(rows) == 6 and all(case.split == "dev" for case in rows)
+    assert len(rows) == 30 and all(case.split == "dev" for case in rows)
     with pytest.raises(ValueError, match="unique"):
         jobs.validate_cases([cases(1)[0].model_dump()] * 2)
     for changes in [{"split": "heldout"}, {"id": "../escape"}, {"messages": []}]:

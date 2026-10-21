@@ -2,6 +2,9 @@ import argparse
 import hashlib
 import json
 import os
+import random
+import subprocess
+from decimal import Decimal
 from pathlib import Path
 from time import perf_counter
 from typing import Literal
@@ -16,12 +19,14 @@ from app import analysis, db, evaluation, history
 from app.config import (
     ModelRegistry,
     Settings,
+    config_version,
     load_environment,
     load_registry,
     load_settings,
+    model_status,
 )
 from app.pipeline import run_chat
-from app.schemas import ChatRequest
+from app.schemas import ChatRequest, ChatResult, GenerationResult
 
 
 class BenchmarkCase(ChatRequest):
@@ -32,7 +37,14 @@ class BenchmarkCase(ChatRequest):
 
 
 def validate_cases(rows):
-    cases = [BenchmarkCase.model_validate(row) for row in rows]
+    from app.grading import ExperimentCase
+
+    cases = [
+        (ExperimentCase if "task" in row else BenchmarkCase).model_validate(row)
+        for row in rows
+    ]
+    if any(case.split != "dev" for case in cases):
+        raise ValueError("Development jobs reject held-out cases.")
     if not cases or len({case.id for case in cases}) != len(cases):
         raise ValueError("Dataset must contain cases with unique IDs.")
     return cases
@@ -48,13 +60,16 @@ def read_cases(path):
     )
 
 
-def create_job(pool, cases, settings, registry, history_snapshot, budget):
+def create_job(
+    pool, cases, settings, registry, history_snapshot, budget, *, comparison=None
+):
     budget = Settings(request_budget_usd=budget).request_budget_usd
     if settings.request_budget_usd is None:
         raise ValueError(
             "Configure a positive per-request budget before creating a job."
         )
-    cases = validate_cases([case.model_dump(mode="json") for case in cases])
+    if comparison is None:
+        cases = validate_cases([case.model_dump(mode="json") for case in cases])
     dataset = [case.model_dump(mode="json") for case in cases]
     digest = hashlib.sha256(json.dumps(dataset, sort_keys=True).encode()).hexdigest()
     job_id = uuid4()
@@ -66,10 +81,27 @@ def create_job(pool, cases, settings, registry, history_snapshot, budget):
         "rubric_version": evaluation.RUBRIC_VERSION,
         "classifier_version": analysis.POLICY_VERSION,
     }
+    if comparison is not None:
+        config.update(comparison)
+    order = [(case.id, "routed") for case in cases]
+    if comparison is not None:
+        rng = random.Random(comparison["seed"])
+        rng.shuffle(order)
+        order = [
+            (case_id, strategy)
+            for case_id, _ in order
+            for strategy in rng.sample(["fixed-cheap", "fixed-strong", "routed"], 3)
+        ]
+    tasks = [(case_id, strategy, "runtime") for case_id, strategy in order]
+    if comparison is not None:
+        grading_order = order.copy()
+        rng.shuffle(grading_order)
+        tasks += [(case_id, strategy, "grading") for case_id, strategy in grading_order]
     with pool.connection() as connection:
         connection.execute(
             "INSERT INTO benchmark_jobs (id, dataset_hash, dataset, config_snapshot, "
-            "history_snapshot, spend_ceiling_usd) VALUES (%s,%s,%s,%s,%s,%s)",
+            "history_snapshot, spend_ceiling_usd, strategy) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s)",
             (
                 job_id,
                 digest,
@@ -77,15 +109,82 @@ def create_job(pool, cases, settings, registry, history_snapshot, budget):
                 Jsonb(config),
                 Jsonb(history_snapshot),
                 budget,
+                "comparison" if comparison is not None else "routed",
             ),
         )
-        for ordinal, case in enumerate(cases):
+        for ordinal, (case_id, strategy, stage) in enumerate(tasks):
             connection.execute(
                 "INSERT INTO benchmark_cases (job_id, case_id, "
-                "ordinal) VALUES (%s,%s,%s)",
-                (job_id, case.id, ordinal),
+                "ordinal, strategy, stage) VALUES (%s,%s,%s,%s,%s)",
+                (job_id, case_id, ordinal, strategy, stage),
             )
     return job_id
+
+
+def create_comparison(
+    pool, cases, settings, registry, history_snapshot, budget, scorer_key, seed=17
+):
+    from app import grading
+
+    cases = grading.validate_cases([case.model_dump(mode="json") for case in cases])
+    if any(case.split != "heldout" for case in cases):
+        raise ValueError("Comparison requires held-out cases only.")
+    models = {model.key: model for model in registry.models}
+    keys = [registry.cheap_baseline_key, registry.strong_baseline_key, scorer_key]
+    if any(key not in models for key in keys):
+        raise ValueError("Configure both baseline models and a scoring model.")
+    if not models[scorer_key].enabled or models[scorer_key].provider != "anthropic":
+        raise ValueError("Independent rubric grading requires enabled Anthropic.")
+    if settings.mode == "live" and any(
+        model_status(models[key]) != "available" for key in keys
+    ):
+        raise ValueError("Baseline and scoring credentials are required.")
+    return create_job(
+        pool,
+        cases,
+        settings,
+        registry,
+        history_snapshot,
+        budget,
+        comparison={
+            "seed": seed,
+            "scorer_key": scorer_key,
+            "scoring_version": grading.SCORING_VERSION,
+            "comparison_version": "comparison-v1",
+            "runtime_fingerprint": runtime_fingerprint(),
+            "source_revision": subprocess.check_output(
+                ["git", "rev-parse", "HEAD"],
+                cwd=Path(__file__).parents[2],
+                text=True,
+            ).strip(),
+            "targets": {
+                "quality_margin_pp": 5,
+                "cost_savings": 0.20,
+                "latency_savings": 0.15,
+            },
+        },
+    )
+
+
+def runtime_fingerprint():
+    root = Path(__file__).parent
+    paths = [
+        root / f"{name}.py"
+        for name in (
+            "jobs",
+            "grading",
+            "pipeline",
+            "providers",
+            "analysis",
+            "evaluation",
+            "routing",
+            "history",
+            "config",
+            "schemas",
+            "db",
+        )
+    ] + [root.parent / "uv.lock"]
+    return hashlib.sha256(b"".join(path.read_bytes() for path in paths)).hexdigest()
 
 
 def report_job(pool, job_id):
@@ -96,24 +195,37 @@ def report_job(pool, job_id):
         if job is None:
             raise ValueError("Unknown benchmark job.")
         cases = connection.execute(
-            "SELECT case_id, state, run_id, attempts, reserved_cost_usd, result, "
+            "SELECT ordinal, case_id, strategy, stage, state, run_id, attempts, "
+            "reserved_cost_usd, result, "
             "uncertain_attempts "
             "FROM benchmark_cases WHERE job_id=%s ORDER BY ordinal",
             (job_id,),
         ).fetchall()
         partial = connection.execute(
-            "SELECT b.case_id, b.reserved_cost_usd, "
+            "SELECT b.ordinal, b.stage, b.reserved_cost_usd, "
             "COALESCE(sum(c.cost_usd),0) AS known "
             "FROM benchmark_cases b LEFT JOIN calls c ON c.run_id=b.run_id "
             "WHERE b.job_id=%s AND b.state='running' "
-            "GROUP BY b.case_id,b.reserved_cost_usd",
+            "GROUP BY b.ordinal,b.stage,b.reserved_cost_usd",
             (job_id,),
         ).fetchall()
-    pending_cost = sum(row["known"] for row in partial)
+    partial_by_ordinal = {row["ordinal"]: row for row in partial}
+    for case in cases:
+        if case["state"] == "running":
+            case["result"] = {
+                "known_cost_usd": str(partial_by_ordinal[case["ordinal"]]["known"]),
+                "total_cost_usd": None,
+                "cost_complete": False,
+                "total_latency_ms": None,
+            }
+    pending_cost = sum(row["known"] for row in partial if row["stage"] == "runtime")
+    pending_scoring = sum(row["known"] for row in partial if row["stage"] == "grading")
+    runtime = [case for case in cases if case["stage"] == "runtime"]
+    scoring = [case for case in cases if case["stage"] == "grading"]
     pending_overage = sum(
         max(0, row["known"] - row["reserved_cost_usd"]) for row in partial
     )
-    return {
+    report = {
         "job_id": str(job_id),
         "created_at": job["created_at"].isoformat(),
         "status": job["status"],
@@ -125,18 +237,48 @@ def report_job(pool, job_id):
         "budget_used_usd": str(job["budget_used_usd"] + pending_overage),
         "known_cost_usd": str(job["known_cost_usd"] + pending_cost),
         "cost_complete": job["cost_complete"]
-        and not any(case["state"] in {"running", "uncertain"} for case in cases),
-        "quality_basis": "Online judge proxy only; no independent benchmark grading.",
-        "case_count": len(cases),
+        and not any(case["state"] in {"running", "uncertain"} for case in runtime),
+        "scoring_known_cost_usd": str(job["scoring_known_cost_usd"] + pending_scoring),
+        "scoring_cost_complete": job["scoring_cost_complete"]
+        and not any(case["state"] in {"running", "uncertain"} for case in scoring),
+        "quality_basis": (
+            "Independent held-out grading; online pass count is not benchmark quality."
+            if job["strategy"] == "comparison"
+            else "Online judge proxy only; no independent benchmark grading."
+        ),
+        "case_count": len(runtime),
         "states": {
-            state: sum(case["state"] == state for case in cases)
+            state: sum(case["state"] == state for case in runtime)
             for state in ("pending", "running", "done", "error", "uncertain")
         },
         "online_pass_count": sum(
-            (case["result"] or {}).get("status") == "passed" for case in cases
+            (case["result"] or {}).get("status") == "passed" for case in runtime
         ),
         "cases": cases,
     }
+    if job["strategy"] == "comparison":
+        from app.comparison_report import build_report
+
+        metrics = build_report(
+            report
+            | {
+                "dataset": job["dataset"],
+                "config_snapshot": job["config_snapshot"],
+            }
+        )
+        report["strategy_metrics"] = metrics["strategies"]
+    return report
+
+
+def experiment_export(pool, job_id):
+    report = report_job(pool, job_id)
+    with pool.connection() as connection:
+        frozen = connection.execute(
+            "SELECT dataset, config_snapshot, history_snapshot "
+            "FROM benchmark_jobs WHERE id=%s",
+            (job_id,),
+        ).fetchone()
+    return report | frozen
 
 
 def recent_jobs(pool, limit):
@@ -188,8 +330,27 @@ def _run_cases(pool, job_id, retry_uncertain):
             or config.get("classifier_version") != analysis.POLICY_VERSION
         ):
             raise ValueError("Frozen job versions differ from the current runtime.")
+        comparison = job["strategy"] == "comparison"
+        if comparison:
+            from app import grading
+
+            if (
+                config.get("scoring_version") != grading.SCORING_VERSION
+                or config.get("comparison_version") != "comparison-v1"
+                or config.get("runtime_fingerprint") != runtime_fingerprint()
+            ):
+                raise ValueError("Frozen scoring versions differ from the runtime.")
+        settings = Settings.model_validate(config["settings"])
+        registry = ModelRegistry.model_validate(config["registry"])
+        cases = (
+            grading.validate_cases(job["dataset"])
+            if comparison
+            else validate_cases(job["dataset"])
+        )
+        if settings.request_budget_usd is None:
+            raise ValueError("Frozen job has no request budget.")
         interrupted = connection.execute(
-            "SELECT case_id, run_id, reserved_cost_usd FROM benchmark_cases "
+            "SELECT ordinal, stage, run_id, reserved_cost_usd FROM benchmark_cases "
             "WHERE job_id=%s AND state='running'",
             (job_id,),
         ).fetchall()
@@ -206,12 +367,14 @@ def _run_cases(pool, job_id, retry_uncertain):
             connection.execute(
                 "UPDATE benchmark_cases SET state='uncertain', "
                 "uncertain_attempts=uncertain_attempts || %s::jsonb "
-                "WHERE job_id=%s AND case_id=%s",
-                (Jsonb([previous]), job_id, case["case_id"]),
+                "WHERE job_id=%s AND ordinal=%s",
+                (Jsonb([previous]), job_id, case["ordinal"]),
             )
+            prefix = "scoring_" if case["stage"] == "grading" else ""
             connection.execute(
-                "UPDATE benchmark_jobs SET cost_complete=false, "
-                "known_cost_usd=known_cost_usd+%s, budget_used_usd=budget_used_usd+%s "
+                f"UPDATE benchmark_jobs SET {prefix}cost_complete=false, "
+                f"{prefix}known_cost_usd={prefix}known_cost_usd+%s, "
+                "budget_used_usd=budget_used_usd+%s "
                 "WHERE id=%s",
                 (known, max(0, known - case["reserved_cost_usd"]), job_id),
             )
@@ -227,75 +390,98 @@ def _run_cases(pool, job_id, retry_uncertain):
             "finished_at=NULL WHERE id=%s",
             (job_id,),
         )
-    settings = Settings.model_validate(config["settings"])
-    registry = ModelRegistry.model_validate(config["registry"])
-    cases = validate_cases(job["dataset"])
-    cap = settings.request_budget_usd
-    if cap is None:
-        raise ValueError("Frozen job has no request budget.")
-    for case in cases:
+        tasks = connection.execute(
+            "SELECT * FROM benchmark_cases WHERE job_id=%s ORDER BY ordinal",
+            (job_id,),
+        ).fetchall()
+    cases = {case.id: case for case in cases}
+    for task in tasks:
+        if task["state"] != "pending":
+            continue
+        case = cases[task["case_id"]]
+        cap = settings.request_budget_usd
+        generation = scorer = None
+        grading_error = None
+        if task["stage"] == "grading":
+            with pool.connection() as connection:
+                source = connection.execute(
+                    "SELECT result FROM benchmark_cases WHERE job_id=%s "
+                    "AND case_id=%s AND strategy=%s AND stage='runtime' "
+                    "AND state IN ('done','error')",
+                    (job_id, case.id, task["strategy"]),
+                ).fetchone()
+            if source is None:
+                continue
+            source = source["result"]
+            generation = GenerationResult(
+                text=source.get("answer") or "",
+                provider=source.get("provider", "unknown"),
+                finish_reason=source.get("finish_reason") or "error",
+                error_category=source.get("error_category"),
+            )
+            scorer = next(m for m in registry.models if m.key == config["scorer_key"])
+            try:
+                cap = (
+                    grading.grade_reservation(case, generation, scorer)
+                    if settings.mode == "live"
+                    else Decimal(0)
+                )
+            except ValueError:
+                cap = Decimal(0)
+                grading_error = "Scoring input or configuration exceeds grading limits."
         with pool.connection() as connection:
             current = connection.execute(
                 "SELECT * FROM benchmark_jobs WHERE id=%s FOR UPDATE", (job_id,)
             ).fetchone()
-            row = connection.execute(
-                "SELECT state FROM benchmark_cases WHERE job_id=%s AND case_id=%s",
-                (job_id, case.id),
-            ).fetchone()
-            if row["state"] != "pending":
-                continue
             if current["budget_used_usd"] + cap > current["spend_ceiling_usd"]:
-                break
+                continue
             run_id = uuid4()
             connection.execute(
                 "UPDATE benchmark_cases SET state='running', "
                 "run_id=%s, attempts=attempts+1, "
-                "reserved_cost_usd=%s WHERE job_id=%s AND case_id=%s",
-                (run_id, cap, job_id, case.id),
+                "reserved_cost_usd=%s WHERE job_id=%s AND ordinal=%s",
+                (run_id, cap, job_id, task["ordinal"]),
             )
             connection.execute(
                 "UPDATE benchmark_jobs SET "
                 "budget_used_usd=budget_used_usd+%s WHERE id=%s",
                 (cap, job_id),
             )
-        result = run_chat(
-            pool,
-            run_id,
-            ChatRequest(messages=case.messages),
-            settings,
-            registry,
-            perf_counter(),
-            history_snapshot=job["history_snapshot"],
-            benchmark_job_id=job_id,
-            run_mode="dev" if settings.mode == "live" else "mock",
-        )
-        complete = result.cost_complete and result.total_cost_usd is not None
-        charge = result.total_cost_usd if complete else max(cap, result.known_cost_usd)
-        summary = {
-            "status": result.status,
-            "final_model": result.final_model,
-            "total_latency_ms": result.total_latency_ms,
-            "total_cost_usd": str(result.total_cost_usd) if complete else None,
-            "known_cost_usd": str(result.known_cost_usd),
-            "cost_complete": complete,
-            "error_category": result.error_category,
-        }
+        if task["stage"] == "grading":
+            summary = _grade(
+                pool,
+                job_id,
+                run_id,
+                case,
+                generation,
+                scorer,
+                settings,
+                registry,
+                cap,
+                grading_error,
+            )
+        else:
+            summary = _generate(pool, job, task, run_id, case, settings, registry)
+        complete = summary["cost_complete"] and summary["total_cost_usd"] is not None
+        known = Decimal(summary["known_cost_usd"])
+        charge = Decimal(summary["total_cost_usd"]) if complete else max(cap, known)
         with pool.connection() as connection:
             connection.execute(
                 "UPDATE benchmark_cases SET state=%s, result=%s WHERE "
-                "job_id=%s AND case_id=%s",
+                "job_id=%s AND ordinal=%s",
                 (
-                    "error" if result.status == "error" else "done",
+                    "error" if summary["status"] == "error" else "done",
                     Jsonb(summary),
                     job_id,
-                    case.id,
+                    task["ordinal"],
                 ),
             )
+            prefix = "scoring_" if task["stage"] == "grading" else ""
             connection.execute(
                 "UPDATE benchmark_jobs SET budget_used_usd=budget_used_usd+%s, "
-                "known_cost_usd=known_cost_usd+%s, "
-                "cost_complete=cost_complete AND %s WHERE id=%s",
-                (charge - cap, result.known_cost_usd, complete, job_id),
+                f"{prefix}known_cost_usd={prefix}known_cost_usd+%s, "
+                f"{prefix}cost_complete={prefix}cost_complete AND %s WHERE id=%s",
+                (charge - cap, known, complete, job_id),
             )
     with pool.connection() as connection:
         rows = connection.execute(
@@ -316,6 +502,141 @@ def _run_cases(pool, job_id, retry_uncertain):
         )
 
 
+def _generate(pool, job, task, run_id, case, settings, registry):
+    fixed = task["strategy"] != "routed"
+    if fixed:
+        settings = settings.model_copy(
+            update={
+                "fixed_model_key": (
+                    registry.cheap_baseline_key
+                    if task["strategy"] == "fixed-cheap"
+                    else registry.strong_baseline_key
+                )
+            }
+        )
+    comparison = job["strategy"] == "comparison"
+    result = run_chat(
+        pool,
+        run_id,
+        ChatRequest(messages=case.messages),
+        settings,
+        registry,
+        perf_counter(),
+        fixed=fixed,
+        history_snapshot=job["history_snapshot"],
+        benchmark_job_id=job["id"],
+        run_mode="baseline" if fixed else "heldout" if comparison else "dev",
+    )
+    complete = result.cost_complete and result.total_cost_usd is not None
+    summary = {
+        "status": result.status,
+        "final_model": result.final_model,
+        "total_latency_ms": result.total_latency_ms,
+        "total_cost_usd": str(result.total_cost_usd) if complete else None,
+        "known_cost_usd": str(result.known_cost_usd),
+        "cost_complete": complete,
+        "error_category": result.error_category,
+    }
+    if comparison:
+        final = next(
+            (
+                attempt
+                for attempt in reversed(result.attempts)
+                if attempt.model_key == result.final_model
+            ),
+            None,
+        )
+        summary.update(
+            {
+                "answer": result.answer,
+                "provider": final.provider if final else "unknown",
+                "finish_reason": final.finish_reason if final else "error",
+                "first_model": result.attempts[0].model_key
+                if result.attempts
+                else None,
+                "escalated": len(result.attempts) > 1,
+            }
+        )
+    return summary
+
+
+def _grade(
+    pool,
+    job_id,
+    run_id,
+    case,
+    generation,
+    scorer,
+    settings,
+    registry,
+    cap,
+    grading_error=None,
+):
+    from app import grading
+
+    started = perf_counter()
+    db.create_run(
+        pool,
+        run_id,
+        ChatRequest(messages=case.messages),
+        "mock" if settings.mode == "mock" else "scoring",
+        config_version(settings, registry),
+        job_id,
+    )
+    if grading_error:
+        grade, call = (
+            {
+                "status": "unknown",
+                "reason": grading_error,
+                "basis": case.grading,
+                "scorer_version": grading.SCORING_VERSION,
+                "error_category": "input_limit",
+            },
+            None,
+        )
+    elif settings.mode == "mock" and case.grading == "rubric":
+        grade, call = (
+            {
+                "status": "unknown",
+                "reason": "Mock job; no scoring provider called.",
+                "basis": "rubric",
+                "scorer_version": grading.SCORING_VERSION,
+            },
+            None,
+        )
+    else:
+        grade, call = grading.grade_case(
+            case,
+            generation,
+            scorer,
+            settings.evaluation_timeout_seconds,
+        )
+    if call is not None:
+        call.price_snapshot = {
+            **(call.price_snapshot or {}),
+            "reserved_cost_usd": str(cap),
+        }
+        db.record_call(pool, run_id, 1, "score", 1, call, grade)
+    cost = call.cost_usd if call is not None else Decimal(0)
+    complete = cost is not None
+    known = cost if complete else Decimal(0)
+    result = ChatResult(
+        run_id=run_id,
+        mode=settings.mode,
+        status="unverified",
+        total_cost_usd=cost,
+        known_cost_usd=known,
+        cost_complete=complete,
+        reserved_cost_usd=cap,
+    )
+    db.finish_run(pool, result, None, started)
+    return grade | {
+        "total_cost_usd": str(cost) if complete else None,
+        "known_cost_usd": str(known),
+        "cost_complete": complete,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Sequential, bounded development benchmark jobs."
@@ -330,6 +651,17 @@ def main():
     benchmark.add_argument("--retry-uncertain", action="store_true")
     report = commands.add_parser("report")
     report.add_argument("job_id", type=UUID)
+    freeze = commands.add_parser("freeze")
+    freeze.add_argument("--dataset", required=True)
+    freeze.add_argument("--budget-usd", required=True)
+    freeze.add_argument("--request-budget-usd", required=True)
+    freeze.add_argument("--scorer", required=True)
+    freeze.add_argument("--seed", type=int, default=17)
+    freeze.add_argument("--mock", action="store_true")
+    export = commands.add_parser("export")
+    export.add_argument("job_id", type=UUID)
+    export.add_argument("--output", required=True)
+    export.add_argument("--manual-reviews")
     args = parser.parse_args()
     load_environment()
     try:
@@ -339,6 +671,44 @@ def main():
         with db.create_pool(url) as pool:
             if args.command == "report":
                 output = report_job(pool, args.job_id)
+            elif args.command == "export":
+                from app.comparison_report import write_report
+
+                write_report(
+                    experiment_export(pool, args.job_id),
+                    args.output,
+                    manual_reviews=json.loads(Path(args.manual_reviews).read_text())
+                    if args.manual_reviews
+                    else None,
+                )
+                return 0
+            elif args.command == "freeze":
+                from app import grading
+
+                settings = load_settings().model_copy(
+                    update={
+                        "mode": "mock" if args.mock else "live",
+                        "request_budget_usd": Settings(
+                            request_budget_usd=args.request_budget_usd,
+                        ).request_budget_usd,
+                    }
+                )
+                registry = load_registry()
+                cases = grading.read_cases(args.dataset)
+                if len(cases) != 30:
+                    raise ValueError("Final comparison requires 30 held-out cases.")
+                job_id = create_comparison(
+                    pool,
+                    cases,
+                    settings,
+                    registry,
+                    history.load_history(pool, registry),
+                    args.budget_usd,
+                    args.scorer,
+                    args.seed,
+                )
+                print(json.dumps({"job_id": str(job_id), "status": "frozen"}))
+                return 0
             elif args.resume:
                 if (
                     args.dataset
