@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 from psycopg_pool import PoolTimeout
 from pydantic import ValidationError
 
-from app import db
+from app import db, jobs
 from app.config import load_environment, load_registry, load_settings, model_status
 from app.pipeline import run_chat
 from app.schemas import ChatRequest, ChatResult
@@ -192,3 +192,25 @@ def read_run(run_id: UUID, pool=Depends(get_pool)):
             },
         )
     return run
+
+
+@app.get("/api/benchmarks")
+def recent_benchmarks(
+    limit: Annotated[int, Query(ge=1, le=100)] = 20, pool=Depends(get_pool)
+):
+    return jobs.recent_jobs(pool, limit)
+
+
+@app.get("/api/benchmarks/{job_id}")
+def read_benchmark(job_id: UUID, pool=Depends(get_pool)):
+    try:
+        return jobs.report_job(pool, job_id)
+    except ValueError:
+        raise HTTPException(
+            404,
+            {
+                "code": "not_found",
+                "message": "Benchmark job not found.",
+                "run_id": None,
+            },
+        ) from None

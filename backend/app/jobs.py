@@ -115,6 +115,7 @@ def report_job(pool, job_id):
     )
     return {
         "job_id": str(job_id),
+        "created_at": job["created_at"].isoformat(),
         "status": job["status"],
         "strategy": job["strategy"],
         "mode": job["config_snapshot"]["settings"]["mode"],
@@ -136,6 +137,20 @@ def report_job(pool, job_id):
         ),
         "cases": cases,
     }
+
+
+def recent_jobs(pool, limit):
+    with pool.connection() as connection:
+        rows = connection.execute(
+            "SELECT id FROM benchmark_jobs ORDER BY created_at DESC, id DESC LIMIT %s",
+            (limit,),
+        ).fetchall()
+    summaries = []
+    for row in rows:
+        summary = report_job(pool, row["id"])
+        del summary["cases"]
+        summaries.append(summary)
+    return summaries
 
 
 def run_job(pool, job_id, retry_uncertain=False):
