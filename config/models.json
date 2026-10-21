@@ -12,7 +12,7 @@
       "additional_pricing": {
         "cached_input_usd_per_million": "0.10"
       },
-      "price_verified_at": "2026-10-11",
+      "price_verified_at": "2026-10-21",
       "source_url": "https://developers.openai.com/api/docs/models/gpt-4.1-mini",
       "prior_quality": {
         "easy": 0.85,
@@ -35,7 +35,7 @@
         "cached_input_usd_per_million": "0.10",
         "cache_write_usd_per_million": "2.50"
       },
-      "price_verified_at": "2026-10-11",
+      "price_verified_at": "2026-10-21",
       "source_url": "https://platform.claude.com/docs/en/models/sonnet-5-5/overview",
       "prior_quality": {
         "easy": 0.9,
@@ -57,7 +57,7 @@
       "additional_pricing": {
         "cached_input_usd_per_million": "0.03"
       },
-      "price_verified_at": "2026-10-11",
+      "price_verified_at": "2026-10-21",
       "source_url": "https://ai.google.dev/gemini-api/docs/pricing#gemini-3.5-flash-lite",
       "prior_quality": {
         "easy": 0.8,

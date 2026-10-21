@@ -2,17 +2,15 @@
 
 Updated: 2026-10-21.
 
-- Current phase: 06 — demo interface, implemented; final CI/review pending.
+- Current phase: 07 — controlled benchmark, in progress.
 - Repository/default branch: [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), `master`.
-- Phases 01–04 merged through PRs #2–#5; recorded checks are below.
-- Phase 05 [PR #6](https://github.com/1RaghavM/arbiter/pull/6) merged on 2026-10-11 at `15dc2b4`; confirmed against GitHub and fetched Git history on 2026-10-21.
-- Phase branch: `phase/06-demo-ui`, from updated `origin/master` at `15dc2b4`.
-- Authorization: user resumed phase progression on 2026-10-21 and authorized delegated implementation. Standing authorization permits independent subagent review/merge after required gates pass, then continuation from updated master.
+- Phase 06 [PR #7](https://github.com/1RaghavM/arbiter/pull/7) merged at `8b681e8` after independent review and [final CI](https://github.com/1RaghavM/arbiter/actions/runs/39680736653): **264 backend tests with real PostgreSQL and six browser tests passed**, with all lint/type/build gates green. Merge author and committer are the configured user.
+- Phase branch: `phase/07-benchmark`, from fetched `origin/master` at `8b681e8`.
+- Authorization: user resumed delegated phase progression on 2026-10-21, approved **USD 5 total** for benchmark API work including independent grading, and selected **Vercel** for Phase 08. No hosting purchase is authorized or required by this selection.
 - Current PR: not opened yet.
-- Next action: independent subagent verifies final PR head and required CI, then merges. Start Phase 07 from updated master only after merge. Benchmark spending ceiling and hosting destination have been requested; no paid work or deployment has begun.
-- Existing uncommitted UI copy/layout cleanup from `codex/frontend-copy` is preserved and incorporated into Phase 06.
-- Testing preference: reuse successful live evidence, use offline fakes for failure paths, and rerun only affected checks. No paid calls are needed for Phase 06.
-- Local PostgreSQL is unavailable: `docker compose up -d --wait db` reports “Docker Desktop is unable to start.” Local full pytest: **218 passed, 46 skipped**; Ruff lint/format passed. [CI on e5e4389](https://github.com/1RaghavM/arbiter/actions/runs/39680222921) passed **264 tests with real PostgreSQL**, plus backend/frontend checks. Final UI/browser head still needs CI.
+- Next action: prepare/freeze dataset, scoring, runner and reports; pass offline checks; run the bounded comparison; review ten matched triplets; record results and request independent phase review. No Phase 08 implementation before Phase 07 merge.
+- Docker Desktop cannot start. Installed PostgreSQL 17 with Homebrew and started an isolated cluster at `/private/tmp/arbiter-phase07-postgres` on `127.0.0.1:55432`; separate `arbiter_test` and `arbiter_benchmark` databases, user `arbiter`. Existing Docker data and root `.env` remain unchanged. Do not run fixtures against the research database.
+- All four provider credentials are configured (values not logged). Official model/price references rechecked before freeze; successful previous integration evidence is reused. No Phase 07 paid calls yet.
 
 ## Phase 06 results
 
