@@ -1,5 +1,6 @@
 import json
 import os
+from contextlib import contextmanager
 from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
@@ -311,3 +312,45 @@ def test_benchmark_reads_without_database_return_safe_error(monkeypatch):
             response = client.get(path)
             assert response.status_code == 503
             assert response.json()["code"] == "database_unavailable"
+
+
+def test_report_keeps_one_snapshot_when_case_finishes_between_reads(pool):
+    job_id = new_job(pool, n=1, mode="mock")
+    with pool.connection() as connection:
+        connection.execute(
+            "UPDATE benchmark_jobs SET status='running' WHERE id=%s",
+            (job_id,),
+        )
+        connection.execute(
+            "UPDATE benchmark_cases SET state='running' WHERE job_id=%s",
+            (job_id,),
+        )
+
+    class FinishingConnection:
+        def __init__(self, connection):
+            self.connection = connection
+
+        def execute(self, query, params=None):
+            if query.startswith("SELECT b.ordinal"):
+                with pool.connection() as writer:
+                    writer.execute(
+                        "UPDATE benchmark_cases SET state='done' WHERE job_id=%s",
+                        (job_id,),
+                    )
+                    writer.execute(
+                        "UPDATE benchmark_jobs SET status='completed' WHERE id=%s",
+                        (job_id,),
+                    )
+            return self.connection.execute(query, params)
+
+    class FinishingPool:
+        @contextmanager
+        def connection(self):
+            with pool.connection() as connection:
+                yield FinishingConnection(connection)
+
+    report = jobs.report_job(FinishingPool(), job_id)
+    assert report["status"] == "running" and report["states"]["running"] == 1
+    assert not report["cost_complete"]
+    assert report["cases"][0]["result"]["known_cost_usd"] == "0"
+    assert jobs.report_job(pool, job_id)["status"] == "completed"

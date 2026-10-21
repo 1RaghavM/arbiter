@@ -189,6 +189,7 @@ def runtime_fingerprint():
 
 def report_job(pool, job_id):
     with pool.connection() as connection:
+        connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
         job = connection.execute(
             "SELECT * FROM benchmark_jobs WHERE id=%s", (job_id,)
         ).fetchone()
