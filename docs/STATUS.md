@@ -7,7 +7,7 @@ Updated: 2026-10-21.
 - Phase 06 [PR #7](https://github.com/1RaghavM/arbiter/pull/7) merged at `8b681e8` after independent review and [final CI](https://github.com/1RaghavM/arbiter/actions/runs/39680736653): **264 backend tests with real PostgreSQL and six browser tests passed**, with all lint/type/build gates green. Merge author and committer are the configured user.
 - Phase branch: `phase/07-benchmark`, from fetched `origin/master` at `8b681e8`.
 - Authorization: user resumed delegated phase progression on 2026-10-21, approved **USD 5 total** for benchmark API work including independent grading, and selected **Vercel** for Phase 08. No hosting purchase is authorized or required by this selection.
-- Current PR: draft PR being prepared; live gates remain blocked and merge is not authorized until they pass.
+- Current PR: [draft #8](https://github.com/1RaghavM/arbiter/pull/8); live gates remain blocked and merge is not authorized until they pass.
 - Next action: restore billing for the Google API project used by GOOGLE_API_KEY (generation returns HTTP 402). Then verify only the affected provider within the remaining USD 5 authorization, record any development/held-out budget reallocation before execution, complete pending development work without replaying completed cases, freeze and run the held-out comparison, review ten triplets, and request final independent review. No Phase 08 implementation before Phase 07 merge.
 - Docker Desktop cannot start. Installed PostgreSQL 17 with Homebrew and started an isolated cluster at `/private/tmp/arbiter-phase07-postgres` on `127.0.0.1:55432`; separate `arbiter_test` and `arbiter_benchmark` databases, user `arbiter`. Existing Docker data and root `.env` remain unchanged. Do not run fixtures against the research database.
 - All four provider credentials are configured (values not logged). Official model/price references rechecked before freeze; successful previous integration evidence is reused. Phase 07 development and one affected-provider diagnostic ran; accounting and blocker are recorded below.
@@ -23,7 +23,7 @@ Implemented 30 development + 30 held-out synthetic cases, objective and blinded 
 - The original development job has exhausted its immutable USD 0.50 ceiling: `--resume` alone cannot advance it after billing is fixed. Preserve that job and its reservations. Prepare a separately capped continuation dataset/job containing exactly its 28 pending case IDs, with the revised total allocation recorded first; do not rerun the two completed cases or silently increase the frozen ceiling.
 - Aggregate conservative amount retained: **USD 0.5026437**; known usage subtotal **USD 0.005209634**. Actual charges remain incomplete. USD 4.4973563 remains below the approved USD 5 aggregate ceiling; reserve at most USD 4.49 for all subsequent work until an explicit revised allocation is recorded. No held-out calls, independent live grades, or manual triplet reviews exist yet. [Blocked benchmark report](../reports/benchmark.md).
 - UI checks include [desktop](screenshots/phase-07-results-desktop.png) and [mobile](screenshots/phase-07-results-mobile.png), visually reviewed and explicitly fixture evidence.
-- Commits, immediately pushed with user author/committer: `6430b64` protocol/pricing verification; `e2b283d` dataset/grading/runner/report; `4c69d8f` result UI; `953852a` consistent read snapshot. Evidence/status update follows in its own immediately pushed commit.
+- Commits, immediately pushed with user author/committer: `6430b64` protocol/pricing verification; `e2b283d` dataset/grading/runner/report; `4c69d8f` result UI; `953852a` consistent read snapshot. `b2d8517` preserves reviewed evidence/status, immediately pushed. A follow-up documentation commit records the created draft PR link.
 - Requirements advanced: R09–R11 and R14; R11's actual three-strategy experiment remains blocked. Vercel CLI is installed and authenticated, but deployment is Phase 08 and has not started. No hosting purchase or project creation.
 
 ## Phase 06 results
@@ -175,7 +175,7 @@ Each commit uses `1RaghavM` as sole author/committer, with no assistant co-autho
 | 04 | merged | phase/04-evaluation | [#5](https://github.com/1RaghavM/arbiter/pull/5) | 222 offline tests, normal live flow and controlled escalation pass |
 | 05 | merged | phase/05-history-jobs | [#6](https://github.com/1RaghavM/arbiter/pull/6) | Merged at 15dc2b4; offline and persisted mock-job gates pass |
 | 06 | merged | phase/06-demo-ui | [#7](https://github.com/1RaghavM/arbiter/pull/7) | Merged at 8b681e8; 264 backend and six browser tests pass |
-| 07 | blocked | phase/07-benchmark | Draft being prepared | 318 backend + six browser tests pass; Google generation HTTP 402 blocks live experiment |
+| 07 | blocked | phase/07-benchmark | [draft #8](https://github.com/1RaghavM/arbiter/pull/8) | 318 backend + six browser tests pass; Google generation HTTP 402 blocks live experiment |
 | 08 | pending | — | — | — |
 
 Allowed states: pending, in_progress, blocked, ready_for_review, merged. A phase becomes a dependency only after its PR is merged.
