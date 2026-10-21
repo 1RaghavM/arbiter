@@ -20,7 +20,7 @@ const mockReply = {
 
 async function screenshot(page: Page, testInfo: TestInfo, view: string) {
   if (process.env.CAPTURE_SCREENSHOTS === '1') {
-    await page.screenshot({ path: `../docs/screenshots/phase-06-${view}-${testInfo.project.name}.png`, fullPage: true })
+    await page.screenshot({ path: `../docs/screenshots/phase-${process.env.SCREENSHOT_PHASE ?? '06'}-${view}-${testInfo.project.name}.png`, fullPage: true })
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 }
@@ -142,10 +142,16 @@ test('results show persisted summaries, empty states, and explicit refresh failu
     if (state === 'error') return route.fulfill({ status: 503, json: { code: 'database_unavailable' } })
     return route.fulfill({ json: state === 'empty' ? [] : [{
       job_id: '00000000-0000-4000-8000-000000000003', created_at: '2026-10-21T14:00:00Z',
-      mode: 'mock', strategy: 'routed', status: 'completed', case_count: 6,
+      mode: 'mock', strategy: 'comparison', status: 'completed', case_count: 6,
       states: { pending: 0, running: 0, done: 6, error: 0, uncertain: 0 },
-      online_pass_count: 0, known_cost_usd: '0', cost_complete: true, budget_usd: '0.25', budget_used_usd: '0',
+      online_pass_count: 0, known_cost_usd: '0', cost_complete: false, budget_usd: '0.25', budget_used_usd: '0',
       quality_basis: 'Offline browser fixture; no independent benchmark grading.',
+      scoring_known_cost_usd: '0', scoring_cost_complete: true,
+      strategy_metrics: {
+        'fixed-cheap': { attempted_count: 2, pass_count: 0, total_runtime_cost_usd: '0', median_latency_ms: 18 },
+        'fixed-strong': { attempted_count: 2, pass_count: 0, total_runtime_cost_usd: '0', median_latency_ms: 18 },
+        routed: { attempted_count: 2, pass_count: 0, total_runtime_cost_usd: null, median_latency_ms: 18 },
+      },
     }] })
   })
   await page.goto('/')
@@ -160,7 +166,9 @@ test('results show persisted summaries, empty states, and explicit refresh failu
   await page.getByRole('button', { name: 'Refresh benchmarks', exact: true }).click()
   await expect(page.getByRole('region', { name: 'Recent runs table' })).toContainText('Incomplete · known $0.002')
   await expect(page.getByRole('region', { name: 'Benchmark jobs table' })).toContainText('6 done / 6 cases')
-  await expect(page.getByText('Independent strategy comparisons are not available yet', { exact: false })).toBeVisible()
+  await expect(page.getByText('fixed-cheap: 0 / 2 independent passes')).toBeVisible()
+  await expect(page.getByText('Runtime cost incomplete', { exact: false })).toBeVisible()
+  await expect(page.getByText('Comparison jobs use independent grading', { exact: false })).toBeVisible()
   await screenshot(page, testInfo, 'results')
   if (testInfo.project.name === 'mobile') {
     const table = page.getByRole('region', { name: 'Recent runs table' })
