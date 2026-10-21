@@ -2,15 +2,29 @@
 
 Updated: 2026-10-21.
 
-- Current phase: 07 — controlled benchmark, in progress.
+- Current phase: 07 — controlled benchmark, **BLOCKED on Google generation billing**.
 - Repository/default branch: [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), `master`.
 - Phase 06 [PR #7](https://github.com/1RaghavM/arbiter/pull/7) merged at `8b681e8` after independent review and [final CI](https://github.com/1RaghavM/arbiter/actions/runs/39680736653): **264 backend tests with real PostgreSQL and six browser tests passed**, with all lint/type/build gates green. Merge author and committer are the configured user.
 - Phase branch: `phase/07-benchmark`, from fetched `origin/master` at `8b681e8`.
 - Authorization: user resumed delegated phase progression on 2026-10-21, approved **USD 5 total** for benchmark API work including independent grading, and selected **Vercel** for Phase 08. No hosting purchase is authorized or required by this selection.
-- Current PR: not opened yet.
-- Next action: prepare/freeze dataset, scoring, runner and reports; pass offline checks; run the bounded comparison; review ten matched triplets; record results and request independent phase review. No Phase 08 implementation before Phase 07 merge.
+- Current PR: draft PR being prepared; live gates remain blocked and merge is not authorized until they pass.
+- Next action: restore billing for the Google API project used by GOOGLE_API_KEY (generation returns HTTP 402). Then verify only the affected provider within the remaining USD 5 authorization, record any development/held-out budget reallocation before execution, complete pending development work without replaying completed cases, freeze and run the held-out comparison, review ten triplets, and request final independent review. No Phase 08 implementation before Phase 07 merge.
 - Docker Desktop cannot start. Installed PostgreSQL 17 with Homebrew and started an isolated cluster at `/private/tmp/arbiter-phase07-postgres` on `127.0.0.1:55432`; separate `arbiter_test` and `arbiter_benchmark` databases, user `arbiter`. Existing Docker data and root `.env` remain unchanged. Do not run fixtures against the research database.
-- All four provider credentials are configured (values not logged). Official model/price references rechecked before freeze; successful previous integration evidence is reused. No Phase 07 paid calls yet.
+- All four provider credentials are configured (values not logged). Official model/price references rechecked before freeze; successful previous integration evidence is reused. Phase 07 development and one affected-provider diagnostic ran; accounting and blocker are recorded below.
+
+## Phase 07 results and live blocker
+
+Implemented 30 development + 30 held-out synthetic cases, objective and blinded rubric grading, fixed-cheap/fixed-strong/routed comparison, seeded order, frozen source/config/history, one durable runtime/scoring budget, resumable jobs, report export and independent strategy metrics in the UI. Independent pre-live review found no remaining code blockers after JSON numeric-equivalence and consistent database snapshot fixes. The final experiment is not complete.
+
+- [CI on 953852a](https://github.com/1RaghavM/arbiter/actions/runs/39682496504): **318 backend tests passed with real PostgreSQL; six desktop/mobile browser tests passed**. Ruff lint/format and frontend type/lint/build passed. Offline providers only. Prior full local run: 317 passed; the subsequent snapshot fix passed 22 focused tests and final CI adds the regression. No repeated broad paid integration suite.
+- Free CLI rehearsal in the test database: job `3205ac0b-9587-4b3f-aee4-d2b502bd941f` completed **90 runtime rows and 90 grading rows**, USD 0, with mock/no-research-conclusion labeling. Research records are in a separate database.
+- Paid development command: `DATABASE_URL=postgresql://arbiter@127.0.0.1:55432/arbiter_benchmark .venv/bin/python -m app.jobs benchmark --dataset ../benchmarks/dev.jsonl --budget-usd 0.50 --request-budget-usd 0.25`. Job `1a09bbc5-f8f0-470e-be44-f1ea50bc7b8b` stopped as blocked after two completed cases, with 28 pending. Both Google generation attempts failed without usage, then Anthropic escalation passed its online judge. Known cost **USD 0.005209634**, incomplete; the job correctly retains **USD 0.50**, not the known subtotal, against its ceiling. [Full synthetic development evidence](../reports/development.json).
+- One free official Google model metadata request returned HTTP 200 and supports generateContent. One affected-provider-only generation diagnostic through the existing smoke pipeline, capped at USD 0.01, returned **HTTP 402**. Run `54bdc268-0bb9-49a0-9b24-a1371c0130aa`; no usage, retained reservation **USD 0.0026437**. No retries. [Sanitized diagnostic](../reports/google-diagnostic.json). The exact error of the first two calls was not retained beyond `unavailable`; do not claim those statuses were observed as 402.
+- The original development job has exhausted its immutable USD 0.50 ceiling: `--resume` alone cannot advance it after billing is fixed. Preserve that job and its reservations. Prepare a separately capped continuation dataset/job containing exactly its 28 pending case IDs, with the revised total allocation recorded first; do not rerun the two completed cases or silently increase the frozen ceiling.
+- Aggregate conservative amount retained: **USD 0.5026437**; known usage subtotal **USD 0.005209634**. Actual charges remain incomplete. USD 4.4973563 remains below the approved USD 5 aggregate ceiling; reserve at most USD 4.49 for all subsequent work until an explicit revised allocation is recorded. No held-out calls, independent live grades, or manual triplet reviews exist yet. [Blocked benchmark report](../reports/benchmark.md).
+- UI checks include [desktop](screenshots/phase-07-results-desktop.png) and [mobile](screenshots/phase-07-results-mobile.png), visually reviewed and explicitly fixture evidence.
+- Commits, immediately pushed with user author/committer: `6430b64` protocol/pricing verification; `e2b283d` dataset/grading/runner/report; `4c69d8f` result UI; `953852a` consistent read snapshot. Evidence/status update follows in its own immediately pushed commit.
+- Requirements advanced: R09–R11 and R14; R11's actual three-strategy experiment remains blocked. Vercel CLI is installed and authenticated, but deployment is Phase 08 and has not started. No hosting purchase or project creation.
 
 ## Phase 06 results
 
@@ -159,9 +173,9 @@ Each commit uses `1RaghavM` as sole author/committer, with no assistant co-autho
 | 02 | merged | phase/02-cloud-models | [#3](https://github.com/1RaghavM/arbiter/pull/3) | Offline gates and all three live checks pass |
 | 03 | merged | phase/03-jev-routing | [#4](https://github.com/1RaghavM/arbiter/pull/4) | Offline checks and live Jev/routing trace pass |
 | 04 | merged | phase/04-evaluation | [#5](https://github.com/1RaghavM/arbiter/pull/5) | 222 offline tests, normal live flow and controlled escalation pass |
-| 05 | ready_for_review | phase/05-history-jobs | [#6](https://github.com/1RaghavM/arbiter/pull/6) | 259 offline tests and six-case persisted/resumed mock job pass |
-| 06 | pending | — | — | — |
-| 07 | pending | — | — | — |
+| 05 | merged | phase/05-history-jobs | [#6](https://github.com/1RaghavM/arbiter/pull/6) | Merged at 15dc2b4; offline and persisted mock-job gates pass |
+| 06 | merged | phase/06-demo-ui | [#7](https://github.com/1RaghavM/arbiter/pull/7) | Merged at 8b681e8; 264 backend and six browser tests pass |
+| 07 | blocked | phase/07-benchmark | Draft being prepared | 318 backend + six browser tests pass; Google generation HTTP 402 blocks live experiment |
 | 08 | pending | — | — | — |
 
 Allowed states: pending, in_progress, blocked, ready_for_review, merged. A phase becomes a dependency only after its PR is merged.
