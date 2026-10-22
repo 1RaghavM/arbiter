@@ -8,7 +8,7 @@ const mockReply = {
   status: 'unverified',
   analysis: null,
   route_decisions: [],
-  attempts: [{ model_key: 'mock-v1', latency_ms: 12, error_category: null, finish_reason: 'stop' }],
+  attempts: [{ model_key: 'mock-v1', model_id: 'mock-v1', latency_ms: 12, error_category: null, finish_reason: 'stop' }],
   total_latency_ms: 18,
   total_cost_usd: '0',
   known_cost_usd: '0',
@@ -91,8 +91,8 @@ test('invalid input and failed requests preserve a draft for an explicit retry',
         total_cost_usd: null, known_cost_usd: '0.002', reserved_cost_usd: '0.25', cost_complete: false,
         total_latency_ms: 3200, escalation_reason: 'First generation timed out.',
         attempts: [
-          { model_key: 'cheap-fixture', latency_ms: 2000, error_category: 'timeout', finish_reason: 'error' },
-          { model_key: 'strong-fixture', latency_ms: 900, error_category: null, finish_reason: 'stop' },
+          { model_key: 'cheap-fixture', model_id: 'gemini-3.5-flash-lite', latency_ms: 2000, error_category: 'timeout', finish_reason: 'error' },
+          { model_key: 'strong-fixture', model_id: 'claude-sonnet-5-5', latency_ms: 900, error_category: null, finish_reason: 'stop' },
         ],
         route_decisions: [{ selected_key: 'strong-fixture', reason: 'Available stronger candidate within the remaining ceiling.' }],
       } })
@@ -113,12 +113,15 @@ test('invalid input and failed requests preserve a draft for an explicit retry',
   await composer.press('Enter')
   await expect(page.getByText('Offline replay: The answer is 42.', { exact: true })).toBeVisible()
   await expect(page.getByRole('alert')).toHaveCount(0)
+  await expect(page.getByText('Unverified · claude-sonnet-5-5 · 3.20 s', { exact: false })).toBeVisible()
   await page.locator('summary').click()
   await expect(page.getByText('reasoning / hard', { exact: true })).toBeVisible()
   await expect(page.getByText('Incomplete · known $0.002', { exact: true })).toBeVisible()
   await expect(page.getByText('$0.25', { exact: true })).toBeVisible()
-  await expect(page.getByText('cheap-fixture', { exact: true })).toBeVisible()
-  await expect(page.getByText('strong-fixture', { exact: true })).toBeVisible()
+  await expect(page.getByText('gemini-3.5-flash-lite', { exact: true })).toBeVisible()
+  await expect(page.getByText('claude-sonnet-5-5', { exact: true })).toBeVisible()
+  await expect(page.getByText('Attempt 1: gemini-3.5-flash-lite', { exact: false })).toBeVisible()
+  await expect(page.getByText('Attempt 2: claude-sonnet-5-5', { exact: false })).toBeVisible()
   await screenshot(page, testInfo, 'details')
   expect(requestCount).toBe(2)
 })

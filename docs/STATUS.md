@@ -1,6 +1,6 @@
 # Arbiter implementation status
 
-Updated: 2026-10-21.
+Updated: 2026-10-22.
 
 - Current phase: 07 — controlled benchmark, **BLOCKED on Google generation billing**.
 - Repository/default branch: [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), `master`.
@@ -11,6 +11,14 @@ Updated: 2026-10-21.
 - Next action: restore billing for the Google API project used by GOOGLE_API_KEY (generation returns HTTP 402). Then verify only the affected provider within the remaining USD 5 authorization, record any development/held-out budget reallocation before execution, complete pending development work without replaying completed cases, freeze and run the held-out comparison, review ten triplets, and request final independent review. No Phase 08 implementation before Phase 07 merge.
 - Docker Desktop cannot start. Installed PostgreSQL 17 with Homebrew and started an isolated cluster at `/private/tmp/arbiter-phase07-postgres` on `127.0.0.1:55432`; separate `arbiter_test` and `arbiter_benchmark` databases, user `arbiter`. Existing Docker data and root `.env` remain unchanged. Do not run fixtures against the research database.
 - All four provider credentials are configured (values not logged). Official model/price references rechecked before freeze; successful previous integration evidence is reused. Phase 07 development and one affected-provider diagnostic ran; accounting and blocker are recorded below.
+
+## Model-name display fix (2026-10-22)
+
+User-requested small UI correction on `phase/07-benchmark`: answer summaries, first/final model fields, routing explanations, and attempts now display the exact `model_id` already returned by the API instead of the internal routing key. No backend, provider, or benchmark behavior changed.
+
+- `npm run typecheck`, `npm run lint`, and `npm run build` from `frontend`: passed.
+- `CAPTURE_SCREENSHOTS=1 SCREENSHOT_PHASE=model-ids npm run test:e2e -- --grep 'invalid input'`: **2 passed**, desktop and mobile, offline fixtures only. The sandbox initially blocked the local test server; the permitted rerun passed. [Desktop](screenshots/phase-model-ids-details-desktop.png) and [mobile](screenshots/phase-model-ids-details-mobile.png) screenshots visually checked.
+- Fix and evidence committed together as `fix(ui): show exact model IDs in answer details` and immediately pushed to existing draft [PR #8](https://github.com/1RaghavM/arbiter/pull/8). No paid checks. Phase 07 remains blocked on billing; no merge or next-phase work is included. Next UI action: view an answer with the updated frontend.
 
 ## Phase 07 results and live blocker
 

@@ -10,7 +10,7 @@ export type ChatResult = {
   cost_complete: boolean
   status: 'passed' | 'quality_failed' | 'unverified'
   analysis: { task: string; difficulty: string; reasoning: string; confidence: number | null; source: string } | null
-  attempts: { model_key: string; latency_ms: number; error_category: string | null; finish_reason: string }[]
+  attempts: { model_key: string; model_id: string; latency_ms: number; error_category: string | null; finish_reason: string }[]
   escalation_reason: string | null
   route_decisions: { selected_key: string | null; reason: string }[]
   warnings: string[]
@@ -72,6 +72,7 @@ export function isChatResult(result: ChatResult): boolean {
         && result.analysis.confidence >= 0 && result.analysis.confidence <= 1))
     && Array.isArray(result.attempts) && result.attempts.every(attempt => attempt
       && typeof attempt.model_key === 'string' && Number.isFinite(attempt.latency_ms) && attempt.latency_ms >= 0
+      && typeof attempt.model_id === 'string'
       && typeof attempt.finish_reason === 'string'
       && (attempt.error_category === null || typeof attempt.error_category === 'string'))
     && Array.isArray(result.route_decisions) && result.route_decisions.every(route => route
