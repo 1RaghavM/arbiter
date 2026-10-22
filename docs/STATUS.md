@@ -36,7 +36,7 @@ Expanded answer details show task/difficulty/source/confidence, first/final mode
 - Final serial `CAPTURE_SCREENSHOTS=1 npm run test:e2e`: **6 passed** (three flows at 1280px desktop and 390px mobile). Covers two-turn context, keyboard input, duplicate prevention, new chat, invalid input, 503/retry, incomplete cost/escalation metadata, result empty/populated/error states, manual refresh and narrow-table keyboard scrolling. A preceding concurrent test attempt collided in temporary trace artifacts; the serial rerun passed. All API traffic is intercepted, including an unmatched-request blocker; no paid calls.
 - Eight screenshots visually inspected: [chat desktop](screenshots/phase-06-chat-desktop.png), [mobile](screenshots/phase-06-chat-mobile.png), [details desktop](screenshots/phase-06-details-desktop.png), [mobile](screenshots/phase-06-details-mobile.png), [error desktop](screenshots/phase-06-error-desktop.png), [mobile](screenshots/phase-06-error-mobile.png), [results desktop](screenshots/phase-06-results-desktop.png), [mobile](screenshots/phase-06-results-mobile.png). Fixtures are explicit offline evidence, not live research results. Earlier cleanup screenshots are preserved.
 - Delegation: API agent implemented benchmark reads/tests; UI agent implemented components; browser agent implemented regression suite and CI; separate reviewer audits the full PR and owns merge. API agent's independent frontend review and separate reviewer's initial full review found no blockers.
-- Commits, each immediately pushed with configured user as sole author/committer: `e5e4389` benchmark API, `2bc74b9` interface, `a299293` browser suite/evidence. Documentation follows in its own immediately pushed commit.
+- Commits, each immediately pushed with configured user as author/committer: `e5e4389` benchmark API, `2bc74b9` interface, `a299293` browser suite/evidence. Documentation follows in its own immediately pushed commit.
 - Requirements advanced: R01, R10, R13, R14. No changes to provider integrations, routing policy, or paid checks. Independent scoring/three-strategy results remain Phase 07; deployment access protection remains Phase 08.
 
 ## Local live setup fix (2026-10-11)
@@ -60,7 +60,7 @@ Live requests load one content-addressed compatible history snapshot. Routing us
 - One actual CLI job: `DATABASE_URL=postgresql://arbiter:arbiter@localhost:5432/arbiter_test .venv/bin/python -m app.jobs benchmark --dataset ../benchmarks/dev.jsonl --budget-usd 0.25 --request-budget-usd 0.25 --mock`. Job `f5b544f2-221f-4f0f-8926-e5a93dbba501` completed all six cases, all mock/unverified, USD 0. Separate `benchmark --resume ID` and `report ID` processes returned the identical report with one attempt per case. [Sanitized evidence](phase-05-mock-job.json). This is persistence/runner evidence, not a live research benchmark.
 - Independent reviews fixed SQL bucket precedence, frozen policy/rubric/classifier validation before resume, retention of uncertain attempt provenance and partial known costs, and incorrect complete-cost reporting before crash recovery. Reviewers found no remaining material code issue; final PR CI/head remains the merge gate.
 - Delegation: history agent implemented history/router with PostgreSQL tests and independently reviewed job transaction/accounting logic; jobs agent implemented CLI/schema/dataset/tests; reviewer audited both and owns merge. Root integrated storage/pipeline, ran full gates and CLI evidence.
-- Commits, each immediately pushed: `19b694b` historical routing, `a960305` frozen resumable jobs/integration. Documentation/evidence follows; `git log -1` identifies that commit. User remains sole author/committer.
+- Commits, each immediately pushed: `19b694b` historical routing, `a960305` frozen resumable jobs/integration. Documentation/evidence follows; `git log -1` identifies that commit.
 - [CI on a960305](https://github.com/1RaghavM/arbiter/actions/runs/38163774356) passed backend and frontend. Secret-value and whitespace checks passed. Demo database migrated and ordinary API restored in mock mode.
 - No frontend behavior changed in this phase; prior browser evidence applies and CI reruns frontend gates. No paid API calls. The job command has no HTTP trigger; independent scoring/three-strategy held-out experiment remains Phase 07. Online history is a biased proxy and reservations are not invoice guarantees.
 
@@ -74,7 +74,7 @@ Fixed Anthropic structured evaluation now checks each usable answer, with determ
 - Offline controlled escalation in `arbiter_test`: initial Google failure → Anthropic pass, five stages and two attempts; simulated costs/grades clearly labeled and excluded from research. [Fixture](phase-04-controlled.json). Keyboard submission and desktop/mobile labels passed using this replay without new paid calls. [Desktop](screenshots/phase-04-desktop.png), [mobile](screenshots/phase-04-mobile.png). Normal free mock API restored afterward.
 - Delegation: provider agent implemented evaluator and structured provider output; UI/pipeline agent implemented bounded orchestration and focused tests; review agent independently reviewed storage, evaluator and connected pipeline. Root integrated, checked PostgreSQL/UI, and ran the one bounded live request.
 - Review fixed missing judge reservation before generation and preservation of original provider errors when escalation is unavailable. Final code review found no remaining blockers; final PR head/CI review remains the merge gate.
-- Commits, immediately pushed: `eea2b69` storage, `bef97bd` evaluator, `6179d61` bounded pipeline, `e655cce` UI/screenshots. Documentation/evidence follows; `git log -1` identifies that commit. User is sole author/committer.
+- Commits, immediately pushed: `eea2b69` storage, `bef97bd` evaluator, `6179d61` bounded pipeline, `e655cce` UI/screenshots. Documentation/evidence follows; `git log -1` identifies that commit.
 - Limits: online judge approval is a biased quality signal, not factual proof; provisional priors remain uncalibrated. USD 0.25 is a conservative ceiling, not expected spend. Timeout billing may be unknown; provider limits remain necessary. No history/jobs or benchmark comparison yet.
 
 ## Phase 03 results
@@ -87,7 +87,7 @@ Live chat now classifies with official Jev and selects a model using a pure, ins
 - The difficult answer reached 1,024 tokens and is labeled truncated/unverified. Priors are engineering assumptions, not measured pass rates; no quality/savings claim or held-out tuning. No evaluator/escalation implementation yet.
 - Delegation: provider agent implemented/tested Jev; UI agent implemented/tested the pure router and independently reviewed Jev; review agent reviewed pipeline/persistence and merged prior PR #3. Root integrated, checked UI, and made the bounded live calls.
 - Reviews fixed unexpected-model pricing (unknown cost), exhausted post-classifier deadline (504), and added persistence-failure coverage before generation. Follow-up review found no blockers. No extra paid checks were used.
-- Commits, each pushed immediately: `809641b` standing workflow/start; `602172a` Jev; `dcb7f82` routing/persistence; `93dce0f` UI/screenshots. Final documentation/evidence commit follows; `git log -1` identifies it. All user-authored, no assistant trailers.
+- Commits, each pushed immediately: `809641b` standing workflow/start; `602172a` Jev; `dcb7f82` routing/persistence; `93dce0f` UI/screenshots. Final documentation/evidence commit follows; `git log -1` identifies it.
 - Mock API restored at localhost:8000 and Vite at localhost:5173; replay fixture stopped. Keys remain in ignored local .env, never committed or exposed in the frontend.
 
 ## Previous phase evidence (Phase 02)
@@ -119,7 +119,7 @@ Commands run from `backend/` unless otherwise indicated. `.venv/bin` uses the lo
 | `npm run typecheck`, `npm run lint`, `npm run build` from frontend | PASS |
 | `docker compose up -d --wait db` from root | PASS: local PostgreSQL 17.6 healthy; existing arbiter_test database reused |
 | Browser, 1280×900 and 390×844 | PASS: mock two-turn context, pending controls, live missing-key disablement, config failure/retry, factual known/unknown cost and truncation labels using an explicitly labeled offline UI fixture |
-| `git diff --check`, relative documentation links, staged files/attribution | PASS: named files reviewed; sole configured user author/committer, no assistant trailers or private artifacts |
+| `git diff --check`, relative documentation links, staged files/attribution | PASS: named files reviewed; configured user author/committer, no private artifacts |
 | [GitHub CI on UI commit 01bce09](https://github.com/1RaghavM/arbiter/actions/runs/38159114544) | PASS: backend with PostgreSQL and frontend; final documentation commit also runs CI |
 
 Screenshots: [desktop mock](screenshots/phase-02-desktop.png), [mobile mock](screenshots/phase-02-mobile.png), [live credentials blocked](screenshots/phase-02-live-blocked.png), [configuration error](screenshots/phase-02-config-error.png), [offline UI fixture](screenshots/phase-02-offline-fixture.png). The last screenshot is **not** live provider evidence; its synthetic records are confined to `arbiter_test`.
@@ -153,7 +153,7 @@ The ordinary mock API/frontend and PostgreSQL were restored and left running at 
 
 ## Commits and publishing
 
-Each commit uses `1RaghavM` as sole author/committer, with no assistant co-author trailers, and was immediately pushed before making another commit.
+Each commit uses `1RaghavM` as author/committer and was immediately pushed before making another commit.
 
 | Commit | Change |
 | --- | --- |

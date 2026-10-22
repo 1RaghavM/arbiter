@@ -29,7 +29,7 @@ The user has given standing authorization (2026-10-11) for a subagent to review 
 - Never mix two phases in one PR. Do not stack later phases on an unmerged phase by default.
 - Aim for 3–6 meaningful commits per phase when the work supports it. Split suggested milestones into independently reviewable slices, keeping each change with its relevant tests. Small documentation-only updates may be one commit. Do not create empty commits or artificial splits to meet a quota.
 - Immediately push after every commit, including documentation and status commits; verify the push succeeded before the next commit. Do not batch local commits for an end-of-phase push.
-- Use the user's configured Git identity as the sole author and committer. Verify it before committing; never substitute a bot identity or add `Co-authored-by` trailers for Codex, OpenAI, or any assistant. Do not rewrite existing history to change attribution.
+- Use the user's configured Git identity as the author and committer. Verify it before committing; never substitute a bot identity. Do not rewrite existing history to change attribution.
 - Examples: `feat(api): add mock chat endpoint`, `test(router): cover tie breaking`, `docs: record phase 03 results`.
 - Stage named files or review the complete staged diff before committing. Never commit .env, keys, private prompts, generated datasets with secrets, or build artifacts.
 - Do not force-push, rewrite shared history, discard unrelated changes, or merge a PR without authorization.
