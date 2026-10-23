@@ -12,6 +12,15 @@ Updated: 2026-10-22.
 - Docker Desktop cannot start. Installed PostgreSQL 17 with Homebrew and started an isolated cluster at `/private/tmp/arbiter-phase07-postgres` on `127.0.0.1:55432`; separate `arbiter_test` and `arbiter_benchmark` databases, user `arbiter`. Existing Docker data and root `.env` remain unchanged. Do not run fixtures against the research database.
 - All four provider credentials are configured (values not logged). Official model/price references rechecked before freeze; successful previous integration evidence is reused. Phase 07 development and one affected-provider diagnostic ran; accounting and blocker are recorded below.
 
+## Haiku easy-task candidate (2026-10-22)
+
+User-requested addition on `phase/07-benchmark`: `haiku` / `claude-haiku-5-5` uses the existing Anthropic key and adapter, with a provisional easy-only quality prior of 0.85, 1,000 ms latency and rank 1. Medium/hard buckets exclude it. The ordinary weighted router selects it for the easy fixture; no prompt-specific rule was added. Sonnet remains the judge/strong baseline and OpenAI the fixed-cheap baseline. Verified ID/pricing/thinking references are in SOURCES.md. Haiku uses `thinking=disabled`; Sonnet keeps `between_tools`. Its 100k configured context ceiling bounds requests to the documented lower price tier.
+
+- `.venv/bin/pytest tests/test_config.py tests/test_routing.py tests/test_providers.py`: **94 passed**, including Haiku SDK payload/cost and easy/medium/hard routing cases. `.venv/bin/pytest tests/test_evaluated.py tests/test_evaluation.py`: **72 passed**. All provider traffic was faked. An initial command referenced nonexistent `tests/test_pipeline.py` and collected no tests; the correct pipeline suite is `test_evaluated.py`.
+- `.venv/bin/ruff check .` and `.venv/bin/ruff format --check .`: passed (31 files). No frontend code changed.
+- Restarted local backend at `127.0.0.1:8000`; startup succeeded and `GET /api/config` lists Haiku with configured credentials. This is not proof of live Haiku account access: no paid call was made. Next action: try an easy prompt in the local UI; the new adapter is loaded.
+- Commit `feat(models): add Haiku 5.5 for easy tasks`, immediately pushed to existing draft [PR #8](https://github.com/1RaghavM/arbiter/pull/8). Phase 07's Google billing blocker remains. Existing benchmark jobs retain their frozen three-model configuration; the protocol records the user-requested four-model change before any held-out freeze. No merge or next-phase work.
+
 ## Model-name display fix (2026-10-22)
 
 User-requested small UI correction on `phase/07-benchmark`: answer summaries, first/final model fields, routing explanations, and attempts now display the exact `model_id` already returned by the API instead of the internal routing key. No backend, provider, or benchmark behavior changed.
