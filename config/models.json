@@ -12,7 +12,7 @@
       "additional_pricing": {
         "cached_input_usd_per_million": "0.10"
       },
-      "price_verified_at": "2026-10-11",
+      "price_verified_at": "2026-10-21",
       "source_url": "https://developers.openai.com/api/docs/models/gpt-4.1-mini",
       "prior_quality": {
         "easy": 0.85,
@@ -35,7 +35,7 @@
         "cached_input_usd_per_million": "0.10",
         "cache_write_usd_per_million": "2.50"
       },
-      "price_verified_at": "2026-10-11",
+      "price_verified_at": "2026-10-21",
       "source_url": "https://platform.claude.com/docs/en/models/sonnet-5-5/overview",
       "prior_quality": {
         "easy": 0.9,
@@ -57,12 +57,33 @@
       "additional_pricing": {
         "cached_input_usd_per_million": "0.03"
       },
-      "price_verified_at": "2026-10-11",
+      "price_verified_at": "2026-10-21",
       "source_url": "https://ai.google.dev/gemini-api/docs/pricing#gemini-3.5-flash-lite",
       "prior_quality": {
         "easy": 0.8,
         "medium": 0.7,
         "hard": 0.55
+      },
+      "prior_latency_ms": 1000,
+      "capability_rank": 1
+    },
+    {
+      "key": "haiku",
+      "provider": "anthropic",
+      "model_id": "claude-haiku-5-5",
+      "enabled": true,
+      "context_limit": 100000,
+      "max_output_tokens": 1024,
+      "input_usd_per_million": "0.10",
+      "output_usd_per_million": "0.50",
+      "additional_pricing": {
+        "cached_input_usd_per_million": "0.01",
+        "cache_write_usd_per_million": "0.125"
+      },
+      "price_verified_at": "2026-10-22",
+      "source_url": "https://platform.claude.com/docs/en/models/haiku-5-5/overview",
+      "prior_quality": {
+        "easy": 0.85
       },
       "prior_latency_ms": 1000,
       "capability_rank": 1

@@ -1,6 +1,6 @@
 # Arbiter phase build line
 
-Complete phases in order. Each row is one branch, meaningful incremental commits (usually 3–6), one PR, and a review/merge boundary. Suggested commits below are milestones that may be split into coherent slices with their tests. Push immediately after every commit and use the user as sole author, without assistant co-author trailers; follow AGENTS.md when push access is blocked. Standing user authorization recorded in AGENTS.md permits a subagent to review and merge passing phase PRs, followed by the next phase. Start every new phase from the updated default branch after its dependency is merged.
+Complete phases in order. Each row is one branch, meaningful incremental commits (usually 3–6), one PR, and a review/merge boundary. Suggested commits below are milestones that may be split into coherent slices with their tests. Push immediately after every commit; follow AGENTS.md when push access is blocked. Standing user authorization recorded in AGENTS.md permits a subagent to review and merge passing phase PRs, followed by the next phase. Start every new phase from the updated default branch after its dependency is merged.
 
 | Phase | Branch | Working result |
 | --- | --- | --- |

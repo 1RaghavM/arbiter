@@ -8,7 +8,7 @@ import httpx2
 import pytest
 
 from app import providers
-from app.config import ModelConfig
+from app.config import ModelConfig, load_registry
 from app.schemas import Message
 
 RESPONSES = {
@@ -154,6 +154,20 @@ def run(provider):
         ],
         3.5,
     )
+
+
+def test_haiku_uses_supported_thinking_setting_and_its_own_prices(monkeypatch):
+    haiku = next(model for model in load_registry().models if model.key == "haiku")
+    payload = copy.deepcopy(RESPONSES["anthropic"])
+    payload["model"] = haiku.model_id
+    requests, _ = install_transport(monkeypatch, "anthropic", payload=payload)
+    result = providers.generate(haiku, [Message(role="user", content="Hi")], 3.5)
+    request = json.loads(requests[0].content)
+    assert request["model"] == "claude-haiku-5-5"
+    assert request["thinking"] == {"type": "disabled"}
+    assert result.error_category is None and result.text == "Blue"
+    assert result.model_key == "haiku" and result.model_id == haiku.model_id
+    assert result.cost_usd == Decimal("0.00001345")
 
 
 @pytest.mark.parametrize("provider", RESPONSES)

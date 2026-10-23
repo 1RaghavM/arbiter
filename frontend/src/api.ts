@@ -10,7 +10,7 @@ export type ChatResult = {
   cost_complete: boolean
   status: 'passed' | 'quality_failed' | 'unverified'
   analysis: { task: string; difficulty: string; reasoning: string; confidence: number | null; source: string } | null
-  attempts: { model_key: string; latency_ms: number; error_category: string | null; finish_reason: string }[]
+  attempts: { model_key: string; model_id: string; latency_ms: number; error_category: string | null; finish_reason: string }[]
   escalation_reason: string | null
   route_decisions: { selected_key: string | null; reason: string }[]
   warnings: string[]
@@ -42,6 +42,14 @@ export type Benchmark = {
   budget_usd: string
   budget_used_usd: string
   quality_basis: string
+  scoring_known_cost_usd?: string
+  scoring_cost_complete?: boolean
+  strategy_metrics?: Record<string, {
+    attempted_count: number
+    pass_count: number
+    total_runtime_cost_usd: string | null
+    median_latency_ms: number | null
+  }>
 }
 
 export function isMoney(value: unknown): value is string | number {
@@ -64,6 +72,7 @@ export function isChatResult(result: ChatResult): boolean {
         && result.analysis.confidence >= 0 && result.analysis.confidence <= 1))
     && Array.isArray(result.attempts) && result.attempts.every(attempt => attempt
       && typeof attempt.model_key === 'string' && Number.isFinite(attempt.latency_ms) && attempt.latency_ms >= 0
+      && typeof attempt.model_id === 'string'
       && typeof attempt.finish_reason === 'string'
       && (attempt.error_category === null || typeof attempt.error_category === 'string'))
     && Array.isArray(result.route_decisions) && result.route_decisions.every(route => route
@@ -110,6 +119,15 @@ export async function fetchBenchmarks(): Promise<Benchmark[]> {
     && Number.isInteger(job.online_pass_count) && job.online_pass_count >= 0
     && job.states && [job.states.pending, job.states.running, job.states.done, job.states.error, job.states.uncertain].every(value => Number.isInteger(value) && value >= 0)
     && typeof job.cost_complete === 'boolean' && isMoney(job.known_cost_usd)
+    && (job.scoring_known_cost_usd === undefined || isMoney(job.scoring_known_cost_usd))
+    && (job.scoring_cost_complete === undefined || typeof job.scoring_cost_complete === 'boolean')
+    && (job.strategy_metrics === undefined || job.strategy_metrics
+      && Object.entries(job.strategy_metrics).every(([strategy, metrics]) =>
+        ['fixed-cheap', 'fixed-strong', 'routed'].includes(strategy) && metrics
+        && Number.isInteger(metrics.attempted_count) && metrics.attempted_count >= 0
+        && Number.isInteger(metrics.pass_count) && metrics.pass_count >= 0 && metrics.pass_count <= metrics.attempted_count
+        && (metrics.total_runtime_cost_usd === null || isMoney(metrics.total_runtime_cost_usd))
+        && (metrics.median_latency_ms === null || Number.isFinite(metrics.median_latency_ms) && metrics.median_latency_ms >= 0)))
     && isMoney(job.budget_usd) && isMoney(job.budget_used_usd))) throw new Error()
   return rows
 }

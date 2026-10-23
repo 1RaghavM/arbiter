@@ -19,8 +19,7 @@ junior developer can maintain; add comments only for non-obvious reasons.
 Begin with Phase 00 unless repository evidence and STATUS prove it is complete.
 Implement only the earliest eligible phase. Use its own phase branch, create
 meaningful incremental commits (usually 3–6 per phase), checking each slice
-and pushing immediately after every commit. Use my configured Git identity as
-sole author/committer, with no Codex or assistant co-author trailers. If push
+and pushing immediately after every commit. Use my configured Git identity. If push
 access is missing, finish local edits and checks but do not create more commits.
 Run the phase gates, update STATUS, commit and push that update, and create one PR. Delegate review and merge to a subagent under the standing authorization; do not
 merge with unresolved findings or missing required gates. Later phases begin from
@@ -40,8 +39,8 @@ checks you will use. Then implement it. Do not stop after a plan.
 ```text
 The previous phase PR is merged. Read AGENTS.md and docs/STATUS.md, verify the actual
 git state, update the default branch safely, and implement the next eligible
-phase on its own branch. Check each slice, commit with my sole authorship and
-no assistant co-author trailers, and immediately push before the next commit.
+phase on its own branch. Check each slice, commit,
+and immediately push before the next commit.
 Run its gates, update STATUS, and create its PR. Delegate review and merge, then continue under the standing authorization.
 ```
 
