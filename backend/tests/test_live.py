@@ -250,9 +250,7 @@ def test_smoke_charges_unknown_reservation_and_stops_on_budget(monkeypatch):
 
     def run(pool, run_id, body, settings, registry, started, *, fixed=False):
         calls.append(settings.fixed_model_key)
-        cost = (
-            None if len(calls) == 1 else budget - reservations[2] - reservations[0] / 2
-        )
+        cost = None if len(calls) == 1 else budget - reservations[0]
         return ChatResult(
             run_id=run_id,
             status="unverified",

@@ -196,3 +196,29 @@ Each commit uses `1RaghavM` as author/committer and was immediately pushed befor
 | 08 | pending | — | — | — |
 
 Allowed states: pending, in_progress, blocked, ready_for_review, merged. A phase becomes a dependency only after its PR is merged.
+
+
+## Benchmark continuation infrastructure (2026-11-04)
+
+User requested benchmark-only work on a new branch and a concise PR. Branch
+`benchmark/pending-development` starts from `phase/07-benchmark` at `edc1d6e`;
+its PR targets that branch so the existing incomplete experiment remains separate.
+This is an explicit exception to the usual one-branch-per-phase workflow.
+
+- Added `export-pending JOB_ID --output PATH`: exports frozen, unattempted
+  development cases under the runner lock without changing records or reservations.
+  Rejects uncertain/running work and existing files. Commit `b43a8b3`, pushed immediately.
+- Focused PostgreSQL job tests: 22 passed. Ruff lint and format checks passed.
+- The prior `/private/tmp/arbiter-phase07-postgres` directory is absent and port
+  55432 is unavailable. Tests use a new isolated cluster on port 55433 and only
+  `arbiter_test`. No research database was created or reconstructed.
+- Live experiment remains BLOCKED: recorded Google billing failure, unverified
+  Haiku access, and unavailable original research database. No paid calls made.
+- Next action: restore research database records from a durable backup; inspect
+  the original job/accounting, restore Google billing, export the pending cases,
+  record the revised allocation, and verify affected providers before continuation.
+  No deployment or Phase 08 work. Preserve the pre-existing uncommitted restart note.
+
+- Final verification: 328 backend tests passed with real PostgreSQL and offline
+  providers; Ruff lint/format passed. Initial full run had one stale smoke-budget
+  fixture after Haiku was added; corrected it to exhaust the budget explicitly.

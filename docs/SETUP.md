@@ -219,3 +219,28 @@ uv run --frozen python -m app.jobs export JOB_ID --output /tmp/arbiter-rehearsal
 Fixed-cheap and fixed-strong each generate once, without classification or online evaluation. Routed uses the complete pipeline. Grading runs separately after generation, using fixed exact/JSON checks or a blinded rubric. Runtime and grading share one persisted budget but have separate usage subtotals and completeness flags. Interrupted work retains reservations; ordinary resume skips completed work and does not retry uncertain calls. `--retry-uncertain` is an explicit additional-spend action within the same ceiling.
 
 Exports produce `benchmark.md`, `benchmark.json`, a blinded `manual-review.json`, and a separate `manual-key.json`. Complete verdicts, notes and reviewer identity for at least ten triplets before the final export; do not consult the answer key before judging. Export preserves existing review entries and validates them against the actual answers. An explicit `--manual-reviews PATH` can supply the completed JSON. Agent review must be labeled as agent review, never human review. Unknown grades are nonpasses; unknown runtime costs make cost savings inconclusive. The UI shows compact independent per-strategy results for comparison jobs.
+
+### Continue an exhausted development job
+
+Export only unattempted pending cases from the original research database:
+
+```sh
+uv run --frozen python -m app.jobs export-pending ORIGINAL_JOB_ID \
+  --output /absolute/path/pending-development.jsonl
+```
+
+This makes no provider calls and does not change the source job or its reservations.
+It refuses active runners, running/uncertain cases, attempted pending cases, and
+existing output files. Keep the source job stopped after exporting: the file is a
+snapshot, not a transfer of ownership. Inspect it and record the new budget split
+in the protocol before creating a separately capped `benchmark --dataset` job.
+The new job captures current configuration/history; disclose changes from the
+source job. Do not resume both jobs or replay completed cases.
+
+Back up the research database before running paid jobs, and store the backup
+outside temporary directories. For example, with DATABASE_URL privately set to
+the research database, use `pg_dump --dbname="$DATABASE_URL" --format=custom
+--file=/persistent/private/path/arbiter-research.dump`. Keep dumps private and out
+of git. Restore into a separate database and inspect `report ORIGINAL_JOB_ID`
+before continuing. Exported reports preserve evidence but do not replace the
+runner's database records or retained spending reservations.
