@@ -1,0 +1,32 @@
+import importlib.util
+import socket
+from pathlib import Path
+
+import pytest
+
+spec = importlib.util.spec_from_file_location(
+    "launcher", Path(__file__).resolve().parents[2] / "scripts/app.py"
+)
+launcher = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(launcher)
+
+
+@pytest.mark.parametrize("provider", launcher.PROVIDERS)
+def test_one_provider_is_enough(provider):
+    launcher.validate({"JEV_API_KEY": "test", provider: "test", "DATABASE_URL": "test"})
+
+
+@pytest.mark.parametrize(
+    "values",
+    [{}, {"JEV_API_KEY": "test"}, {"OPENAI_API_KEY": "test", "DATABASE_URL": "test"}],
+)
+def test_missing_configuration(values):
+    with pytest.raises(RuntimeError, match="Edit .env"):
+        launcher.validate(values)
+
+
+def test_busy_port_is_not_reused():
+    with socket.socket() as occupied:
+        occupied.bind(("127.0.0.1", 0))
+        port = occupied.getsockname()[1]
+        assert launcher.free_port(port) != port
