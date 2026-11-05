@@ -167,3 +167,19 @@ Each commit uses `1RaghavM` as sole author/committer, with no assistant co-autho
 | 08 | pending | — | — | — |
 
 Allowed states: pending, in_progress, blocked, ready_for_review, merged. A phase becomes a dependency only after its PR is merged.
+
+## Requested local setup shortcut (2026-11-04)
+
+Standalone user-requested change on `feat/make-app`, based on `origin/master`
+(the repository has no `main` branch); no phase progression or benchmark work.
+`make app` checks the local env, requires Jev plus one generator, installs locked
+packages, migrates PostgreSQL, builds and serves the frontend with an API proxy,
+and prints the localhost URL after a successful database-backed readiness read.
+Busy ports use alternatives. Ctrl+C cleans up app servers; database data persists.
+
+Validation: `uv run --frozen pytest tests/test_launcher.py`: 7 passed;
+Ruff check and format check for launcher/tests passed. Frontend `npm run typecheck`,
+`npm run lint`, `npm run build`: passed. No paid requests or full Docker startup
+rehearsal performed. Next step: review the setup PR and try `make app` with Docker
+running and configured keys. Existing uncommitted benchmark STATUS work is
+preserved in stash `pre-make-app-status` on its original branch.
