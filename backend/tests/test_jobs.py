@@ -354,3 +354,49 @@ def test_report_keeps_one_snapshot_when_case_finishes_between_reads(pool):
     assert not report["cost_complete"]
     assert report["cases"][0]["result"]["known_cost_usd"] == "0"
     assert jobs.report_job(pool, job_id)["status"] == "completed"
+
+
+def test_export_pending_preserves_frozen_cases_and_accounting(
+    pool, monkeypatch, tmp_path
+):
+    calls = install_runner(monkeypatch, cost=None)
+    job_id = new_job(pool, n=3, budget=".25")
+    before = jobs.run_job(pool, job_id)
+    target = tmp_path / "pending.jsonl"
+    assert jobs.export_pending(pool, job_id, target) == {
+        "source_job_id": str(job_id),
+        "pending_cases": 2,
+    }
+    assert jobs.read_cases(target) == cases(3)[1:]
+    assert jobs.report_job(pool, job_id) == before
+    assert len(calls) == 1
+    with pytest.raises(FileExistsError):
+        jobs.export_pending(pool, job_id, target)
+
+
+@pytest.mark.parametrize(
+    "state, attempts", [("running", 1), ("uncertain", 1), ("pending", 1), ("done", 1)]
+)
+def test_export_pending_rejects_unsafe_or_empty_work(pool, tmp_path, state, attempts):
+    job_id = new_job(pool, n=1)
+    with pool.connection() as connection:
+        connection.execute(
+            "UPDATE benchmark_cases SET state=%s, attempts=%s WHERE job_id=%s",
+            (state, attempts, job_id),
+        )
+    target = tmp_path / "pending.jsonl"
+    with pytest.raises(ValueError):
+        jobs.export_pending(pool, job_id, target)
+    assert not target.exists()
+
+
+def test_export_pending_respects_runner_lock(pool, tmp_path):
+    job_id = new_job(pool)
+    with pool.connection() as connection:
+        connection.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))", (str(job_id),)
+        )
+        with pytest.raises(ValueError, match="runner"):
+            jobs.export_pending(pool, job_id, tmp_path / "pending.jsonl")
+    with pytest.raises(ValueError, match="development"):
+        jobs.export_pending(pool, uuid4(), tmp_path / "missing.jsonl")

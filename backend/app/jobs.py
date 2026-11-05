@@ -296,6 +296,40 @@ def recent_jobs(pool, limit):
     return summaries
 
 
+def export_pending(pool, job_id, output):
+    with pool.connection() as connection:
+        locked = connection.execute(
+            "SELECT pg_try_advisory_xact_lock(hashtextextended(%s, 0)) AS locked",
+            (str(job_id),),
+        ).fetchone()["locked"]
+        if not locked:
+            raise ValueError("This benchmark job already has a runner.")
+        job = connection.execute(
+            "SELECT * FROM benchmark_jobs WHERE id=%s", (job_id,)
+        ).fetchone()
+        if job is None or job["strategy"] != "routed":
+            raise ValueError("Pending export requires a development job.")
+        rows = connection.execute(
+            "SELECT case_id, state, attempts FROM benchmark_cases "
+            "WHERE job_id=%s ORDER BY ordinal",
+            (job_id,),
+        ).fetchall()
+        if any(row["state"] in ("running", "uncertain") for row in rows):
+            raise ValueError("Resolve running or uncertain cases before export.")
+        pending = {row["case_id"] for row in rows if row["state"] == "pending"}
+        if not pending or any(
+            row["attempts"] for row in rows if row["case_id"] in pending
+        ):
+            raise ValueError("Export requires unattempted pending cases.")
+        cases = validate_cases(job["dataset"])
+        # Exclusive creation preserves any previously reviewed continuation file.
+        with Path(output).open("x") as destination:
+            for case in cases:
+                if case.id in pending:
+                    destination.write(case.model_dump_json() + "\n")
+    return {"source_job_id": str(job_id), "pending_cases": len(pending)}
+
+
 def run_job(pool, job_id, retry_uncertain=False):
     # The session lock excludes a second runner without holding a transaction open.
     with pool.connection() as lease:
@@ -663,6 +697,9 @@ def main():
     export.add_argument("job_id", type=UUID)
     export.add_argument("--output", required=True)
     export.add_argument("--manual-reviews")
+    pending = commands.add_parser("export-pending")
+    pending.add_argument("job_id", type=UUID)
+    pending.add_argument("--output", required=True)
     args = parser.parse_args()
     load_environment()
     try:
@@ -670,7 +707,10 @@ def main():
         if not url:
             raise ValueError("Set DATABASE_URL first.")
         with db.create_pool(url) as pool:
-            if args.command == "report":
+            if args.command == "export-pending":
+                print(json.dumps(export_pending(pool, args.job_id, args.output)))
+                return 0
+            elif args.command == "report":
                 output = report_job(pool, args.job_id)
             elif args.command == "export":
                 from app.comparison_report import write_report
