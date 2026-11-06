@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { RunDetails } from '@/components/RunDetails'
+import { BenchmarkDetails } from '@/components/BenchmarkDetails'
 import { costLabel, fetchBenchmarks, fetchRuns, latencyLabel, qualityLabel, type Benchmark, type Run } from '@/api'
 
 export function ResultsView() {
@@ -79,13 +81,13 @@ export function ResultsView() {
           <thead className="bg-stone-100 text-xs text-stone-600"><tr>
             {['Select', 'Run / mode', 'Quality / model', 'Latency', 'Runtime cost'].map(label => <th scope="col" key={label} className="px-4 py-3 font-medium">{label}</th>)}
           </tr></thead>
-          <tbody>{runs.map(run => <tr key={run.id} className="border-t align-top">
+          <tbody>{runs.map(run => <Fragment key={run.id}><tr className="border-t align-top">
             <td className="px-4 py-3"><input type="checkbox" aria-label={`Select run ${run.id}`} disabled={summarizing || !['passed', 'quality_failed', 'unverified', 'error'].includes(run.status)} checked={selected.includes(run.id)} onChange={event => setSelected(event.target.checked ? [...selected, run.id] : selected.filter(id => id !== run.id))} /></td>
-            <td className="px-4 py-3"><time className="whitespace-nowrap" dateTime={run.created_at}>{new Date(run.created_at).toLocaleString()}</time><p className="text-xs text-stone-600">{run.mode}</p><details><summary className="cursor-pointer text-xs">Run ID</summary><p className="max-w-48 break-all text-xs">{run.id}</p></details></td>
+            <td className="px-4 py-3"><time className="whitespace-nowrap" dateTime={run.created_at}>{new Date(run.created_at).toLocaleString()}</time><p className="text-xs text-stone-600">{run.mode}</p></td>
             <td className="px-4 py-3"><p>{qualityLabel(run.status)}</p><p className="text-xs text-stone-600">{run.final_model ?? 'No model'}</p></td>
             <td className="whitespace-nowrap px-4 py-3">{latencyLabel(run.total_latency_ms)}</td>
             <td className="px-4 py-3">{costLabel(run.total_cost_usd, run.known_cost_usd, run.cost_complete)}{run.mode === 'mock' && <p className="text-xs text-stone-600">No API charge</p>}</td>
-          </tr>)}</tbody>
+          </tr><tr><td colSpan={5} className="px-4 pb-4"><div className="sticky left-4 w-[calc(100vw-4.5rem)] max-w-[43.25rem]"><RunDetails runId={run.id} /></div></td></tr></Fragment>)}</tbody>
         </table>
       </div>}
       <Button className="mt-3" variant="outline" disabled={runsLoading || summarizing} onClick={async () => {
@@ -114,8 +116,8 @@ export function ResultsView() {
           <thead className="bg-stone-100 text-xs text-stone-600"><tr>
             {['Job / strategy', 'Progress', 'Quality / comparison', 'Cost / budget'].map(label => <th scope="col" key={label} className="px-4 py-3 font-medium">{label}</th>)}
           </tr></thead>
-          <tbody>{benchmarks.map(job => <tr key={job.job_id} className="border-t align-top">
-            <td className="px-4 py-3"><time className="whitespace-nowrap" dateTime={job.created_at}>{new Date(job.created_at).toLocaleString()}</time><p className="text-xs text-stone-600">{job.strategy} · {job.mode}</p><details><summary className="cursor-pointer text-xs">Job ID</summary><p className="max-w-48 break-all text-xs">{job.job_id}</p></details></td>
+          <tbody>{benchmarks.map(job => <Fragment key={job.job_id}><tr className="border-t align-top">
+            <td className="px-4 py-3"><time className="whitespace-nowrap" dateTime={job.created_at}>{new Date(job.created_at).toLocaleString()}</time><p className="text-xs text-stone-600">{job.strategy} · {job.mode}</p></td>
             <td className="px-4 py-3"><p>{job.status.replaceAll('_', ' ')}</p><p className="text-xs text-stone-600">{job.states.done} done / {job.case_count} cases · {job.states.error} errors</p><p className="text-xs text-stone-600">{job.states.pending} pending · {job.states.running} running · {job.states.uncertain} uncertain</p></td>
             <td className="px-4 py-3">{job.strategy_metrics
               ? <ul className="min-w-52 space-y-2 text-xs">{Object.entries(job.strategy_metrics).map(([strategy, metrics]) => <li key={strategy}>
@@ -127,7 +129,7 @@ export function ResultsView() {
             <td className="px-4 py-3"><p>Runtime {costLabel(job.known_cost_usd, job.known_cost_usd, job.cost_complete)}</p>
               {job.scoring_known_cost_usd !== undefined && <p className="mt-1 text-xs text-stone-600">Scoring {costLabel(job.scoring_known_cost_usd, job.scoring_known_cost_usd, job.scoring_cost_complete === true)}</p>}
               <p className="mt-1 text-xs text-stone-600">Budget used / held: ${job.budget_used_usd} / ${job.budget_usd}</p></td>
-          </tr>)}</tbody>
+          </tr><tr><td colSpan={4} className="px-4 pb-4"><div className="sticky left-4 w-[calc(100vw-4.5rem)] max-w-[43.25rem]"><BenchmarkDetails jobId={job.job_id} /></div></td></tr></Fragment>)}</tbody>
         </table>
       </div>}
     </section>

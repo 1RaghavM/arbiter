@@ -194,6 +194,120 @@ test('results show persisted summaries, empty states, and explicit refresh failu
   await expect(page.getByRole('region', { name: 'Recent runs table' })).toContainText('mock-v1')
 })
 
+test('run and benchmark dropdowns load saved details on demand and retry without provider calls', async ({ page }, testInfo) => {
+  const run = {
+    id: mockReply.run_id, created_at: '2026-11-06T14:00:00Z', mode: 'live', status: 'unverified',
+    final_model: 'strong-fixture', total_latency_ms: 3200, total_cost_usd: null, known_cost_usd: '0.002', cost_complete: false,
+    messages: [{ role: 'user', content: 'What is 6 multiplied by 7?' }],
+    final_answer: 'Offline saved answer: 42. <script>window.fixtureExecuted = true</script>',
+    analysis: { task: 'reasoning', difficulty: 'hard', reasoning: 'high', confidence: null, source: 'fallback' },
+    route_decisions: [{ selected_key: 'strong-fixture', reason: 'Available stronger candidate within the remaining ceiling.' }],
+    escalation_reason: 'First generation timed out.', reserved_cost_usd: '0.25', error: null,
+    evaluations: [{ attempt: 2, model_key: 'strong-fixture', status: 'unknown', reason: 'The judge did not return a complete evaluation.' }],
+    calls: [{
+      sequence: 1, stage: 'generate', attempt: 1, model_id: 'gemini-3.5-flash-lite', status: 'error',
+      latency_ms: 2000, input_tokens: null, output_tokens: null, cost_usd: null, error: { code: 'timeout' },
+      output: { model_key: 'cheap-fixture', text: '', finish_reason: 'error' },
+    }, {
+      sequence: 2, stage: 'generate', attempt: 2, model_id: 'claude-sonnet-5-5', status: 'done',
+      latency_ms: 900, input_tokens: 100, output_tokens: 20, cost_usd: '0.002', error: null,
+      output: { model_key: 'strong-fixture', text: 'Offline saved attempt: 42.', finish_reason: 'stop' },
+    }],
+  }
+  const failedRun = {
+    ...run, id: '00000000-0000-4000-8000-000000000002', status: 'error', final_model: null,
+    final_answer: null, analysis: null, calls: [], evaluations: [], route_decisions: [],
+    escalation_reason: null, total_latency_ms: null, error: { code: 'provider_unavailable' },
+  }
+  const job = {
+    job_id: '00000000-0000-4000-8000-000000000003', created_at: run.created_at,
+    mode: 'mock', strategy: 'routed', status: 'blocked', case_count: 2,
+    states: { pending: 1, running: 0, done: 1, error: 0, uncertain: 0 },
+    online_pass_count: 0, known_cost_usd: '0', cost_complete: true, budget_usd: '0.25', budget_used_usd: '0',
+    quality_basis: 'Offline browser fixture; online judge proxy only.',
+    dataset_hash: 'offline-fixture-dataset', history_snapshot_id: null,
+    cases: [
+      { ordinal: 0, case_id: 'fixture-reasoning', strategy: 'routed', stage: 'runtime', state: 'done', run_id: run.id, attempts: 1 },
+      { ordinal: 1, case_id: 'fixture-pending', strategy: 'routed', stage: 'runtime', state: 'pending', run_id: null, attempts: 0 },
+    ],
+  }
+  let runReads = 0
+  let jobReads = 0
+  await page.route('**/api/runs?limit=20&offset=0', route => route.fulfill({ json: [run, failedRun] }))
+  await page.route('**/api/benchmarks?limit=20', route => route.fulfill({ json: [job] }))
+  await page.route(`**/api/runs/${run.id}`, route => {
+    runReads++
+    return runReads === 1
+      ? route.fulfill({ status: 503, json: { code: 'database_unavailable' } })
+      : route.fulfill({ json: run })
+  })
+  await page.route(`**/api/runs/${failedRun.id}`, route => route.fulfill({ json: failedRun }))
+  await page.route(`**/api/benchmarks/${job.job_id}`, route => {
+    jobReads++
+    return jobReads === 1 ? route.fulfill({ json: { job_id: job.job_id, cases: null } }) : route.fulfill({ json: job })
+  })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Runs & benchmarks', exact: true }).click()
+  const runs = page.getByRole('region', { name: 'Recent runs table' })
+  await expect(runs).toBeVisible()
+  expect(runReads).toBe(0)
+  expect(jobReads).toBe(0)
+  const details = runs.locator('details').first()
+  await details.locator('summary').first().focus()
+  await details.locator('summary').first().press('Enter')
+  await expect(details.getByRole('alert')).toContainText('Could not load run details.')
+  await details.getByRole('button', { name: 'Retry run details' }).click()
+  await expect(details.getByText('What is 6 multiplied by 7?', { exact: true })).toBeVisible()
+  await expect(details.getByText(run.final_answer, { exact: true })).toBeVisible()
+  await expect(details.getByText('reasoning / hard', { exact: true })).toBeVisible()
+  await expect(details.getByText('fallback · high reasoning · confidence unknown', { exact: true })).toBeVisible()
+  await expect(details.getByText('gemini-3.5-flash-lite', { exact: true })).toBeVisible()
+  await expect(details.getByText('claude-sonnet-5-5', { exact: true })).toBeVisible()
+  await expect(details.getByText('Incomplete · known $0.002', { exact: true })).toBeVisible()
+  await expect(details.getByText('$0.25', { exact: true })).toBeVisible()
+  await expect(details.getByText('Selected claude-sonnet-5-5:', { exact: false })).toBeVisible()
+  await expect(details.getByText('Attempt 2 · claude-sonnet-5-5 · unknown:', { exact: false })).toBeVisible()
+  await expect(details.getByText('Cost unknown', { exact: false })).toBeVisible()
+  await details.getByText('Attempt answer', { exact: true }).click()
+  await expect(details.getByText('Offline saved attempt: 42.', { exact: true })).toBeVisible()
+  expect(await page.evaluate(() => 'fixtureExecuted' in window)).toBe(false)
+  expect(await details.evaluate(element => {
+    const bounds = element.getBoundingClientRect()
+    return bounds.left >= 0 && bounds.right <= window.innerWidth
+  })).toBe(true)
+  await screenshot(page, testInfo, 'run-details')
+  await details.locator('summary').first().click()
+  await details.locator('summary').first().click()
+  await page.getByRole('button', { name: 'Chat', exact: true }).click()
+  await page.getByRole('button', { name: 'Runs & benchmarks', exact: true }).click()
+  await expect(details.getByText(run.final_answer, { exact: true })).toBeVisible()
+  expect(runReads).toBe(2)
+  const failedDetails = runs.locator('td > div > details').nth(1)
+  await failedDetails.locator('summary').click()
+  await expect(failedDetails.getByText('No answer was saved.', { exact: true })).toBeVisible()
+  await expect(failedDetails.getByText('provider_unavailable', { exact: true })).toBeVisible()
+  await expect(failedDetails.getByText('No calls recorded.', { exact: true })).toBeVisible()
+  const benchmarks = page.getByRole('region', { name: 'Benchmark jobs table' })
+  const jobDetails = benchmarks.locator('details').first()
+  await jobDetails.locator('summary').click()
+  await expect(jobDetails.getByRole('alert')).toContainText('Could not load benchmark details.')
+  await jobDetails.getByRole('button', { name: 'Retry benchmark details' }).click()
+  await expect(jobDetails.getByText('Dataset: offline-fixture-dataset', { exact: true })).toBeVisible()
+  await expect(jobDetails.getByText('No run recorded.', { exact: true })).toBeVisible()
+  const caseDetails = jobDetails.locator('li').first().locator('details').first()
+  await caseDetails.locator('summary').click()
+  await expect(caseDetails.getByText(run.final_answer, { exact: true })).toBeVisible()
+  expect(runReads).toBe(3)
+  expect(jobReads).toBe(2)
+  expect(await caseDetails.evaluate(element => {
+    const bounds = element.getBoundingClientRect()
+    return bounds.left >= 0 && bounds.right <= window.innerWidth
+  })).toBe(true)
+  await details.locator('summary').first().click()
+  await failedDetails.locator('summary').click()
+  await screenshot(page, testInfo, 'benchmark-details')
+})
+
 test('selected completed runs download a Markdown summary', async ({ page }, testInfo) => {
   await page.route('**/api/runs?*', route => route.fulfill({ json: [{
     id: mockReply.run_id, created_at: '2026-11-06T12:00:00Z', mode: 'mock',
