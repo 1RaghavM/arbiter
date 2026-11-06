@@ -45,3 +45,10 @@ one Haiku generation verification, with no automatic retries. Reserve the
 remaining USD 4.4773563 for later development/comparison; revise its split
 before execution. These smoke records are not development history or held-out
 quality evidence. Back up the new database after calls.
+
+Both provider checks passed with complete usage, USD 0.0000121 combined.
+Allocate USD 0.50 to a fresh two-case routed development batch (first two
+committed development cases), USD 0.25 per request. This is an explicitly
+authorized replay after data loss, not recovery of the old job. Historical
+retained USD 0.5026437 remains charged against the USD 5 ceiling. Reserve at
+most USD 3.9973442 for subsequent work until this batch accounting is known.
