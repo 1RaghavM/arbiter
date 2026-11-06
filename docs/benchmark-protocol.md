@@ -33,3 +33,15 @@ Review at least ten matched prompt triplets qualitatively using a deterministic 
 The USD 0.50 development pass stopped after two cases because Google failures supplied no usage and retained both USD 0.25 request reservations. An affected-provider diagnostic used the existing smoke pipeline with a USD 0.01 ceiling and retained USD 0.0026437; it returned HTTP 402. This extra diagnostic is included in the user's USD 5 total. No held-out job has been frozen or run. Known charges are incomplete; do not release unknown reservations or repeat finished development cases. Restore Google billing before further generation. At most USD 4.49 is available for subsequent work under the original aggregate ceiling; record the revised split between unfinished development, affected-provider verification, and held-out grading before execution. Do not silently retain the original USD 4.50 held-out allocation after this diagnostic. No thresholds, models or rubrics changed in response to these outcomes.
 
 The blocked development job cannot advance with `--resume` because its frozen ceiling is fully retained. Preserve the original job and create a separately capped continuation job containing exactly its 28 pending case IDs after billing is restored and the budget allocation is recorded. Both jobs and the diagnostic count toward the same USD 5 authorization. Do not silently alter frozen ceilings or replay the two completed cases.
+
+## Authorized replacement database, 2026-11-05
+
+The user authorized fresh calls after loss of the original research database.
+Preserve the exported historical evidence and USD 0.5026437 retained amount;
+new records are replacement work, never recovered original records. A new
+private durable cluster lives under ignored `.local/research-20261105`, port
+55434, database arbiter_research. First allocate USD 0.02 for one Google and
+one Haiku generation verification, with no automatic retries. Reserve the
+remaining USD 4.4773563 for later development/comparison; revise its split
+before execution. These smoke records are not development history or held-out
+quality evidence. Back up the new database after calls.
