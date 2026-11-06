@@ -96,8 +96,8 @@ export function latencyLabel(milliseconds: number | null) {
   return milliseconds === null ? 'Unknown' : `${(milliseconds / 1000).toFixed(2)} s`
 }
 
-export async function fetchRuns(): Promise<Run[]> {
-  const response = await fetch('/api/runs?limit=20', { signal: AbortSignal.timeout(10000) })
+export async function fetchRuns(offset = 0): Promise<Run[]> {
+  const response = await fetch(`/api/runs?limit=20&offset=${offset}`, { signal: AbortSignal.timeout(10000) })
   if (!response.ok) throw new Error()
   const rows = await response.json()
   if (!Array.isArray(rows) || !rows.every((run: Run) => run

@@ -89,3 +89,8 @@ The independent rubric scorer uses a separate blinded prompt and frozen scorer v
 - Verified [Haiku 5.5 ID, pricing and limits](https://platform.claude.com/docs/en/models/haiku-5-5/overview): `claude-haiku-5-5`; up to 100,000 prompt tokens costs USD 0.10/M input and 0.50/M output, with 0.01/M cache reads and 0.125/M five-minute writes. Arbiter caps this candidate's context at 100,000 tokens to stay within that tier instead of adding tiered accounting. Its normal 1,024-token output limit remains. The provider supports a 1M context, but prompts above 100k have higher prices.
 - Verified [thinking configuration](https://platform.claude.com/docs/en/build-with-claude/thinking): Haiku 5.5 accepts `disabled` at default medium effort and rejects Sonnet's `between_tools`. The existing Anthropic adapter selects `disabled` for this exact model. Credentials, endpoint, SDK, timeouts, retry policy and usage accounting are shared with Sonnet.
 - Easy-only quality 0.85, latency 1,000 ms and rank 1 are provisional engineering assumptions, not measured performance. No live Haiku success is claimed; verification uses offline SDK transport and routing tests. Existing benchmark snapshots remain unchanged.
+
+- 2026-11-06: Selected-run summaries reuse claude-sonnet-5-5 and the existing
+  registry prices ($2/M input, $10/M output; conservative cache-write bound).
+  Official model ID/pricing: https://platform.claude.com/docs/en/models/sonnet-5-5/overview
+  No paid verification was performed for this new report workflow.

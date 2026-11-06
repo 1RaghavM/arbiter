@@ -363,3 +363,21 @@ Required backend/frontend CI passed on both push and PR runs at that head:
 Reviewer merged PR #8 with a normal merge commit `683c0d6`, using the configured
 user as sole author and committer, and immediately pushed to master. GitHub
 confirms MERGED. No additional paid calls or Phase 08 work.
+
+## Selected-run Markdown summaries (2026-11-06)
+
+Standalone requested feature on feat/run-summaries; Phase 08 remains pending.
+Adds completed-run selection, older-run loading and one Sonnet 5.5 Markdown report
+with saved conversations/results and project context. Separate durable summary
+reservations/results prevent contamination of benchmark/history accounting.
+
+- Backend Ruff check passed; four focused fake-provider summary tests passed.
+- Frontend typecheck/lint/build passed; focused Playwright download test passed
+  on desktop and mobile (2 tests). Screenshots: phase-summary-summary-*.png.
+- Combined summary/DB/chat test invocation: 7 passed, 5 database setup errors:
+  PostgreSQL requires a password on both documented port 55434 and configured
+  port 55432. Migration/real PostgreSQL summary persistence is not yet verified.
+- No paid requests. Existing Sonnet adapter reused; summary output quality/live
+  workflow remains unverified. Apply migration 005 before use.
+- Concurrent expandable-details work was preserved separately. The user stopped
+  that task and requested focus on summaries.

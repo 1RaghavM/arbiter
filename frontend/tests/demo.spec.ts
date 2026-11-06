@@ -193,3 +193,24 @@ test('results show persisted summaries, empty states, and explicit refresh failu
   await expect(page.getByRole('alert').filter({ hasText: 'Could not load recent runs' })).toContainText('Previously loaded records')
   await expect(page.getByRole('region', { name: 'Recent runs table' })).toContainText('mock-v1')
 })
+
+test('selected completed runs download a Markdown summary', async ({ page }, testInfo) => {
+  await page.route('**/api/runs?*', route => route.fulfill({ json: [{
+    id: mockReply.run_id, created_at: '2026-11-06T12:00:00Z', mode: 'mock',
+    status: 'unverified', final_model: 'mock-v1', total_latency_ms: 18,
+    total_cost_usd: '0', known_cost_usd: '0', cost_complete: true,
+  }] }))
+  await page.route('**/api/benchmarks?*', route => route.fulfill({ json: [] }))
+  await page.route('**/api/run-summaries', async route => {
+    expect(route.request().postDataJSON()).toEqual({ run_ids: [mockReply.run_id] })
+    await route.fulfill({ contentType: 'text/markdown', body: '# Selected run summary' })
+  })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Runs & benchmarks' }).click()
+  await expect(page.getByRole('button', { name: 'Download summary (0)' })).toBeDisabled()
+  await page.getByRole('checkbox', { name: `Select run ${mockReply.run_id}` }).check()
+  await screenshot(page, testInfo, 'summary')
+  const downloaded = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Download summary (1)' }).click()
+  expect((await downloaded).suggestedFilename()).toBe('arbiter-run-summary.md')
+})

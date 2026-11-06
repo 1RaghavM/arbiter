@@ -146,3 +146,20 @@ A comparison freezes one held-out dataset, registry/settings, compatible develop
 Both runtime and grading stages use the existing job lock, committed reservation, uncertain recovery and explicit retry rules. Grading run/call records preserve independent research usage; job accounting keeps runtime and scoring subtotals/completeness separate while charging both to a shared job ceiling. A failed or incomplete answer remains in the comparison; an unavailable independent grade does not become a pass. Objective grading makes no provider call. Rubric grading sees prompt/reference/answer data without strategy or generator identity and never executes generated code.
 
 CLI preparation and execution are separate so the frozen experiment can be inspected before paid work. HTTP remains read-only. Exports include frozen inputs and per-case results; summaries compare matched cases and mark incomplete cost conclusions inconclusive. Blinded triplet review is a separate artifact, with reviewer identity/type recorded. The exact experiment protocol and approved aggregate budget are in [benchmark-protocol.md](benchmark-protocol.md).
+
+## Selected-run summary contract
+
+POST /api/run-summaries accepts {run_ids: UUID[]} (1–100 entries, deduplicated),
+loads completed records server-side, and returns a text/markdown attachment.
+The request body is capped at 10 KB; the assembled prompt at 200 KB, also subject
+to the existing conservative model context/cost estimate. One Sonnet 5.5 call,
+8,192 output tokens, existing generation timeout and REQUEST_BUDGET_USD apply.
+Missing credentials/budget, unfinished/missing runs, and oversized selections
+fail before provider work. Truncated output fails explicitly. No automatic retry.
+
+Migration 005 stores summary reservations before paid work and normalized provider
+results afterward in run_summaries, separate from routing history and benchmark
+metrics. Interrupted calls retain their reservation. The report uses saved run
+snapshots, which can overlap, and does not claim selected-sample benchmark validity.
+GET /api/runs adds a nonnegative offset for loading older records.
+Benchmark execution remains CLI-only; summary generation is a separate paid HTTP action.

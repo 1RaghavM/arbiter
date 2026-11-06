@@ -193,13 +193,13 @@ def finish_run(
         )
 
 
-def recent_runs(pool, limit):
+def recent_runs(pool, limit, offset=0):
     with pool.connection() as connection:
         return connection.execute(
             "SELECT id, created_at, mode, status, final_model, total_latency_ms, "
             "total_cost_usd, known_cost_usd, cost_complete FROM runs "
-            "ORDER BY created_at DESC, id DESC LIMIT %s",
-            (limit,),
+            "ORDER BY created_at DESC, id DESC LIMIT %s OFFSET %s",
+            (limit, offset),
         ).fetchall()
 
 

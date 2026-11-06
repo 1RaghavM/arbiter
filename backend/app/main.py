@@ -7,11 +7,11 @@ from uuid import UUID, uuid4
 
 import psycopg
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from psycopg_pool import PoolTimeout
 from pydantic import ValidationError
 
-from app import db, jobs
+from app import db, jobs, summaries
 from app.config import load_environment, load_registry, load_settings, model_status
 from app.pipeline import run_chat
 from app.schemas import ChatRequest, ChatResult
@@ -174,9 +174,11 @@ def public_config():
 
 @app.get("/api/runs")
 def recent_runs(
-    limit: Annotated[int, Query(ge=1, le=100)] = 20, pool=Depends(get_pool)
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    pool=Depends(get_pool),
 ):
-    return db.recent_runs(pool, limit)
+    return db.recent_runs(pool, limit, offset)
 
 
 @app.get("/api/runs/{run_id}")
@@ -214,3 +216,30 @@ def read_benchmark(job_id: UUID, pool=Depends(get_pool)):
                 "run_id": None,
             },
         ) from None
+
+
+async def read_summary(request: Request):
+    body = bytearray()
+    async for chunk in request.stream():
+        body.extend(chunk)
+        if len(body) > 10000:
+            summaries.fail(422, "Summary selection is too large.")
+    try:
+        return summaries.SummaryRequest.model_validate_json(body)
+    except ValidationError:
+        summaries.fail(422, "Select between 1 and 100 valid run IDs.")
+
+
+@app.post("/api/run-summaries")
+def create_summary(
+    body: Annotated[summaries.SummaryRequest, Depends(read_summary)],
+    pool=Depends(get_pool),
+):
+    settings, registry = runtime_config()
+    return Response(
+        summaries.summarize(pool, body, settings, registry),
+        media_type="text/markdown",
+        headers={
+            "Content-Disposition": 'attachment; filename="arbiter-run-summary.md"'
+        },
+    )
