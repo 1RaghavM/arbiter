@@ -52,3 +52,12 @@ committed development cases), USD 0.25 per request. This is an explicitly
 authorized replay after data loss, not recovery of the old job. Historical
 retained USD 0.5026437 remains charged against the USD 5 ceiling. Reserve at
 most USD 3.9973442 for subsequent work until this batch accounting is known.
+
+## Final execution allocation, 2026-11-06
+
+User requested completion of Phase 07. Retain historical USD 0.5026437 and
+new completed USD 0.004688834. Allocate USD 0.75 to the remaining 28 development
+cases and USD 3.74 to the single held-out comparison including scoring.
+The combined maximum is USD 4.997332534, below USD 5. Request ceiling remains
+USD 0.25. Do not replay the first two replacement development cases. Freeze
+held-out settings/history after development, without changing priors or rubrics.
