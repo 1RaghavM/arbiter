@@ -183,3 +183,9 @@ Ruff check and format check for launcher/tests passed. Frontend `npm run typeche
 rehearsal performed. Next step: review the setup PR and try `make app` with Docker
 running and configured keys. Existing uncommitted benchmark STATUS work is
 preserved in stash `pre-make-app-status` on its original branch.
+
+## Local launcher database fix (2026-11-05)
+
+User-requested follow-up on `feat/make-app`, independent of the blocked Phase 07 experiment. Local DATABASE_URL values now provision PostgreSQL using installed native binaries (including Homebrew 17), falling back to Compose. Native clusters persist under ignored `.local/postgres-PORT`; existing reachable databases are reused, occupied inaccessible ports and remote failures are reported without replacing them. New clusters do not restore historical research data.
+
+Validation: `uv run pytest tests/test_launcher.py -q`: 9 passed; Ruff check/format passed. A real temporary PostgreSQL cluster passed creation, stop/restart with a preserved row, and reuse. `make app` completed migrations, npm install/build, and API/proxied database-read readiness; app available on localhost:5173. No paid calls. Docker fallback was not exercised on this machine. Fix will be committed and immediately pushed; next action is review the launcher PR. Phase 07 billing gate remains unchanged.
