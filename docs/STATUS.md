@@ -37,9 +37,11 @@ changes and a push; no new phase branch, PR, merge, or Phase 08 progression.
   Screenshots are explicit offline fixtures; no live benchmark was started.
   Local research DB credentials did not allow a test connection, so all tests
   used the independent temporary cluster; research data was untouched.
-- No implementation blockers. Changes are recorded by
-  `feat(benchmarks): launch jobs from results and default to live`, followed by
-  the immediately pushed status commit recording the exact implementation SHA.
+- No implementation blockers. Implementation/evidence commit `2202205`
+  (`feat(benchmarks): launch jobs from results and default to live`) was immediately
+  pushed successfully to `origin/master`. The separate temporary PostgreSQL test
+  server was stopped after verification. No PR was created, per the requested
+  current-branch workflow. This status update is committed and immediately pushed.
   Next action: restart the API and refresh the frontend, then use
   **Runs & benchmarks → Run benchmark**. Keep the API running during jobs; after
   interruption use CLI resume with the existing uncertain-spend rules.
