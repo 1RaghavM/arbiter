@@ -1,0 +1,24 @@
+[
+  {
+    "model": "google",
+    "model_id": "gemini-3.5-flash-lite",
+    "run_id": "12955e4b-d56a-44e1-a9e5-835ee260a753",
+    "status": "ok",
+    "answer": "smoke OK",
+    "cost_usd": "0.0000068",
+    "cost_complete": true,
+    "reserved_cost_usd": "0.0026437",
+    "error": null
+  },
+  {
+    "model": "haiku",
+    "model_id": "claude-haiku-5-5",
+    "run_id": "bbff89ec-8427-4d05-a95f-dcfce9a46067",
+    "status": "ok",
+    "answer": "smoke OK",
+    "cost_usd": "0.0000053",
+    "cost_complete": true,
+    "reserved_cost_usd": "0.000546875",
+    "error": null
+  }
+]

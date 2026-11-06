@@ -4,20 +4,17 @@ Updated 21 October 2026.
 
 ## Implemented
 
-- **Application:** React/TypeScript chat frontend, FastAPI backend and PostgreSQL storage. Conversation context, loading, retry and new-chat behavior work.
-- **Providers:** verified live OpenAI, Anthropic and Google generation, plus Jev task/difficulty classification. Credentials remain server-side.
-- **Routing and evaluation:** deterministic selection using quality, estimated cost and latency; confidence fallback; structured judge scores; at most one escalation. Every paid attempt, usage estimate, failure and decision is persisted with bounded time and spending.
-- **History and jobs:** per-attempt historical estimates, frozen configuration/history snapshots, and a sequential benchmark CLI. Completed cases are skipped on resume; interrupted calls retain spending reservations. Phase 05 merged in PR #6.
+- React/TypeScript chat, FastAPI and PostgreSQL; context, loading, retry and new chat.
+- OpenAI, Anthropic and Google adapters, Jev classification, deterministic historical routing, bounded online evaluation and one escalation. Prior successful live checks are preserved.
+- Durable paid-call accounting, frozen resumable CLI jobs, expanded answer details, and recent-run/benchmark views. Phases 00–06 are merged.
+- Phase 07 code: 30 development + 30 held-out cases, three strategies, independent grading, seeded execution, frozen snapshots, shared spending ledger, report exports and strategy metrics.
 
-**Verification:** the last recorded full suite passed 261 tests, including real PostgreSQL. Phase 06 adds six passing desktop/mobile browser checks; CI passed all 264 backend tests with PostgreSQL on its API commit. Final PR review/CI is pending. A six-case mock job resumed without duplicates. Live routing worked; escalation was verified with an offline fixture.
+**Verification:** final runtime CI passed 318 backend tests with real PostgreSQL and six desktop/mobile browser tests, plus lint/type/build checks. A full free comparison rehearsal completed 90 runtime and 90 grading rows.
 
-## Remaining
+## Remaining and blocker
 
-- Finish final Phase 06 PR review/CI and merge; answer details and recent-run/benchmark tables are implemented.
-- Complete the 60-case dataset, compare routed and fixed-model strategies, independently grade answers, and publish cost/latency/quality results.
-- Add container packaging, same-origin serving, password sessions, request/concurrency limits, managed PostgreSQL and HTTPS deployment.
-- Finish deployment instructions and the demo handoff.
+- **Phase 07 is blocked:** Google generation returned HTTP 402 (Payment Required). Development stopped after two completed cases and 28 pending. Known usage is USD 0.005209634, incomplete; USD 0.5026437 is retained conservatively including the diagnostic. No held-out comparison or independent live grade exists.
+- Restore Google API billing, record the remaining budget allocation within the approved USD 5 total, finish the 28 pending cases in a separately capped continuation job (the original frozen ceiling is exhausted), freeze/run the three strategies, review ten matched triplets, and publish the measured report. Review and merge Phase 07.
+- Phase 08: Vercel deployment (user selected; CLI authenticated), container packaging, same-origin serving, password sessions, request/concurrency limits, managed PostgreSQL and HTTPS verification. Final instructions, requirement traceability and demo handoff remain. No hosting service purchased.
 
-Judge approval does not prove correctness; savings remain unmeasured. Reuse live evidence to minimize paid testing.
-
-Detailed evidence: [STATUS.md](STATUS.md). Technical contracts: [design.md](design.md).
+Judge approval does not prove correctness; savings remain unmeasured. [Detailed status](STATUS.md), [blocked report](../reports/benchmark.md), [technical contracts](design.md).

@@ -1,18 +1,47 @@
 # Arbiter implementation status
 
-Updated: 2026-10-21.
+Updated: 2026-11-05.
 
-- Current phase: 06 — demo interface, implemented; final CI/review pending.
+- Current phase: 07 — controlled benchmark, **complete; independent final review/merge pending**.
 - Repository/default branch: [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), `master`.
-- Phases 01–04 merged through PRs #2–#5; recorded checks are below.
-- Phase 05 [PR #6](https://github.com/1RaghavM/arbiter/pull/6) merged on 2026-10-11 at `15dc2b4`; confirmed against GitHub and fetched Git history on 2026-10-21.
-- Phase branch: `phase/06-demo-ui`, from updated `origin/master` at `15dc2b4`.
-- Authorization: user resumed phase progression on 2026-10-21 and authorized delegated implementation. Standing authorization permits independent subagent review/merge after required gates pass, then continuation from updated master.
-- Current PR: not opened yet.
-- Next action: independent subagent verifies final PR head and required CI, then merges. Start Phase 07 from updated master only after merge. Benchmark spending ceiling and hosting destination have been requested; no paid work or deployment has begun.
-- Existing uncommitted UI copy/layout cleanup from `codex/frontend-copy` is preserved and incorporated into Phase 06.
-- Testing preference: reuse successful live evidence, use offline fakes for failure paths, and rerun only affected checks. No paid calls are needed for Phase 06.
-- Local PostgreSQL is unavailable: `docker compose up -d --wait db` reports “Docker Desktop is unable to start.” Local full pytest: **218 passed, 46 skipped**; Ruff lint/format passed. [CI on e5e4389](https://github.com/1RaghavM/arbiter/actions/runs/39680222921) passed **264 tests with real PostgreSQL**, plus backend/frontend checks. Final UI/browser head still needs CI.
+- Phase 06 [PR #7](https://github.com/1RaghavM/arbiter/pull/7) merged at `8b681e8` after independent review and [final CI](https://github.com/1RaghavM/arbiter/actions/runs/39680736653): **264 backend tests with real PostgreSQL and six browser tests passed**, with all lint/type/build gates green. Merge author and committer are the configured user.
+- Phase branch: `phase/07-benchmark`, from fetched `origin/master` at `8b681e8`.
+- Authorization: user resumed delegated phase progression on 2026-10-21, approved **USD 5 total** for benchmark API work including independent grading, and selected **Vercel** for Phase 08. No hosting purchase is authorized or required by this selection.
+- Current PR: [#8](https://github.com/1RaghavM/arbiter/pull/8); final review pending after completed live gates.
+- Next action: independent reviewer verifies final evidence/current head and CI, then merges PR #8. Phase 08 has not started.
+- Docker Desktop cannot start. Installed PostgreSQL 17 with Homebrew and started an isolated cluster at `/private/tmp/arbiter-phase07-postgres` on `127.0.0.1:55432`; separate `arbiter_test` and `arbiter_benchmark` databases, user `arbiter`. Existing Docker data and root `.env` remain unchanged. Do not run fixtures against the research database.
+- All four provider credentials are configured (values not logged). Official model/price references rechecked before freeze; successful previous integration evidence is reused. Phase 07 development and one affected-provider diagnostic ran; accounting and blocker are recorded below.
+
+## Haiku easy-task candidate (2026-10-22)
+
+User-requested addition on `phase/07-benchmark`: `haiku` / `claude-haiku-5-5` uses the existing Anthropic key and adapter, with a provisional easy-only quality prior of 0.85, 1,000 ms latency and rank 1. Medium/hard buckets exclude it. The ordinary weighted router selects it for the easy fixture; no prompt-specific rule was added. Sonnet remains the judge/strong baseline and OpenAI the fixed-cheap baseline. Verified ID/pricing/thinking references are in SOURCES.md. Haiku uses `thinking=disabled`; Sonnet keeps `between_tools`. Its 100k configured context ceiling bounds requests to the documented lower price tier.
+
+- `.venv/bin/pytest tests/test_config.py tests/test_routing.py tests/test_providers.py`: **94 passed**, including Haiku SDK payload/cost and easy/medium/hard routing cases. `.venv/bin/pytest tests/test_evaluated.py tests/test_evaluation.py`: **72 passed**. All provider traffic was faked. An initial command referenced nonexistent `tests/test_pipeline.py` and collected no tests; the correct pipeline suite is `test_evaluated.py`.
+- `.venv/bin/ruff check .` and `.venv/bin/ruff format --check .`: passed (31 files). No frontend code changed.
+- Restarted local backend at `127.0.0.1:8000`; startup succeeded and `GET /api/config` lists Haiku with configured credentials. This is not proof of live Haiku account access: no paid call was made. Next action: try an easy prompt in the local UI; the new adapter is loaded.
+- Commit `feat(models): add Haiku 5.5 for easy tasks`, immediately pushed to existing draft [PR #8](https://github.com/1RaghavM/arbiter/pull/8). Phase 07's Google billing blocker remains. Existing benchmark jobs retain their frozen three-model configuration; the protocol records the user-requested four-model change before any held-out freeze. No merge or next-phase work.
+
+## Model-name display fix (2026-10-22)
+
+User-requested small UI correction on `phase/07-benchmark`: answer summaries, first/final model fields, routing explanations, and attempts now display the exact `model_id` already returned by the API instead of the internal routing key. No backend, provider, or benchmark behavior changed.
+
+- `npm run typecheck`, `npm run lint`, and `npm run build` from `frontend`: passed.
+- `CAPTURE_SCREENSHOTS=1 SCREENSHOT_PHASE=model-ids npm run test:e2e -- --grep 'invalid input'`: **2 passed**, desktop and mobile, offline fixtures only. The sandbox initially blocked the local test server; the permitted rerun passed. [Desktop](screenshots/phase-model-ids-details-desktop.png) and [mobile](screenshots/phase-model-ids-details-mobile.png) screenshots visually checked.
+- Fix and evidence committed together as `fix(ui): show exact model IDs in answer details` and immediately pushed to existing draft [PR #8](https://github.com/1RaghavM/arbiter/pull/8). No paid checks. Phase 07 remains blocked on billing; no merge or next-phase work is included. Next UI action: view an answer with the updated frontend.
+
+## Phase 07 results and live blocker
+
+Implemented 30 development + 30 held-out synthetic cases, objective and blinded rubric grading, fixed-cheap/fixed-strong/routed comparison, seeded order, frozen source/config/history, one durable runtime/scoring budget, resumable jobs, report export and independent strategy metrics in the UI. Independent pre-live review found no remaining code blockers after JSON numeric-equivalence and consistent database snapshot fixes. The final experiment is not complete.
+
+- [CI on 953852a](https://github.com/1RaghavM/arbiter/actions/runs/39682496504): **318 backend tests passed with real PostgreSQL; six desktop/mobile browser tests passed**. Ruff lint/format and frontend type/lint/build passed. Offline providers only. Prior full local run: 317 passed; the subsequent snapshot fix passed 22 focused tests and final CI adds the regression. No repeated broad paid integration suite.
+- Free CLI rehearsal in the test database: job `3205ac0b-9587-4b3f-aee4-d2b502bd941f` completed **90 runtime rows and 90 grading rows**, USD 0, with mock/no-research-conclusion labeling. Research records are in a separate database.
+- Paid development command: `DATABASE_URL=postgresql://arbiter@127.0.0.1:55432/arbiter_benchmark .venv/bin/python -m app.jobs benchmark --dataset ../benchmarks/dev.jsonl --budget-usd 0.50 --request-budget-usd 0.25`. Job `1a09bbc5-f8f0-470e-be44-f1ea50bc7b8b` stopped as blocked after two completed cases, with 28 pending. Both Google generation attempts failed without usage, then Anthropic escalation passed its online judge. Known cost **USD 0.005209634**, incomplete; the job correctly retains **USD 0.50**, not the known subtotal, against its ceiling. [Full synthetic development evidence](../reports/development.json).
+- One free official Google model metadata request returned HTTP 200 and supports generateContent. One affected-provider-only generation diagnostic through the existing smoke pipeline, capped at USD 0.01, returned **HTTP 402**. Run `54bdc268-0bb9-49a0-9b24-a1371c0130aa`; no usage, retained reservation **USD 0.0026437**. No retries. [Sanitized diagnostic](../reports/google-diagnostic.json). The exact error of the first two calls was not retained beyond `unavailable`; do not claim those statuses were observed as 402.
+- The original development job has exhausted its immutable USD 0.50 ceiling: `--resume` alone cannot advance it after billing is fixed. Preserve that job and its reservations. Prepare a separately capped continuation dataset/job containing exactly its 28 pending case IDs, with the revised total allocation recorded first; do not rerun the two completed cases or silently increase the frozen ceiling.
+- Aggregate conservative amount retained: **USD 0.5026437**; known usage subtotal **USD 0.005209634**. Actual charges remain incomplete. USD 4.4973563 remains below the approved USD 5 aggregate ceiling; reserve at most USD 4.49 for all subsequent work until an explicit revised allocation is recorded. No held-out calls, independent live grades, or manual triplet reviews exist yet. [Blocked benchmark report](../reports/benchmark.md).
+- UI checks include [desktop](screenshots/phase-07-results-desktop.png) and [mobile](screenshots/phase-07-results-mobile.png), visually reviewed and explicitly fixture evidence.
+- Commits, immediately pushed with user author/committer: `6430b64` protocol/pricing verification; `e2b283d` dataset/grading/runner/report; `4c69d8f` result UI; `953852a` consistent read snapshot. `b2d8517` preserves reviewed evidence/status, immediately pushed. A follow-up documentation commit records the created draft PR link.
+- Requirements advanced: R09–R11 and R14; R11's actual three-strategy experiment remains blocked. Vercel CLI is installed and authenticated, but deployment is Phase 08 and has not started. No hosting purchase or project creation.
 
 ## Phase 06 results
 
@@ -24,7 +53,7 @@ Expanded answer details show task/difficulty/source/confidence, first/final mode
 - Final serial `CAPTURE_SCREENSHOTS=1 npm run test:e2e`: **6 passed** (three flows at 1280px desktop and 390px mobile). Covers two-turn context, keyboard input, duplicate prevention, new chat, invalid input, 503/retry, incomplete cost/escalation metadata, result empty/populated/error states, manual refresh and narrow-table keyboard scrolling. A preceding concurrent test attempt collided in temporary trace artifacts; the serial rerun passed. All API traffic is intercepted, including an unmatched-request blocker; no paid calls.
 - Eight screenshots visually inspected: [chat desktop](screenshots/phase-06-chat-desktop.png), [mobile](screenshots/phase-06-chat-mobile.png), [details desktop](screenshots/phase-06-details-desktop.png), [mobile](screenshots/phase-06-details-mobile.png), [error desktop](screenshots/phase-06-error-desktop.png), [mobile](screenshots/phase-06-error-mobile.png), [results desktop](screenshots/phase-06-results-desktop.png), [mobile](screenshots/phase-06-results-mobile.png). Fixtures are explicit offline evidence, not live research results. Earlier cleanup screenshots are preserved.
 - Delegation: API agent implemented benchmark reads/tests; UI agent implemented components; browser agent implemented regression suite and CI; separate reviewer audits the full PR and owns merge. API agent's independent frontend review and separate reviewer's initial full review found no blockers.
-- Commits, each immediately pushed with configured user as sole author/committer: `e5e4389` benchmark API, `2bc74b9` interface, `a299293` browser suite/evidence. Documentation follows in its own immediately pushed commit.
+- Commits, each immediately pushed with configured user as author/committer: `e5e4389` benchmark API, `2bc74b9` interface, `a299293` browser suite/evidence. Documentation follows in its own immediately pushed commit.
 - Requirements advanced: R01, R10, R13, R14. No changes to provider integrations, routing policy, or paid checks. Independent scoring/three-strategy results remain Phase 07; deployment access protection remains Phase 08.
 
 ## Local live setup fix (2026-10-11)
@@ -48,7 +77,7 @@ Live requests load one content-addressed compatible history snapshot. Routing us
 - One actual CLI job: `DATABASE_URL=postgresql://arbiter:arbiter@localhost:5432/arbiter_test .venv/bin/python -m app.jobs benchmark --dataset ../benchmarks/dev.jsonl --budget-usd 0.25 --request-budget-usd 0.25 --mock`. Job `f5b544f2-221f-4f0f-8926-e5a93dbba501` completed all six cases, all mock/unverified, USD 0. Separate `benchmark --resume ID` and `report ID` processes returned the identical report with one attempt per case. [Sanitized evidence](phase-05-mock-job.json). This is persistence/runner evidence, not a live research benchmark.
 - Independent reviews fixed SQL bucket precedence, frozen policy/rubric/classifier validation before resume, retention of uncertain attempt provenance and partial known costs, and incorrect complete-cost reporting before crash recovery. Reviewers found no remaining material code issue; final PR CI/head remains the merge gate.
 - Delegation: history agent implemented history/router with PostgreSQL tests and independently reviewed job transaction/accounting logic; jobs agent implemented CLI/schema/dataset/tests; reviewer audited both and owns merge. Root integrated storage/pipeline, ran full gates and CLI evidence.
-- Commits, each immediately pushed: `19b694b` historical routing, `a960305` frozen resumable jobs/integration. Documentation/evidence follows; `git log -1` identifies that commit. User remains sole author/committer.
+- Commits, each immediately pushed: `19b694b` historical routing, `a960305` frozen resumable jobs/integration. Documentation/evidence follows; `git log -1` identifies that commit.
 - [CI on a960305](https://github.com/1RaghavM/arbiter/actions/runs/38163774356) passed backend and frontend. Secret-value and whitespace checks passed. Demo database migrated and ordinary API restored in mock mode.
 - No frontend behavior changed in this phase; prior browser evidence applies and CI reruns frontend gates. No paid API calls. The job command has no HTTP trigger; independent scoring/three-strategy held-out experiment remains Phase 07. Online history is a biased proxy and reservations are not invoice guarantees.
 
@@ -62,7 +91,7 @@ Fixed Anthropic structured evaluation now checks each usable answer, with determ
 - Offline controlled escalation in `arbiter_test`: initial Google failure → Anthropic pass, five stages and two attempts; simulated costs/grades clearly labeled and excluded from research. [Fixture](phase-04-controlled.json). Keyboard submission and desktop/mobile labels passed using this replay without new paid calls. [Desktop](screenshots/phase-04-desktop.png), [mobile](screenshots/phase-04-mobile.png). Normal free mock API restored afterward.
 - Delegation: provider agent implemented evaluator and structured provider output; UI/pipeline agent implemented bounded orchestration and focused tests; review agent independently reviewed storage, evaluator and connected pipeline. Root integrated, checked PostgreSQL/UI, and ran the one bounded live request.
 - Review fixed missing judge reservation before generation and preservation of original provider errors when escalation is unavailable. Final code review found no remaining blockers; final PR head/CI review remains the merge gate.
-- Commits, immediately pushed: `eea2b69` storage, `bef97bd` evaluator, `6179d61` bounded pipeline, `e655cce` UI/screenshots. Documentation/evidence follows; `git log -1` identifies that commit. User is sole author/committer.
+- Commits, immediately pushed: `eea2b69` storage, `bef97bd` evaluator, `6179d61` bounded pipeline, `e655cce` UI/screenshots. Documentation/evidence follows; `git log -1` identifies that commit.
 - Limits: online judge approval is a biased quality signal, not factual proof; provisional priors remain uncalibrated. USD 0.25 is a conservative ceiling, not expected spend. Timeout billing may be unknown; provider limits remain necessary. No history/jobs or benchmark comparison yet.
 
 ## Phase 03 results
@@ -75,7 +104,7 @@ Live chat now classifies with official Jev and selects a model using a pure, ins
 - The difficult answer reached 1,024 tokens and is labeled truncated/unverified. Priors are engineering assumptions, not measured pass rates; no quality/savings claim or held-out tuning. No evaluator/escalation implementation yet.
 - Delegation: provider agent implemented/tested Jev; UI agent implemented/tested the pure router and independently reviewed Jev; review agent reviewed pipeline/persistence and merged prior PR #3. Root integrated, checked UI, and made the bounded live calls.
 - Reviews fixed unexpected-model pricing (unknown cost), exhausted post-classifier deadline (504), and added persistence-failure coverage before generation. Follow-up review found no blockers. No extra paid checks were used.
-- Commits, each pushed immediately: `809641b` standing workflow/start; `602172a` Jev; `dcb7f82` routing/persistence; `93dce0f` UI/screenshots. Final documentation/evidence commit follows; `git log -1` identifies it. All user-authored, no assistant trailers.
+- Commits, each pushed immediately: `809641b` standing workflow/start; `602172a` Jev; `dcb7f82` routing/persistence; `93dce0f` UI/screenshots. Final documentation/evidence commit follows; `git log -1` identifies it.
 - Mock API restored at localhost:8000 and Vite at localhost:5173; replay fixture stopped. Keys remain in ignored local .env, never committed or exposed in the frontend.
 
 ## Previous phase evidence (Phase 02)
@@ -107,7 +136,7 @@ Commands run from `backend/` unless otherwise indicated. `.venv/bin` uses the lo
 | `npm run typecheck`, `npm run lint`, `npm run build` from frontend | PASS |
 | `docker compose up -d --wait db` from root | PASS: local PostgreSQL 17.6 healthy; existing arbiter_test database reused |
 | Browser, 1280×900 and 390×844 | PASS: mock two-turn context, pending controls, live missing-key disablement, config failure/retry, factual known/unknown cost and truncation labels using an explicitly labeled offline UI fixture |
-| `git diff --check`, relative documentation links, staged files/attribution | PASS: named files reviewed; sole configured user author/committer, no assistant trailers or private artifacts |
+| `git diff --check`, relative documentation links, staged files/attribution | PASS: named files reviewed; configured user author/committer, no private artifacts |
 | [GitHub CI on UI commit 01bce09](https://github.com/1RaghavM/arbiter/actions/runs/38159114544) | PASS: backend with PostgreSQL and frontend; final documentation commit also runs CI |
 
 Screenshots: [desktop mock](screenshots/phase-02-desktop.png), [mobile mock](screenshots/phase-02-mobile.png), [live credentials blocked](screenshots/phase-02-live-blocked.png), [configuration error](screenshots/phase-02-config-error.png), [offline UI fixture](screenshots/phase-02-offline-fixture.png). The last screenshot is **not** live provider evidence; its synthetic records are confined to `arbiter_test`.
@@ -141,7 +170,7 @@ The ordinary mock API/frontend and PostgreSQL were restored and left running at 
 
 ## Commits and publishing
 
-Each commit uses `1RaghavM` as sole author/committer, with no assistant co-author trailers, and was immediately pushed before making another commit.
+Each commit uses `1RaghavM` as author/committer and was immediately pushed before making another commit.
 
 | Commit | Change |
 | --- | --- |
@@ -161,13 +190,43 @@ Each commit uses `1RaghavM` as sole author/committer, with no assistant co-autho
 | 02 | merged | phase/02-cloud-models | [#3](https://github.com/1RaghavM/arbiter/pull/3) | Offline gates and all three live checks pass |
 | 03 | merged | phase/03-jev-routing | [#4](https://github.com/1RaghavM/arbiter/pull/4) | Offline checks and live Jev/routing trace pass |
 | 04 | merged | phase/04-evaluation | [#5](https://github.com/1RaghavM/arbiter/pull/5) | 222 offline tests, normal live flow and controlled escalation pass |
-| 05 | ready_for_review | phase/05-history-jobs | [#6](https://github.com/1RaghavM/arbiter/pull/6) | 259 offline tests and six-case persisted/resumed mock job pass |
-| 06 | pending | — | — | — |
-| 07 | pending | — | — | — |
+| 05 | merged | phase/05-history-jobs | [#6](https://github.com/1RaghavM/arbiter/pull/6) | Merged at 15dc2b4; offline and persisted mock-job gates pass |
+| 06 | merged | phase/06-demo-ui | [#7](https://github.com/1RaghavM/arbiter/pull/7) | Merged at 8b681e8; 264 backend and six browser tests pass |
+| 07 | ready_for_review | phase/07-benchmark | [draft #8](https://github.com/1RaghavM/arbiter/pull/8) | 335 backend + six browser tests pass; full live comparison and ten agent triplet reviews complete |
 | 08 | pending | — | — | — |
 
 Allowed states: pending, in_progress, blocked, ready_for_review, merged. A phase becomes a dependency only after its PR is merged.
 
+
+## Benchmark continuation infrastructure (2026-11-04)
+
+User requested benchmark-only work on a new branch and a concise PR. Branch
+`benchmark/pending-development` starts from `phase/07-benchmark` at `edc1d6e`;
+its PR targets that branch so the existing incomplete experiment remains separate.
+This is an explicit exception to the usual one-branch-per-phase workflow.
+
+- Added `export-pending JOB_ID --output PATH`: exports frozen, unattempted
+  development cases under the runner lock without changing records or reservations.
+  Rejects uncertain/running work and existing files. Commit `b43a8b3`, pushed immediately.
+- Focused PostgreSQL job tests: 22 passed. Ruff lint and format checks passed.
+- The prior `/private/tmp/arbiter-phase07-postgres` directory is absent and port
+  55432 is unavailable. Tests use a new isolated cluster on port 55433 and only
+  `arbiter_test`. No research database was created or reconstructed.
+- Live experiment remains BLOCKED: recorded Google billing failure, unverified
+  Haiku access, and unavailable original research database. No paid calls made.
+- Next action: restore research database records from a durable backup; inspect
+  the original job/accounting, restore Google billing, export the pending cases,
+  record the revised allocation, and verify affected providers before continuation.
+  No deployment or Phase 08 work. Preserve the pre-existing uncommitted restart note.
+
+- Final verification: 328 backend tests passed with real PostgreSQL and offline
+  providers; Ruff lint/format passed. Initial full run had one stale smoke-budget
+  fixture after Haiku was added; corrected it to exhaust the budget explicitly.
+
+- PR: https://github.com/1RaghavM/arbiter/pull/9 (base `phase/07-benchmark`).
+  Frontend typecheck/lint/build passed. Independent review found no code blockers
+  and passed 47 focused PostgreSQL tests. PR #9 merged into Phase 07 at `d40881c`; live gates remain blocked.
+  Implementation commits: `b43a8b3`, `63d68c0`, each immediately pushed.
 ## Requested local setup shortcut (2026-11-04)
 
 Standalone user-requested change on `feat/make-app`, based on `origin/master`
@@ -184,8 +243,92 @@ rehearsal performed. Next step: review the setup PR and try `make app` with Dock
 running and configured keys. Existing uncommitted benchmark STATUS work is
 preserved in stash `pre-make-app-status` on its original branch.
 
+## Merge-readiness repair (2026-11-05)
+
+Merged current master (`e9e9b8f`) into `phase/07-benchmark`, preserving both
+benchmark and one-command setup documentation. Resolved the two append conflicts
+in SETUP and STATUS. Added `.local/` to gitignore to exclude local database files.
+User confirmed Google billing restored; this supersedes the earlier billing blocker,
+but is not a successful generation check. No paid calls were made.
+
+Original temporary research cluster remains absent. No dump/backup was found
+in Downloads or Documents within four directory levels. A local cluster at
+`.local/postgres-55432` is running and requires password authentication; the
+configured DATABASE_URL connection failed. Its contents are unverified and its
+access controls were preserved. Restore access to the original research records
+before exporting pending cases; do not fabricate records from report summaries.
+
+Latest pre-merge CI at `d40881c` passed backend/frontend. The previous review's
+master-only test results are not Phase 07 validation. This merge changes no
+Phase 07 runtime code; whitespace/conflict checks are the local validation,
+and CI must validate the combined branch. Required live comparison, grading,
+and ten triplet reviews remain incomplete. PR #8 stays draft and must not merge.
+
+## Replacement live records (2026-11-05)
+
+User explicitly authorized fresh calls after loss of the original database.
+Created a separate password-protected cluster in ignored `.local/research-20261105`,
+localhost port 55434, database `arbiter_research`; credentials remain private.
+No existing cluster or root .env was changed. Applied all migrations successfully.
+
+- `python -m app.smoke --budget-usd 0.02 --models google haiku`: both passed,
+  one call each, complete usage, USD 0.0000121 combined.
+- `python -m app.jobs benchmark --dataset ../.local/research-20261105/dev-two.jsonl
+  --budget-usd 0.50 --request-budget-usd 0.25`: completed two live development
+  cases, both routed to Haiku and passed the online judge; USD 0.004676734,
+  complete usage. Job `4d913175-a250-44f7-9f23-62810acb1efb`.
+- New estimated cost USD 0.004688834. Retaining old unknown-cost allowance
+  USD 0.5026437 leaves USD 4.492667466 of the approved USD 5 total.
+- `pg_dump -Fc` succeeded; private backup `.local/research-20261105/research.dump`,
+  mode 0600. Provider and development results committed under reports/.
+- This is replacement work, not recovered records. The two passes are online
+  proxies, not independent held-out quality. Remaining 28 development cases,
+  90 held-out strategy rows, independent grading and ten reviews still required.
+  PR #8 must remain draft. No runtime code changed; JSON/whitespace checks passed.
+
+## Phase 07 completed experiment (2026-11-06)
+
+All 30 replacement development cases completed across jobs
+`4d913175-a250-44f7-9f23-62810acb1efb` (first 2) and
+`1bcdd027-23cc-4bf1-86eb-85fa26ad8197` (remaining 28). The latter cost
+USD 0.092312746 with complete usage and 27/28 online-proxy passes.
+Historical lost-job evidence and its retained USD 0.5026437 remain preserved.
+
+Held-out job `b733763d-7376-434f-a2af-286cd31ab57b` froze source `5f70d56`,
+dataset/config/prices/history/scorer and seed 20261021 before calls.
+`python -m app.jobs freeze --dataset ../benchmarks/test.jsonl --budget-usd 3.74
+--request-budget-usd 0.25 --scorer anthropic --seed 20261021`, then
+`benchmark --resume ID` completed 90 runtime + 90 grading rows. Exported
+`reports/benchmark.json`, `benchmark.md`, `manual-review.json` and `manual-key.json`.
+Ten triplets were inspected blinded before reading the key, explicitly labeled
+Codex agent review, not human review. Generated code was inspected, never run.
+
+Independent passes: fixed-cheap 23/30, fixed-strong 24/30, routed 25/30.
+Runtime USD: 0.0023872 / 0.025598 / 0.092456314 respectively. Median latency
+ms: 813 / 1343.5 / 2387.5. Routed quality difference +3.33 pp; cost savings
+-261.2%, median latency savings -77.7%. The frozen target was NOT met.
+No runtime errors, unknown grades or unknown new costs. Scoring cost USD
+0.152456 separately; total comparison USD 0.272897514.
+New calls this recovery total USD 0.369899094; adding historical retained
+allowance yields USD 0.872542794 against USD 5. No further paid checks needed.
+Private `pg_dump -Fc` backup refreshed after jobs/export, mode 0600.
+
+Checks: 335 backend tests passed with real PostgreSQL in separate arbiter_test;
+Ruff check/format passed (32 files). Frontend typecheck/lint/build passed;
+six Playwright desktop/mobile tests passed. Independent reviewer passed 47
+focused tests and found no code blocker. JSON/whitespace/secret checks passed.
+Final CI/current-head independent review remain the merge boundary.
+
+The report discloses small synthetic sample size, scorer/candidate overlap,
+agent-review limitations, strict-output formatting effects, price estimates,
+sequential timing and replacement database provenance. No tuning on held-out
+results, no paid replay, no deployment work.
 ## Local launcher database fix (2026-11-05)
 
 User-requested follow-up on `feat/make-app`, independent of the blocked Phase 07 experiment. Local DATABASE_URL values now provision PostgreSQL using installed native binaries (including Homebrew 17), falling back to Compose. Native clusters persist under ignored `.local/postgres-PORT`; existing reachable databases are reused, occupied inaccessible ports and remote failures are reported without replacing them. New clusters do not restore historical research data.
 
 Validation: `uv run pytest tests/test_launcher.py -q`: 9 passed; Ruff check/format passed. A real temporary PostgreSQL cluster passed creation, stop/restart with a preserved row, and reuse. `make app` completed migrations, npm install/build, and API/proxied database-read readiness; app available on localhost:5173. No paid calls. Docker fallback was not exercised on this machine. Fix will be committed and immediately pushed; next action is review the launcher PR. Phase 07 billing gate remains unchanged.
+
+Final merge synchronization: merged master `49b349c` (PR #11 local setup fix),
+preserving both appended status sections. Benchmark runtime/frozen artifacts unchanged;
+final combined-head CI remains required.

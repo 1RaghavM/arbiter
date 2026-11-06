@@ -11,7 +11,7 @@ Readable small code, correct routing/accounting, explicit failure states, a usab
 - Minimize paid testing: reuse successful live evidence and select only unverified or affected providers. Normally make one bounded call per needed live check; repeat only after a relevant code/config/access change or an explicit user request. Use offline fakes for failure paths. This does not waive required phase gates.
 - No credentials in tracked files or frontend bundle; review staged diff.
 - Document exact commands and results in STATUS and PR; skipped/live-blocked checks are not passes.
-- Meaningful incremental commits, each immediately pushed successfully, and one phase PR. Verify the user is the sole author/committer and no assistant co-author trailers exist. Follow AGENTS.md if pushing is blocked. UI changes include a quick browser check at desktop and narrow/mobile width.
+- Meaningful incremental commits, each immediately pushed successfully, and one phase PR. Follow AGENTS.md if pushing is blocked. UI changes include a quick browser check at desktop and narrow/mobile width.
 
 ## Test focus
 

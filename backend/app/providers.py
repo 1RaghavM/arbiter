@@ -176,7 +176,11 @@ async def _generate(model, messages, timeout, result, output_schema):
                         model=model.model_id,
                         messages=history,
                         max_tokens=model.max_output_tokens,
-                        thinking={"type": "between_tools"},
+                        thinking={
+                            "type": "disabled"
+                            if model.model_id == "claude-haiku-5-5"
+                            else "between_tools"
+                        },
                         **options,
                     )
                 ).model_dump(mode="json")

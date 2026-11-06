@@ -4,11 +4,32 @@ from types import SimpleNamespace
 
 import pytest
 
-from app.config import ModelConfig, ModelRegistry, reserve_cost
+from app.config import ModelConfig, ModelRegistry, load_registry, reserve_cost
 from app.routing import choose_route
 from app.schemas import Message
 
 MESSAGES = [Message(role="user", content="test")]
+
+
+@pytest.mark.parametrize("difficulty", ["easy", "medium", "hard"])
+def test_configured_haiku_routes_only_easy_tasks(difficulty):
+    registry = load_registry()
+    result = choose_route(
+        SimpleNamespace(
+            task="general", difficulty=difficulty, source="jev", confidence=0.9
+        ),
+        registry,
+        MESSAGES,
+        {model.key for model in registry.models},
+        Decimal("1"),
+        30,
+    )
+    haiku = next(c for c in result["candidates"] if c["key"] == "haiku")
+    if difficulty == "easy":
+        assert haiku["eligible"] and result["selected_key"] == "haiku"
+    else:
+        assert not haiku["eligible"]
+        assert result["selected_key"] != "haiku"
 
 
 def model(key, price="1", latency=1000, quality=0.85, rank=1, **changes):

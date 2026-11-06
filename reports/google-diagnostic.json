@@ -1,0 +1,23 @@
+{
+  "purpose": "Single affected-provider diagnostic after two development failures; included in approved USD5 ceiling.",
+  "budget_usd": "0.01",
+  "diagnostics": [
+    {
+      "exception_type": "ClientError",
+      "http_status": 402
+    }
+  ],
+  "outcomes": [
+    {
+      "model": "google",
+      "model_id": "gemini-3.5-flash-lite",
+      "run_id": "54bdc268-0bb9-49a0-9b24-a1371c0130aa",
+      "status": "error",
+      "answer": null,
+      "cost_usd": null,
+      "cost_complete": false,
+      "reserved_cost_usd": "0.0026437",
+      "error": "unavailable"
+    }
+  ]
+}

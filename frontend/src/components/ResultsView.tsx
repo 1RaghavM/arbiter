@@ -60,21 +60,29 @@ export function ResultsView() {
         <h2 id="benchmarks-heading" className="text-lg font-semibold">Benchmark jobs</h2>
         <Button variant="outline" onClick={() => { setBenchmarksLoading(true); setBenchmarksError(''); void refreshBenchmarks() }} disabled={benchmarksLoading}>Refresh benchmarks</Button>
       </div>
-      <p className="mt-3 text-sm text-stone-600">Development jobs show online judge signals only. Independent strategy comparisons are not available yet; mock jobs are not live research evidence.</p>
+      <p className="mt-3 text-sm text-stone-600">Comparison jobs use independent grading. Development jobs show online judge signals only; mock jobs are not live research evidence.</p>
       {benchmarksLoading && <p role="status" className="mt-3 text-sm text-stone-600">Loading benchmark jobs…</p>}
       {benchmarksError && <p role="alert" className="mt-3 text-sm text-red-700">{benchmarksError} {benchmarks.length > 0 && 'Previously loaded records are shown below.'}</p>}
       {!benchmarksLoading && !benchmarksError && benchmarks.length === 0 && <p className="mt-4 text-sm text-stone-600">No benchmark jobs yet. Completed CLI jobs will appear here.</p>}
       {benchmarks.length > 0 && <div role="region" aria-label="Benchmark jobs table" tabIndex={0} className="mt-4 overflow-x-auto rounded-lg border bg-white focus-visible:outline-2 focus-visible:outline-stone-700">
         <table className="w-full text-left text-sm">
-          <caption className="sr-only">Persisted development benchmark summaries</caption>
+          <caption className="sr-only">Persisted benchmark summaries</caption>
           <thead className="bg-stone-100 text-xs text-stone-600"><tr>
-            {['Job / strategy', 'Progress', 'Online passes', 'Cost / budget'].map(label => <th scope="col" key={label} className="px-4 py-3 font-medium">{label}</th>)}
+            {['Job / strategy', 'Progress', 'Quality / comparison', 'Cost / budget'].map(label => <th scope="col" key={label} className="px-4 py-3 font-medium">{label}</th>)}
           </tr></thead>
           <tbody>{benchmarks.map(job => <tr key={job.job_id} className="border-t align-top">
             <td className="px-4 py-3"><time className="whitespace-nowrap" dateTime={job.created_at}>{new Date(job.created_at).toLocaleString()}</time><p className="text-xs text-stone-600">{job.strategy} · {job.mode}</p><details><summary className="cursor-pointer text-xs">Job ID</summary><p className="max-w-48 break-all text-xs">{job.job_id}</p></details></td>
             <td className="px-4 py-3"><p>{job.status.replaceAll('_', ' ')}</p><p className="text-xs text-stone-600">{job.states.done} done / {job.case_count} cases · {job.states.error} errors</p><p className="text-xs text-stone-600">{job.states.pending} pending · {job.states.running} running · {job.states.uncertain} uncertain</p></td>
-            <td className="px-4 py-3"><p>{job.online_pass_count} / {job.case_count}</p><p className="min-w-36 text-xs text-stone-600">{job.quality_basis}</p></td>
-            <td className="px-4 py-3"><p>{costLabel(job.known_cost_usd, job.known_cost_usd, job.cost_complete)}</p><p className="mt-1 text-xs text-stone-600">Budget used / held: ${job.budget_used_usd} / ${job.budget_usd}</p></td>
+            <td className="px-4 py-3">{job.strategy_metrics
+              ? <ul className="min-w-52 space-y-2 text-xs">{Object.entries(job.strategy_metrics).map(([strategy, metrics]) => <li key={strategy}>
+                <p className="font-medium">{strategy}: {metrics.pass_count} / {metrics.attempted_count} independent passes</p>
+                <p className="text-stone-600">Runtime {metrics.total_runtime_cost_usd === null ? 'cost incomplete' : `$${metrics.total_runtime_cost_usd}`} · median {latencyLabel(metrics.median_latency_ms)}</p>
+              </li>)}</ul>
+              : <p>{job.online_pass_count} / {job.case_count} online passes</p>}
+              <p className="mt-2 min-w-36 text-xs text-stone-600">{job.quality_basis}</p></td>
+            <td className="px-4 py-3"><p>Runtime {costLabel(job.known_cost_usd, job.known_cost_usd, job.cost_complete)}</p>
+              {job.scoring_known_cost_usd !== undefined && <p className="mt-1 text-xs text-stone-600">Scoring {costLabel(job.scoring_known_cost_usd, job.scoring_known_cost_usd, job.scoring_cost_complete === true)}</p>}
+              <p className="mt-1 text-xs text-stone-600">Budget used / held: ${job.budget_used_usd} / ${job.budget_usd}</p></td>
           </tr>)}</tbody>
         </table>
       </div>}

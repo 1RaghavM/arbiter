@@ -1,0 +1,587 @@
+{
+  "job_id": "1bcdd027-23cc-4bf1-86eb-85fa26ad8197",
+  "created_at": "2026-11-05T23:36:59.819523-05:00",
+  "status": "completed",
+  "strategy": "routed",
+  "mode": "live",
+  "dataset_hash": "019b446be39611272f19b067a673ca832056fb226fae66c04e860d20c5940057",
+  "history_snapshot_id": "f77b563397500ab3220a1949f6985efe42ce7ca80ccbc14321c622be256c529f",
+  "budget_usd": "0.75",
+  "budget_used_usd": "0.092312746",
+  "known_cost_usd": "0.092312746",
+  "cost_complete": true,
+  "scoring_known_cost_usd": "0",
+  "scoring_cost_complete": true,
+  "quality_basis": "Online judge proxy only; no independent benchmark grading.",
+  "case_count": 28,
+  "states": {
+    "pending": 0,
+    "running": 0,
+    "done": 28,
+    "error": 0,
+    "uncertain": 0
+  },
+  "online_pass_count": 27,
+  "cases": [
+    {
+      "ordinal": 0,
+      "case_id": "extract-current-time",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "071d5376-0b31-4c59-b925-c106ddf31959",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "anthropic",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.002716098",
+        "total_cost_usd": "0.002716098",
+        "total_latency_ms": 2458
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 1,
+      "case_id": "extract-open-items",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "360ec495-653c-4a8b-9b08-2f53318cd52b",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "haiku",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.00241642",
+        "total_cost_usd": "0.00241642",
+        "total_latency_ms": 1937
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 2,
+      "case_id": "extract-ledger",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "e2f166f1-70fd-491e-af47-c033b75e78b2",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "anthropic",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.003786644",
+        "total_cost_usd": "0.003786644",
+        "total_latency_ms": 3570
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 3,
+      "case_id": "summarize-meeting",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "eebf78d0-339c-4446-8e43-22649a614a95",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "haiku",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.00264249",
+        "total_cost_usd": "0.00264249",
+        "total_latency_ms": 2595
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 4,
+      "case_id": "summarize-library",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "6597456c-0ee2-47cb-a8c3-e42aebcb7597",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "haiku",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.002587584",
+        "total_cost_usd": "0.002587584",
+        "total_latency_ms": 2634
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 5,
+      "case_id": "summarize-pilot",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "b41ae9bb-73c5-4ab9-9abd-2b3af5da07da",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "haiku",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.002917404",
+        "total_cost_usd": "0.002917404",
+        "total_latency_ms": 3672
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 6,
+      "case_id": "summarize-corrections",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "6ae57cd0-af1f-418a-a998-304d68e5ee9b",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "haiku",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.002441114",
+        "total_cost_usd": "0.002441114",
+        "total_latency_ms": 2508
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 7,
+      "case_id": "summarize-study",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "a29b8bab-f4c3-43e6-8bb4-5e0b684c8716",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "anthropic",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.003894728",
+        "total_cost_usd": "0.003894728",
+        "total_latency_ms": 3074
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 8,
+      "case_id": "write-reminder",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "6c379ff2-627d-48b0-80ba-cf02aaf4c410",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "haiku",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.00264156",
+        "total_cost_usd": "0.00264156",
+        "total_latency_ms": 3188
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 9,
+      "case_id": "write-sign",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "5f78a638-6225-4fb1-9ec7-4c18af29b9d2",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "haiku",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.00252257",
+        "total_cost_usd": "0.00252257",
+        "total_latency_ms": 2071
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 10,
+      "case_id": "write-apology",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "743241ab-84d2-4558-958c-8f242c57826a",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "unverified",
+        "final_model": "anthropic",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.004361804",
+        "total_cost_usd": "0.004361804",
+        "total_latency_ms": 3698
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 11,
+      "case_id": "write-checklist",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "80957051-8759-4db1-b118-ac9a1eb67d39",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "haiku",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.002953794",
+        "total_cost_usd": "0.002953794",
+        "total_latency_ms": 2398
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 12,
+      "case_id": "write-balanced-note",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "131e52c7-863d-472e-9f43-7d5dbeafb868",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "anthropic",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.00467014",
+        "total_cost_usd": "0.00467014",
+        "total_latency_ms": 3532
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 13,
+      "case_id": "code-add",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "459ceb0f-b8c0-4b58-a644-be26b3b1119f",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "haiku",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.00209356",
+        "total_cost_usd": "0.00209356",
+        "total_latency_ms": 3458
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 14,
+      "case_id": "code-even",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "411d63bb-0eb5-4973-a314-feda47c70bd1",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "haiku",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.002545712",
+        "total_cost_usd": "0.002545712",
+        "total_latency_ms": 2198
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 15,
+      "case_id": "code-unique",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "77eaff52-17a6-4633-a258-57df1d2a2bbd",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "haiku",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.002454406",
+        "total_cost_usd": "0.002454406",
+        "total_latency_ms": 2149
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 16,
+      "case_id": "code-off-by-one",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "e1f6f3d7-3678-4a6b-bd1a-be41925a1d01",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "anthropic",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.007723552",
+        "total_cost_usd": "0.007723552",
+        "total_latency_ms": 4741
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 17,
+      "case_id": "code-intervals",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "e33a3fb7-59c0-4e3a-83cf-e294cd4cc87c",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "anthropic",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.005846014",
+        "total_cost_usd": "0.005846014",
+        "total_latency_ms": 4245
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 18,
+      "case_id": "reason-marble",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "73105cfb-f144-465a-a784-60ae29461b7c",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "haiku",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.00217749",
+        "total_cost_usd": "0.00217749",
+        "total_latency_ms": 2581
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 19,
+      "case_id": "reason-price",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "7f1bd858-dfe8-4a14-97ce-dd9343aa4dbc",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "anthropic",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.002419006",
+        "total_cost_usd": "0.002419006",
+        "total_latency_ms": 3479
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 20,
+      "case_id": "reason-order",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "038ea87e-535b-4fe6-8efa-67b90d204f48",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "haiku",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.002244764",
+        "total_cost_usd": "0.002244764",
+        "total_latency_ms": 1939
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 21,
+      "case_id": "reason-ratio",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "bc69ddb0-0f39-4d7d-b40a-4e6257758f80",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "anthropic",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.003511762",
+        "total_cost_usd": "0.003511762",
+        "total_latency_ms": 3169
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 22,
+      "case_id": "reason-selection",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "b3e5e30a-3fcd-4858-b7e0-0b29c4d3bd03",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "anthropic",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.003864392",
+        "total_cost_usd": "0.003864392",
+        "total_latency_ms": 2924
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 23,
+      "case_id": "general-context",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "894470b9-db59-4c87-937f-562087638d40",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "haiku",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.002284524",
+        "total_cost_usd": "0.002284524",
+        "total_latency_ms": 2076
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 24,
+      "case_id": "general-alphabet",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "569ae04e-9fe0-43ed-a42f-774039cf0aa4",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "haiku",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.002057718",
+        "total_cost_usd": "0.002057718",
+        "total_latency_ms": 1956
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 25,
+      "case_id": "general-distinction",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "ea52f207-166a-4029-bfd5-84b7d54dabbc",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "haiku",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.002414812",
+        "total_cost_usd": "0.002414812",
+        "total_latency_ms": 2180
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 26,
+      "case_id": "general-instructions",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "69fe930b-7877-4b00-b26c-432d52763c35",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "anthropic",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.0029293",
+        "total_cost_usd": "0.0029293",
+        "total_latency_ms": 2761
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 27,
+      "case_id": "general-evidence",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "3c51dd90-7db9-4df7-a54d-5d7bfec3b2d3",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "anthropic",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.007193384",
+        "total_cost_usd": "0.007193384",
+        "total_latency_ms": 5588
+      },
+      "uncertain_attempts": []
+    }
+  ]
+}
