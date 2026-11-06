@@ -24,7 +24,7 @@ Readable small code, correct routing/accounting, explicit failure states, a usab
 | Pipeline | Pass first; fail then pass; fail twice; unknown judge; no stronger model; first generation failure; call caps; exhausted deadline/budget |
 | Costs | Classifier+both generation+both evaluation included; unknown usage stays unknown; snapshots retained |
 | Database | Real PostgreSQL round trip, failed attempt persistence, migration twice safe, per-attempt history correctness |
-| Jobs | Resume completed cases without calling again; pending/running semantics; spend ceiling; held-out exclusion |
+| Jobs | Resume completed cases without calling again; pending/running semantics; spend ceiling; held-out exclusion; web start persists before background execution, rejects overlap/missing limits, and updates UI progress |
 | UI | Send and reply; loading prevents duplicate submit; route details; error/retry; new chat; keyboard usability |
 | Deployment | Login/session, no public run data, no client secrets, same-origin API, persistence after restart |
 

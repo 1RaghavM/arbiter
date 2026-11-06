@@ -11,7 +11,7 @@
 | Schema changes | Numbered SQL files plus a tiny migration command and schema_migrations table |
 | Providers | Official Python SDKs where straightforward; httpx for documented APIs when simpler |
 | Testing | pytest, Ruff, TypeScript checks, frontend lint/build, one focused Playwright flow |
-| Jobs | Python CLI; sequential and resumable; optional host scheduler later |
+| Jobs | Sequential, resumable Python runner; CLI and a development-benchmark button |
 | Deployment | One container serves built frontend and API; managed PostgreSQL |
 | Repository | One small monorepo; uv Python lockfile and npm package-lock |
 
@@ -33,7 +33,7 @@ Start with a flat app package and a few React components. Split a file when it h
 - Jev only classifies. Start with a separately configured cloud generator as the online judge; this judge is fixed across candidate generators and never chosen by the router.
 - Online evaluation is a heuristic. Held-out benchmark grading is separate from the online pass signal.
 - Historical adaptation reads aggregate statistics; no retraining service. Freeze history snapshots for final experiments.
-- No web endpoint that starts an expensive benchmark. Run the CLI from a controlled environment.
+- The results view can start the fixed development dataset with server-configured spend limits. A short HTTP request persists the job, then an in-process background task runs the existing sequential runner. One web-launched job at a time per API process; no worker service. Held-out comparisons retain the controlled CLI freeze/run workflow.
 - Final deployment uses one API process. A small shared demo password/session protects provider spend; no user-account system. Do not bake the password into browser assets. Store only a session indicator in a signed HttpOnly cookie.
 - Serve frontend and API on the same origin in deployment. Local development uses a Vite proxy. SPA fallback must not swallow /api errors.
 
@@ -50,3 +50,7 @@ Quality floor 0.80; history threshold 5 labeled attempts per bucket; confidence 
 Use configurable stage timeouts with a 90-second request deadline. Configure a conservative request spend limit and a separate benchmark spend ceiling before live calls. No default unlimited billing. If a host's request timeout is shorter, reduce stage limits or choose appropriate hosting; do not add an asynchronous job architecture just to preserve a long request.
 
 Any larger architectural change needs a concrete failing requirement and a short rationale in STATUS. Ordinary implementation decisions within these constraints do not need repeated permission requests.
+
+Live mode is the default for the app, settings, saved-run defaults, and environment
+template. Explicit offline fixtures remain available for tests and historical mock
+records retain their original labels; missing live access never falls back to mock.

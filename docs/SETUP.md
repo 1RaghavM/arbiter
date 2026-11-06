@@ -14,7 +14,7 @@ cd ../frontend
 npm ci
 ```
 
-Keep `.env` local. Its database credentials are for the local demo container only. Provider keys may stay blank in default mock mode. Live mode requires explicit provider credentials and a positive request budget; benchmark jobs also require a separate positive total ceiling.
+Keep `.env` local. Its database credentials are for the local demo container only. Live mode is the default. Configure provider credentials and a positive request budget; benchmark jobs also require a separate positive total ceiling. Missing access fails explicitly instead of using mock responses.
 
 ## Start PostgreSQL and migrate
 
@@ -44,7 +44,7 @@ In another terminal, start the frontend from `frontend/`:
 npm run dev -- --host 127.0.0.1
 ```
 
-Open http://127.0.0.1:5173. Send “My project is called Arbiter.” Then send “What did I call my project?” The second mock reply includes the earlier user message. The mock function echoes up to 200 characters of the latest and previous user messages; it does not understand or evaluate them. The complete bounded history is retained in the run record.
+Open http://127.0.0.1:5173. Send “My project is called Arbiter.” Then send “What did I call my project?” Live requests send the bounded conversation to the configured providers. The complete bounded history is retained in the run record. Submitting chat incurs provider usage within the configured request ceiling.
 
 Enter sends; Shift+Enter adds a newline. Sending disables duplicate submission and New chat. Failed requests retain the draft and successful conversation so selecting Send retries by user action. Each retry creates a new run; a timeout may have saved the previous run. The API accepts 1–10 nonblank user/assistant messages ending with a user message, totaling at most 12,000 Unicode characters. Invalid Unicode/null characters and unknown fields are rejected. The raw JSON body is capped at 160,000 bytes. The UI offers New chat at the limit instead of discarding earlier context.
 
@@ -55,7 +55,7 @@ curl 'http://127.0.0.1:8000/api/runs?limit=20'
 curl 'http://127.0.0.1:8000/api/runs/REPLACE_WITH_RUN_ID'
 ```
 
-The list returns metadata only (limit 1–100); the detail includes messages and call output. In mock mode records have provider `mock`, model `mock-v1`, zero simulated API cost, unknown token counts, and status `unverified`. No analysis, routing, or quality success is fabricated. Failed generation attempts are saved. Missing/unreachable/unmigrated PostgreSQL returns 503 before generation. A write failure after generation returns a persistence error with the allocated run ID; a partial record can remain, so the error does not guarantee absence of data.
+The list returns metadata only (limit 1–100); the detail includes messages and call output. Historical mock records have provider `mock`, model `mock-v1`, zero simulated API cost, unknown token counts, and status `unverified`. No analysis, routing, or quality success is fabricated. Failed generation attempts are saved. Missing/unreachable/unmigrated PostgreSQL returns 503 before generation. A write failure after generation returns a persistence error with the allocated run ID; a partial record can remain, so the error does not guarantee absence of data.
 
 Vite proxies `/api` to port 8000. `GET /api/health` remains a liveness check independent of database availability. Keep this unauthenticated phase bound to localhost; deployment access protection belongs to Phase 08.
 
@@ -102,7 +102,7 @@ This preserves `postgres_data`. Do not add `--volumes` if you want to retain you
 
 ## Live analysis, generation, and evaluation (Phase 04)
 
-Mock mode is still the template default. For live chat, put `JEV_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `GOOGLE_API_KEY` in the root `.env`, then set these values there:
+Live mode is the template and application default. Put `JEV_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `GOOGLE_API_KEY` in the root `.env`, then set these values there:
 
 ```dotenv
 CHAT_MODE=live
@@ -117,7 +117,7 @@ Start the API from `backend/`:
 uv run --frozen uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-Credentials are `JEV_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `GOOGLE_API_KEY`. Keep them backend-only; never use `VITE_` variables. The root `.env` loads automatically on startup. A previously exported `CHAT_MODE=mock` overrides the file; run `unset CHAT_MODE` before starting live mode. To test for free, use `CHAT_MODE=mock uv run --frozen uvicorn app.main:app --host 127.0.0.1 --port 8000`. Live chat now routes automatically; fixed selection is confined to the provider smoke CLI.
+Credentials are `JEV_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `GOOGLE_API_KEY`. Keep them backend-only; never use `VITE_` variables. The root `.env` loads automatically on startup. A previously exported `CHAT_MODE=mock` overrides the file; run `unset CHAT_MODE` before starting live mode. Use the offline pytest and Playwright suites for free verification. Live chat now routes automatically; fixed selection is confined to the provider smoke CLI.
 
 `config/models.json` records exact documented model IDs, context/output limits, Decimal prices, source URLs, and verification dates. Enabled entries still become unavailable without their credentials. Unavailable generators are excluded; live requests never silently switch to mock. `GET /api/config` exposes mode, routed selection, and generation credential availability labels, never key values. The frontend checks it before enabling Send. No model selector is added.
 
@@ -168,18 +168,31 @@ Each judge response is capped at 256 tokens and its stage at 15 seconds. Candida
 
 Normal live chat loads one compatible history snapshot before any paid work. At least five known per-attempt labels are required per task/difficulty/model bucket. Quality is smoothed with five prior observations; latency and output tokens use medians. Failed generators count against quality; unknown judgments remain separately counted. History excludes mocks, held-out/baseline runs, unfinished runs and incompatible model/judge/policy/rubric versions. The `history-v1` policy intentionally starts fresh: earlier `priors-v1` data remains visible but is not used. Online labels are biased proxies, not independent benchmark grades.
 
-Jobs run from a terminal, never from an HTTP endpoint. Apply migrations first. From `backend/`, run the 30-case synthetic development dataset without paid calls:
+Apply migrations first. In **Runs & benchmarks**, select **Run benchmark** to
+start the 30-case development dataset. The button shows the server mode, total
+`BENCHMARK_BUDGET_USD` ceiling, and per-case `REQUEST_BUDGET_USD` ceiling before
+launch. Both must be positive; live mode also needs generator credentials. The
+root environment template defaults to live, USD 1.00 total and USD 0.25 per case.
+The total ceiling can stop the job before all 30 cases finish, especially when
+unknown costs retain full reservations.
+
+The new job appears automatically, with progress refreshed every two seconds until
+it completes or stops. One web-started job can run at a time per API process.
+Keep the API running; closing the browser does not stop the job. API restarts can
+interrupt it: use CLI resume and review uncertain cases before retrying. The
+button never retries interrupted work or starts held-out comparisons.
+
+The same live development runner remains available from `backend/`:
 
 ```sh
-DATABASE_URL=postgresql://arbiter:arbiter@localhost:5432/arbiter_test \
-  uv run --frozen python -m app.jobs benchmark \
-  --dataset ../benchmarks/dev.jsonl --budget-usd 0.25 \
-  --request-budget-usd 0.25 --mock
+uv run --frozen python -m app.jobs benchmark \
+  --dataset ../benchmarks/dev.jsonl --budget-usd 1.00 \
+  --request-budget-usd 0.25
 uv run --frozen python -m app.jobs report JOB_ID
 uv run --frozen python -m app.jobs benchmark --resume JOB_ID
 ```
 
-Use the same `DATABASE_URL` for all three commands. The job stores its dataset/hash, settings, exact registry and history snapshot. Resuming reads these frozen values; changing environment settings does not alter the saved experiment. Mock jobs stay mock on resume. To deliberately run development cases live, omit `--mock`, export the provider keys privately and `REQUEST_BUDGET_USD=0.25`, and choose a separate explicit total `--budget-usd`. Do not repeat existing live evidence just for testing this runner.
+Use the same `DATABASE_URL` for all three commands. The job stores its dataset/hash, settings, exact registry and history snapshot. Resuming reads these frozen values; changing environment settings does not alter the saved experiment. Existing mock jobs retain their original mode on resume; changing defaults never relabels prior evidence. New development commands are live by default, require provider keys privately configured, and use an explicit total `--budget-usd`. Do not repeat existing live evidence just for testing this runner.
 
 Each case reserves its complete request cap before any call. Completed cases are skipped on resume. A crash leaves running cases uncertain and retains their reservations, since they may have been billed. `benchmark --resume JOB_ID --retry-uncertain` explicitly allocates another reservation; old uncertain spend is not refunded. Concurrent runners for the same job are rejected. Known complete costs release unused reservation; incomplete costs retain a conservative charge. A depleted ceiling stops new cases. Reports label mock data and online judge outcomes; the three-strategy held-out research comparison comes in Phase 07.
 
@@ -188,9 +201,9 @@ Each case reserves its complete request cap before any call. Completed cases are
 
 The chat keeps the simple layout and adds expandable answer details: task/difficulty, first/final model, routing reason, attempts, evaluator status, elapsed time, and complete or incomplete cost. Mock answers remain explicitly unverified. A known cost subtotal is not presented as a complete total.
 
-Use the results view for recent runs and persisted benchmark job summaries. Opening the view loads records; refresh is manual, with no background polling or paid job trigger. Empty and unavailable results have explicit states. Benchmark summaries distinguish mock data and online-judge counts from independent research grading, which remains Phase 07.
+Use the results view for recent runs and persisted benchmark job summaries. Opening the view loads records. Refresh is manual when idle; active benchmark jobs refresh automatically. The Run benchmark button is an explicit paid action in live mode. Empty and unavailable results have explicit states. Benchmark summaries distinguish mock data and online-judge counts from independent research grading, which remains Phase 07.
 
-Read-only benchmark API endpoints:
+Benchmark read endpoints:
 
 ```sh
 curl 'http://127.0.0.1:8000/api/benchmarks?limit=20'
@@ -204,17 +217,17 @@ The list accepts a limit from 1 to 100 and omits per-case payloads. The detail r
 
 Read [benchmark-protocol.md](benchmark-protocol.md) before a live experiment. `benchmarks/dev.jsonl` and `benchmarks/test.jsonl` contain 30 synthetic cases each, with five per task type. Do not tune settings or rubrics on held-out outcomes. Keep test fixtures and research in separate PostgreSQL databases. The normal development command remains routed-only and rejects held-out cases.
 
-Prepare a free rehearsal, then execute and export it from `backend/`:
+Prepare the live comparison, inspect the frozen inputs, then execute and export it from `backend/`. Freeze itself makes no provider calls; resume is paid:
 
 ```sh
 uv run --frozen python -m app.jobs freeze --dataset ../benchmarks/test.jsonl \
   --budget-usd 4.50 --request-budget-usd 0.25 --scorer anthropic \
-  --seed 20261021 --mock
+  --seed 20261021
 uv run --frozen python -m app.jobs benchmark --resume JOB_ID
-uv run --frozen python -m app.jobs export JOB_ID --output /tmp/arbiter-rehearsal
+uv run --frozen python -m app.jobs export JOB_ID --output /tmp/arbiter-comparison
 ```
 
-`freeze` persists the dataset/hash, settings, registry, history, scorer, source revision/fingerprint, targets and seeded strategy order without calling providers. Commit the implementation first, inspect the frozen inputs, then resume to execute. Changed runtime/scoring source or lockfile rejects resume. Keep `DATABASE_URL` consistent across commands. A live job deliberately omits `--mock`; its total ceiling includes both runtime and independent grading. Never run the held-out experiment with test fixtures in its history database.
+`freeze` persists the dataset/hash, settings, registry, history, scorer, source revision/fingerprint, targets and seeded strategy order without calling providers. Commit the implementation first, inspect the frozen inputs, then resume to execute. Changed runtime/scoring source or lockfile rejects resume. Keep `DATABASE_URL` consistent across commands. The live job total ceiling includes both runtime and independent grading. Never run the held-out experiment with test fixtures in its history database.
 
 Fixed-cheap and fixed-strong each generate once, without classification or online evaluation. Routed uses the complete pipeline. Grading runs separately after generation, using fixed exact/JSON checks or a blinded rubric. Runtime and grading share one persisted budget but have separate usage subtotals and completeness flags. Interrupted work retains reservations; ordinary resume skips completed work and does not retry uncertain calls. `--retry-uncertain` is an explicit additional-spend action within the same ceiling.
 

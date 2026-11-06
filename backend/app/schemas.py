@@ -51,7 +51,7 @@ class GenerationResult(BaseModel):
 
 class ChatResult(BaseModel):
     run_id: UUID
-    mode: Literal["mock", "live"] = "mock"
+    mode: Literal["mock", "live"] = "live"
     answer: str | None = None
     final_model: str | None = None
     status: Literal["passed", "quality_failed", "unverified", "error"]

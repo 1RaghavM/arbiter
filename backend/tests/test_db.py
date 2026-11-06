@@ -27,13 +27,14 @@ def test_round_trip_and_reconnect(pool):
     )
     result = ChatResult(
         run_id=run_id,
+        mode="mock",
         answer=generation.text,
         status="unverified",
         final_model="mock-v1",
         attempts=[generation],
     )
     try:
-        db.create_run(pool, run_id, request)
+        db.create_run(pool, run_id, request, mode="mock", version="mock-v1")
         db.finish_run(pool, result, generation, perf_counter())
         with db.create_pool(os.environ["TEST_DATABASE_URL"]) as reconnected:
             run = db.read_run(reconnected, run_id)

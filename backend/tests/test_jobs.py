@@ -289,7 +289,7 @@ def test_benchmark_read_endpoints_return_safe_summaries_and_real_mock_results(
         assert client.get("/api/benchmarks/not-a-uuid").status_code == 422
         missing = client.get(f"/api/benchmarks/{uuid4()}")
         assert missing.status_code == 404 and missing.json()["code"] == "not_found"
-        assert client.post("/api/benchmarks", json={}).status_code == 405
+        assert client.post("/api/benchmarks", json={}).status_code == 422
 
 
 def test_benchmark_http_preserves_unknown_costs(pool, monkeypatch):

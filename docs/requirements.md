@@ -20,7 +20,7 @@ A single-user/demo chat app with React, shadcn/ui, FastAPI, PostgreSQL, Jev prom
 | R06 | Evaluate each generated answer with a bounded rubric; escalate at most once when appropriate | Passing, failing, unknown, exhausted, and provider-error cases tested |
 | R07 | Persist input messages, analysis, candidates, decisions, all paid attempts, answers, usage, latency, cost, evaluator outcomes, errors, and config versions | PostgreSQL round-trip tests; failed attempts retained |
 | R08 | Use historical task/difficulty/model performance in later routing | Seeded aggregate changes expected selection; live demonstration |
-| R09 | Run benchmark/evaluation jobs outside the interactive request path | CLI job stores progress and results; interrupted job can resume |
+| R09 | Run benchmark/evaluation jobs outside the interactive request path; start development jobs from the results view | Button persists a bounded job, background execution updates results; CLI supports resume |
 | R10 | Show route metadata under each assistant message and a small recent-runs/benchmark view | Selected model, rationale, escalation, quality, total latency and cost visible |
 | R11 | Compare routed, fixed-cheap, and fixed-strong strategies on a frozen held-out set | Reproducible report including overhead, failures, and sample size |
 | R12 | Deploy on cloud CPU infrastructure with PostgreSQL and browser access | HTTPS demo from a second machine; deployment instructions |
@@ -42,7 +42,13 @@ A single-user/demo chat app with React, shadcn/ui, FastAPI, PostgreSQL, Jev prom
 
 No accounts, billing, organization roles, RAG, vector database, uploads, browsing/tools, autonomous code execution, streaming, Redis, Celery, Kubernetes, distributed workers, automatic model discovery, fine-tuning, reinforcement learning, or model marketplace. No claim of production reliability.
 
-Use one chat screen, one compact runs/benchmark screen, one API service, one database, and a CLI for jobs. Manual or scheduled invocation of the CLI satisfies background work; no job-management UI is needed.
+Use one chat screen, one compact runs/benchmark screen, one API service, one database,
+and a CLI for jobs. The results view includes one development-benchmark start button
+and automatically refreshes active jobs. No general job-management UI or worker
+infrastructure is needed. Held-out experiments are prepared and run through the CLI.
+
+App and benchmark defaults are live. Offline test fixtures and explicitly frozen
+historical mock jobs remain labeled accurately; they never count as live evidence.
 
 ## Completion versus research success
 

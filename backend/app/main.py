@@ -1,18 +1,34 @@
 import logging
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
+from threading import Lock
 from time import perf_counter
 from typing import Annotated
 from uuid import UUID, uuid4
 
 import psycopg
-from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi import (
+    BackgroundTasks,
+    Depends,
+    FastAPI,
+    Header,
+    HTTPException,
+    Query,
+    Request,
+)
 from fastapi.responses import JSONResponse, Response
 from psycopg_pool import PoolTimeout
 from pydantic import ValidationError
 
-from app import db, jobs, summaries
-from app.config import load_environment, load_registry, load_settings, model_status
+from app import db, history, jobs, summaries
+from app.config import (
+    Settings,
+    load_environment,
+    load_registry,
+    load_settings,
+    model_status,
+)
 from app.pipeline import run_chat
 from app.schemas import ChatRequest, ChatResult
 
@@ -24,6 +40,7 @@ async def lifespan(app):
     load_environment()
     url = os.environ.get("DATABASE_URL")
     app.state.pool = db.create_pool(url) if url else None
+    app.state.benchmark_lock = Lock()
     yield
     if app.state.pool:
         app.state.pool.close()
@@ -201,6 +218,90 @@ def recent_benchmarks(
     limit: Annotated[int, Query(ge=1, le=100)] = 20, pool=Depends(get_pool)
 ):
     return jobs.recent_jobs(pool, limit)
+
+
+def benchmark_config():
+    settings, registry = runtime_config()
+    try:
+        budget = Settings(
+            request_budget_usd=os.environ.get("BENCHMARK_BUDGET_USD")
+        ).request_budget_usd
+        if budget is None or settings.request_budget_usd is None:
+            raise ValueError()
+        if settings.mode == "live" and not any(
+            model_status(model) == "available" for model in registry.models
+        ):
+            raise ValueError()
+    except ValueError:
+        raise HTTPException(
+            503,
+            {
+                "code": "benchmark_configuration",
+                "message": "Configure positive BENCHMARK_BUDGET_USD and "
+                "REQUEST_BUDGET_USD limits and live model credentials on the server.",
+            },
+        ) from None
+    return settings, registry, budget
+
+
+@app.get("/api/benchmarks/config")
+def public_benchmark_config():
+    settings, _, budget = benchmark_config()
+    return {
+        "mode": settings.mode,
+        "budget_usd": str(budget),
+        "request_budget_usd": str(settings.request_budget_usd),
+    }
+
+
+def run_background_benchmark(pool, job_id, lock):
+    try:
+        jobs.run_job(pool, job_id)
+    except Exception:
+        logger.error("Benchmark interrupted; job_id=%s", job_id)
+        try:
+            with pool.connection() as connection:
+                connection.execute(
+                    "UPDATE benchmark_jobs SET status='uncertain' WHERE id=%s",
+                    (job_id,),
+                )
+        except (psycopg.Error, PoolTimeout):
+            logger.error("Could not save interrupted benchmark; job_id=%s", job_id)
+    finally:
+        lock.release()
+
+
+@app.post("/api/benchmarks", status_code=202)
+def start_benchmark(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    x_arbiter_benchmark: Annotated[str, Header()],
+    pool=Depends(get_pool),
+):
+    # A custom header requires a preflight for cross-origin browser requests.
+    if x_arbiter_benchmark != "start":
+        raise HTTPException(422, {"message": "Invalid benchmark start request."})
+    settings, registry, budget = benchmark_config()
+    lock = request.app.state.benchmark_lock
+    if not lock.acquire(blocking=False):
+        raise HTTPException(409, {"message": "A benchmark is already running."})
+    try:
+        cases = jobs.read_cases(
+            Path(__file__).resolve().parents[2] / "benchmarks/dev.jsonl"
+        )
+        job_id = jobs.create_job(
+            pool,
+            cases,
+            settings,
+            registry,
+            history.load_history(pool, registry),
+            budget,
+        )
+        background_tasks.add_task(run_background_benchmark, pool, job_id, lock)
+    except Exception:
+        lock.release()
+        raise
+    return {"job_id": str(job_id)}
 
 
 @app.get("/api/benchmarks/{job_id}")

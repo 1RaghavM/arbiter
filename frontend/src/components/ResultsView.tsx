@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { RunDetails } from '@/components/RunDetails'
 import { BenchmarkDetails } from '@/components/BenchmarkDetails'
@@ -36,6 +36,36 @@ export function ResultsView() {
   const [benchmarksLoading, setBenchmarksLoading] = useState(true)
   const [runsError, setRunsError] = useState('')
   const [benchmarksError, setBenchmarksError] = useState('')
+  const [benchmarkConfig, setBenchmarkConfig] = useState<{ mode: string; budget_usd: string; request_budget_usd: string } | null>(null)
+  const [startingBenchmark, setStartingBenchmark] = useState(false)
+  const [benchmarkStartError, setBenchmarkStartError] = useState('')
+  const [watchingBenchmarks, setWatchingBenchmarks] = useState(false)
+  const benchmarkInFlight = useRef(false)
+
+  async function startBenchmark() {
+    if (benchmarkInFlight.current) return
+    benchmarkInFlight.current = true
+    setStartingBenchmark(true)
+    setBenchmarkStartError('')
+    try {
+      const response = await fetch('/api/benchmarks', {
+        method: 'POST', headers: { 'X-Arbiter-Benchmark': 'start' },
+        signal: AbortSignal.timeout(10000),
+      })
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message ?? 'Could not start benchmark.')
+      }
+      setWatchingBenchmarks(true)
+      await refreshBenchmarks()
+    } catch (error) {
+      setBenchmarkStartError(error instanceof Error && error.name === 'Error' ? error.message
+        : 'Could not confirm the job started. Refresh benchmarks before retrying; it may already be running.')
+    } finally {
+      benchmarkInFlight.current = false
+      setStartingBenchmark(false)
+    }
+  }
 
   function refreshRuns() {
     return fetchRuns().then(rows => { setRuns(rows); setSelected([]) })
@@ -44,7 +74,11 @@ export function ResultsView() {
   }
 
   function refreshBenchmarks() {
-    return fetchBenchmarks().then(setBenchmarks)
+    return fetchBenchmarks().then(rows => {
+      setBenchmarks(rows)
+      setBenchmarksError('')
+      setWatchingBenchmarks(rows.some(job => ['pending', 'running'].includes(job.status)))
+    })
       .catch(() => setBenchmarksError('Could not load benchmark jobs. Refresh to try again.'))
       .finally(() => setBenchmarksLoading(false))
   }
@@ -52,7 +86,25 @@ export function ResultsView() {
   useEffect(() => {
     void refreshRuns()
     void refreshBenchmarks()
+    void fetch('/api/benchmarks/config', { signal: AbortSignal.timeout(10000) }).then(async response => {
+      if (!response.ok) throw new Error()
+      const config = await response.json()
+      if (!['mock', 'live'].includes(config.mode)
+        || ![config.budget_usd, config.request_budget_usd].every(value => typeof value === 'string' && Number.isFinite(Number(value)) && Number(value) > 0)) throw new Error()
+      setBenchmarkConfig(config)
+    }).catch(() => setBenchmarkStartError('Benchmark unavailable. Check the server budget and model configuration, then reload.'))
   }, [])
+
+  useEffect(() => {
+    if (!watchingBenchmarks) return
+    let refreshing = false
+    const timer = setInterval(() => {
+      if (refreshing) return
+      refreshing = true
+      void refreshBenchmarks().finally(() => { refreshing = false })
+    }, 2000)
+    return () => clearInterval(timer)
+  }, [watchingBenchmarks])
 
   return <div className="space-y-10">
     <div>
@@ -102,14 +154,18 @@ export function ResultsView() {
       }}>Load older runs</Button>
     </section>
     <section aria-labelledby="benchmarks-heading" aria-busy={benchmarksLoading}>
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="benchmarks-heading" className="text-lg font-semibold">Benchmark jobs</h2>
+        <Button onClick={() => void startBenchmark()} disabled={!benchmarkConfig || startingBenchmark || watchingBenchmarks || benchmarksLoading}>{startingBenchmark ? 'Starting…' : watchingBenchmarks ? 'Benchmark running…' : 'Run benchmark'}</Button>
         <Button variant="outline" onClick={() => { setBenchmarksLoading(true); setBenchmarksError(''); void refreshBenchmarks() }} disabled={benchmarksLoading}>Refresh benchmarks</Button>
       </div>
-      <p className="mt-3 text-sm text-stone-600">Comparison jobs use independent grading. Development jobs show online judge signals only; mock jobs are not live research evidence.</p>
+      {benchmarkConfig && <p className="mt-3 text-sm text-stone-600">Runs 30 development cases in {benchmarkConfig.mode} mode. {benchmarkConfig.mode === 'mock' ? 'No provider charges.' : 'Uses paid providers.'} Total ceiling ${benchmarkConfig.budget_usd}; per-case ceiling ${benchmarkConfig.request_budget_usd}.</p>}
+      {benchmarkStartError && <p role="alert" className="mt-3 text-sm text-red-700">{benchmarkStartError}</p>}
+      {watchingBenchmarks && <p role="status" className="mt-3 text-sm text-stone-600">Benchmark in progress. Results update automatically.</p>}
+      <p className="mt-3 text-sm text-stone-600">Comparison jobs use independent grading. Development jobs show online judge signals only.</p>
       {benchmarksLoading && <p role="status" className="mt-3 text-sm text-stone-600">Loading benchmark jobs…</p>}
       {benchmarksError && <p role="alert" className="mt-3 text-sm text-red-700">{benchmarksError} {benchmarks.length > 0 && 'Previously loaded records are shown below.'}</p>}
-      {!benchmarksLoading && !benchmarksError && benchmarks.length === 0 && <p className="mt-4 text-sm text-stone-600">No benchmark jobs yet. Completed CLI jobs will appear here.</p>}
+      {!benchmarksLoading && !benchmarksError && benchmarks.length === 0 && <p className="mt-4 text-sm text-stone-600">No benchmark jobs yet. Run a benchmark to see results here.</p>}
       {benchmarks.length > 0 && <div role="region" aria-label="Benchmark jobs table" tabIndex={0} className="mt-4 overflow-x-auto rounded-lg border bg-white focus-visible:outline-2 focus-visible:outline-stone-700">
         <table className="w-full text-left text-sm">
           <caption className="sr-only">Persisted benchmark summaries</caption>

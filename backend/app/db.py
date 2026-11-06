@@ -50,8 +50,8 @@ def create_run(
     pool,
     run_id,
     request: ChatRequest,
-    mode="mock",
-    version="mock-v1",
+    mode="live",
+    version="unversioned",
     benchmark_job_id=None,
 ):
     with pool.connection() as connection:

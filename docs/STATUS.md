@@ -2,6 +2,48 @@
 
 Updated: 2026-11-06 UTC.
 
+## Benchmark start button and live defaults (2026-11-06)
+
+Standalone user-requested change directly on the current `master` branch, based on
+`e1726f7` (merged dropdown PR #14). The user explicitly requested current-branch
+changes and a push; no new phase branch, PR, merge, or Phase 08 progression.
+
+- Added **Run benchmark** in Runs & benchmarks. A short POST persists the existing
+  30-case development job with frozen settings/history and server-configured
+  `BENCHMARK_BUDGET_USD` / `REQUEST_BUDGET_USD` ceilings, then schedules the existing
+  runner in the API process. The job appears automatically; active jobs refresh
+  every two seconds until completed, blocked, or uncertain. Duplicate clicks and
+  overlapping web launches are blocked. Configuration and start/read errors are
+  explicit; background failures release the slot and retain reservations.
+- Changed Settings, environment fallback/template, ChatResult, and saved-run
+  defaults to live. Updated the ignored local `.env` to `CHAT_MODE=live`, preserving
+  all other values. CLI new jobs and the launcher already defaulted to live.
+  Explicit offline fixtures and historical mock data retain truthful labels.
+- Updated requirements/steering/design/setup/quality together to replace the
+  former CLI-only development-job contract. Held-out comparisons remain CLI-only.
+  No dependencies, worker service, schema changes, or paid requests were added.
+- Backend focused check: `TEST_DATABASE_URL=postgresql://arbiter@127.0.0.1:55439/arbiter_test .venv/bin/pytest tests/test_web_benchmarks.py tests/test_jobs.py tests/test_config.py tests/test_db.py`:
+  **51 passed**. Full same-database `.venv/bin/pytest`: **353 passed** with real
+  PostgreSQL in a separate temporary test cluster and offline provider fixtures.
+  `.venv/bin/ruff check .` / `.venv/bin/ruff format --check .`: passed (35 files).
+  Initial lint found long new lines; formatting fixed them before tests.
+- Frontend `npm run typecheck`, `npm run lint`, `npm run build`: passed.
+  `CAPTURE_SCREENSHOTS=1 SCREENSHOT_PHASE=benchmark-button npm run test:e2e`:
+  **14 passed** at desktop/mobile widths. After the final explanatory-text change
+  and live-mode screenshot fixture, the affected `--grep 'benchmark button|benchmark start errors|results show'`
+  checks passed again: **6 passed**; type/lint/build passed again.
+- Visually checked [desktop completed](screenshots/phase-benchmark-button-benchmark-completed-desktop.png)
+  and [mobile running](screenshots/phase-benchmark-button-benchmark-running-mobile.png).
+  Screenshots are explicit offline fixtures; no live benchmark was started.
+  Local research DB credentials did not allow a test connection, so all tests
+  used the independent temporary cluster; research data was untouched.
+- No implementation blockers. Changes are recorded by
+  `feat(benchmarks): launch jobs from results and default to live`, followed by
+  the immediately pushed status commit recording the exact implementation SHA.
+  Next action: restart the API and refresh the frontend, then use
+  **Runs & benchmarks → Run benchmark**. Keep the API running during jobs; after
+  interruption use CLI resume with the existing uncertain-spend rules.
+
 ## Saved run and benchmark dropdown details (2026-11-06)
 
 Standalone user-requested fix on `fix/run-detail-dropdowns`, based on updated

@@ -29,6 +29,7 @@ test.beforeEach(async ({ page }) => {
   // Block every API request by default so a missing fixture cannot reach a paid backend.
   await page.route('**/api/**', route => route.fulfill({ status: 503, json: { code: 'unmocked_test_request' } }))
   await page.route('**/api/config', route => route.fulfill({ json: { mode: 'mock', model_key: null, providers: [] } }))
+  await page.route('**/api/benchmarks/config', route => route.fulfill({ json: { mode: 'live', budget_usd: '1.00', request_budget_usd: '0.25' } }))
 })
 
 test('keyboard chat preserves context, blocks duplicate sends, and clears on new chat', async ({ page }, testInfo) => {
@@ -327,4 +328,73 @@ test('selected completed runs download a Markdown summary', async ({ page }, tes
   const downloaded = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Download summary (1)' }).click()
   expect((await downloaded).suggestedFilename()).toBe('arbiter-run-summary.md')
+})
+
+test('benchmark button starts once and automatically displays progress and results', async ({ page }, testInfo) => {
+  await page.route('**/api/config', route => route.fulfill({ json: { mode: 'live', model_key: null, providers: [{ key: 'offline', provider: 'openai', model_id: 'offline', status: 'available' }] } }))
+  const job = {
+    job_id: '00000000-0000-4000-8000-000000000004', created_at: '2026-11-06T12:00:00Z',
+    mode: 'live', strategy: 'routed', status: 'running', case_count: 30,
+    states: { pending: 29, running: 1, done: 0, error: 0, uncertain: 0 },
+    online_pass_count: 0, known_cost_usd: '0', cost_complete: false,
+    budget_usd: '1.00', budget_used_usd: '0.25', quality_basis: 'Offline fixture; online judge proxy only.',
+  }
+  let started = false
+  let completed = false
+  let starts = 0
+  let reads = 0
+  let release: () => void = () => {}
+  const heldStart = new Promise<void>(resolve => { release = resolve })
+  await page.route('**/api/runs?*', route => route.fulfill({ json: [] }))
+  await page.route('**/api/benchmarks?*', route => {
+    reads++
+    return route.fulfill({ json: !started ? [] : [{ ...job,
+      ...(completed ? { status: 'completed', states: { pending: 0, running: 0, done: 30, error: 0, uncertain: 0 } } : {}),
+    }] })
+  })
+  await page.route('**/api/benchmarks', async route => {
+    expect(route.request().method()).toBe('POST')
+    expect(route.request().headers()['x-arbiter-benchmark']).toBe('start')
+    starts++
+    await heldStart
+    started = true
+    await route.fulfill({ status: 202, json: { job_id: job.job_id } })
+  })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Runs & benchmarks', exact: true }).click()
+  await expect(page.getByText('Runs 30 development cases in live mode.', { exact: false })).toContainText('Total ceiling $1.00; per-case ceiling $0.25')
+  const start = page.getByRole('button', { name: 'Run benchmark', exact: true })
+  await expect(start).toBeEnabled()
+  await start.focus()
+  await start.press('Enter')
+  await expect(page.getByRole('button', { name: 'Starting…' })).toBeDisabled()
+  await page.keyboard.press('Enter')
+  expect(starts).toBe(1)
+  release()
+  const table = page.getByRole('region', { name: 'Benchmark jobs table' })
+  await expect(table).toContainText('0 done / 30 cases')
+  await expect(page.getByRole('button', { name: 'Benchmark running…' })).toBeDisabled()
+  await screenshot(page, testInfo, 'benchmark-running')
+  completed = true
+  await expect(table).toContainText('30 done / 30 cases')
+  await expect(start).toBeEnabled()
+  const completedReads = reads
+  await expect(page.getByText('Benchmark in progress.', { exact: false })).toHaveCount(0)
+  await screenshot(page, testInfo, 'benchmark-completed')
+  await page.waitForTimeout(2200)
+  expect(reads).toBe(completedReads)
+  expect(starts).toBe(1)
+})
+
+test('benchmark start errors do not fabricate a job and allow user retry', async ({ page }) => {
+  await page.route('**/api/runs?*', route => route.fulfill({ json: [] }))
+  await page.route('**/api/benchmarks?*', route => route.fulfill({ json: [] }))
+  await page.route('**/api/benchmarks', route => route.fulfill({ status: 503, json: { message: 'Configure the benchmark budget on the server.' } }))
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Runs & benchmarks', exact: true }).click()
+  const start = page.getByRole('button', { name: 'Run benchmark', exact: true })
+  await start.click()
+  await expect(page.getByRole('alert')).toContainText('Configure the benchmark budget')
+  await expect(page.getByText('No benchmark jobs yet.', { exact: false })).toBeVisible()
+  await expect(start).toBeEnabled()
 })

@@ -66,6 +66,8 @@ Provider fields are translated and validated at the adapter boundary. Unknown co
 | GET /api/runs?limit=20 | Recent metadata only; cap limit at 100 |
 | GET /api/runs/{id} | One full stored run; 404 if absent |
 | GET /api/benchmarks | Recent job summaries |
+| GET /api/benchmarks/config | Mode and positive server-configured total/per-case ceilings; no secrets |
+| POST /api/benchmarks | Requires `X-Arbiter-Benchmark: start`; persists the fixed development job and returns 202 `{job_id}` before background execution |
 | GET /api/benchmarks/{id} | Report and per-strategy metrics |
 | POST /api/session | Deployment-only shared-password login; rate-limited |
 | DELETE /api/session | Clear demo session |
@@ -136,7 +138,7 @@ History uses the `history-v1` policy and `rubric-v1` only. Earlier `priors-v1` r
 
 A request loads one content-addressed history snapshot before paid work and reuses it for every selection. Jobs freeze dataset contents/hash, settings, model registry and that snapshot in PostgreSQL; resume uses those stored inputs. Development live records can enter future history; mock, held-out and baseline records cannot. The current development job reports online quality status only; independent comparison grading belongs to Phase 07.
 
-Before a case starts, persist its run ID, running state and full request reservation. Known complete costs release unused reservation; unknown/crashed work retains the cap. Resume skips finished cases and marks interrupted running cases uncertain. Only an explicit uncertain retry may allocate another reservation; the original charge remains. A per-job advisory lock prevents concurrent workers from mistaking active work for a crash. No database transaction spans provider work and no HTTP endpoint starts a job.
+Before a case starts, persist its run ID, running state and full request reservation. Known complete costs release unused reservation; unknown/crashed work retains the cap. Resume skips finished cases and marks interrupted running cases uncertain. Only an explicit uncertain retry may allocate another reservation; the original charge remains. A per-job advisory lock prevents concurrent workers from mistaking active work for a crash. No database transaction spans provider work.
 
 
 ## Phase 07 comparison contract
@@ -145,7 +147,7 @@ A comparison freezes one held-out dataset, registry/settings, compatible develop
 
 Both runtime and grading stages use the existing job lock, committed reservation, uncertain recovery and explicit retry rules. Grading run/call records preserve independent research usage; job accounting keeps runtime and scoring subtotals/completeness separate while charging both to a shared job ceiling. A failed or incomplete answer remains in the comparison; an unavailable independent grade does not become a pass. Objective grading makes no provider call. Rubric grading sees prompt/reference/answer data without strategy or generator identity and never executes generated code.
 
-CLI preparation and execution are separate so the frozen experiment can be inspected before paid work. HTTP remains read-only. Exports include frozen inputs and per-case results; summaries compare matched cases and mark incomplete cost conclusions inconclusive. Blinded triplet review is a separate artifact, with reviewer identity/type recorded. The exact experiment protocol and approved aggregate budget are in [benchmark-protocol.md](benchmark-protocol.md).
+CLI preparation and execution are separate so the frozen experiment can be inspected before paid work. Comparison jobs remain read-only over HTTP. Exports include frozen inputs and per-case results; summaries compare matched cases and mark incomplete cost conclusions inconclusive. Blinded triplet review is a separate artifact, with reviewer identity/type recorded. The exact experiment protocol and approved aggregate budget are in [benchmark-protocol.md](benchmark-protocol.md).
 
 ## Selected-run summary contract
 
@@ -162,4 +164,25 @@ results afterward in run_summaries, separate from routing history and benchmark
 metrics. Interrupted calls retain their reservation. The report uses saved run
 snapshots, which can overlap, and does not claim selected-sample benchmark validity.
 GET /api/runs adds a nonnegative offset for loading older records.
-Benchmark execution remains CLI-only; summary generation is a separate paid HTTP action.
+Summary generation is separate from benchmark execution and accounting.
+
+## Development benchmark button (2026-11-06)
+
+The start endpoint accepts no client dataset, model, mode, or budget overrides.
+It freezes `benchmarks/dev.jsonl`, the current settings/registry/history, positive
+`BENCHMARK_BUDGET_USD` and `REQUEST_BUDGET_USD` limits, then schedules the existing
+runner with FastAPI BackgroundTasks after returning the job ID. Missing live
+generator credentials or limits reject creation. A per-process lock rejects
+overlapping web launches with 409 and is released on creation or runner failure.
+Runner failures mark the job uncertain when persistence is available, retaining
+all case reservations. No provider retries are introduced. Custom start headers
+require browser cross-origin preflight; this local demo adds no permissive CORS.
+Deployment still requires the Phase 08 session protection.
+
+The UI displays mode and both ceilings before launch, prevents duplicate clicks,
+and refreshes the job list every two seconds while jobs are pending/running.
+Polling stops on completion, blocked, or uncertain states. Reloading recovers
+progress from persisted jobs. Execution requires the API process to stay alive;
+after a restart, use the existing CLI resume and explicit uncertain-retry rules.
+Live is the default in `.env.example`, Settings, ChatResult, and run creation.
+Historical mock evidence and explicit offline fixtures keep their original labels.
