@@ -381,3 +381,10 @@ reservations/results prevent contamination of benchmark/history accounting.
   workflow remains unverified. Apply migration 005 before use.
 - Concurrent expandable-details work was preserved separately. The user stopped
   that task and requested focus on summaries.
+- Integration isolation: the stopped task had changed the checkout branch during
+  this session. Summary commit dfd97da was pushed to feat/run-summaries; follow-up
+  removes leftover expandable-detail markup from the isolated commit. Other task
+  edits remain uncommitted. The isolated summary frontend build and two browser
+  download tests passed after correction; screenshots were regenerated.
+- Next action: review the summary PR, supply a working test-database connection,
+  verify migration/persistence, then apply migration 005 to the app database.

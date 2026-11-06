@@ -85,7 +85,7 @@ export function ResultsView() {
             <td className="px-4 py-3"><p>{qualityLabel(run.status)}</p><p className="text-xs text-stone-600">{run.final_model ?? 'No model'}</p></td>
             <td className="whitespace-nowrap px-4 py-3">{latencyLabel(run.total_latency_ms)}</td>
             <td className="px-4 py-3">{costLabel(run.total_cost_usd, run.known_cost_usd, run.cost_complete)}{run.mode === 'mock' && <p className="text-xs text-stone-600">No API charge</p>}</td>
-          </tr><tr><td colSpan={5} className="px-4 pb-4"><div className="sticky left-4 w-[calc(100vw-4.5rem)] max-w-[43.25rem]"><RunDetails runId={run.id} /></div></td></tr></Fragment>)}</tbody>
+          </tr>)}</tbody>
         </table>
       </div>}
       <Button className="mt-3" variant="outline" disabled={runsLoading || summarizing} onClick={async () => {
@@ -127,7 +127,7 @@ export function ResultsView() {
             <td className="px-4 py-3"><p>Runtime {costLabel(job.known_cost_usd, job.known_cost_usd, job.cost_complete)}</p>
               {job.scoring_known_cost_usd !== undefined && <p className="mt-1 text-xs text-stone-600">Scoring {costLabel(job.scoring_known_cost_usd, job.scoring_known_cost_usd, job.scoring_cost_complete === true)}</p>}
               <p className="mt-1 text-xs text-stone-600">Budget used / held: ${job.budget_used_usd} / ${job.budget_usd}</p></td>
-          </tr><tr><td colSpan={4} className="px-4 pb-4"><div className="sticky left-4 w-[calc(100vw-4.5rem)] max-w-[43.25rem]"><BenchmarkDetails jobId={job.job_id} /></div></td></tr></Fragment>)}</tbody>
+          </tr>)}</tbody>
         </table>
       </div>}
     </section>
