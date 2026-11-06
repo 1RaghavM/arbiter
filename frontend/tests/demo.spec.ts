@@ -129,7 +129,7 @@ test('invalid input and failed requests preserve a draft for an explicit retry',
 test('results show persisted summaries, empty states, and explicit refresh failures', async ({ page }, testInfo) => {
   let state: 'empty' | 'populated' | 'error' = 'empty'
   let reads = 0
-  await page.route('**/api/runs?limit=20', route => {
+  await page.route('**/api/runs?limit=20&offset=0', route => {
     reads++
     if (state === 'error') return route.fulfill({ status: 503, json: { code: 'database_unavailable' } })
     return route.fulfill({ json: state === 'empty' ? [] : [{
