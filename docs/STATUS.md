@@ -1,14 +1,14 @@
 # Arbiter implementation status
 
-Updated: 2026-10-22.
+Updated: 2026-11-05.
 
-- Current phase: 07 — controlled benchmark, **BLOCKED on Google generation billing**.
+- Current phase: 07 — controlled benchmark, **BLOCKED on research database recovery and unfinished live experiment**.
 - Repository/default branch: [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), `master`.
 - Phase 06 [PR #7](https://github.com/1RaghavM/arbiter/pull/7) merged at `8b681e8` after independent review and [final CI](https://github.com/1RaghavM/arbiter/actions/runs/39680736653): **264 backend tests with real PostgreSQL and six browser tests passed**, with all lint/type/build gates green. Merge author and committer are the configured user.
 - Phase branch: `phase/07-benchmark`, from fetched `origin/master` at `8b681e8`.
 - Authorization: user resumed delegated phase progression on 2026-10-21, approved **USD 5 total** for benchmark API work including independent grading, and selected **Vercel** for Phase 08. No hosting purchase is authorized or required by this selection.
 - Current PR: [draft #8](https://github.com/1RaghavM/arbiter/pull/8); live gates remain blocked and merge is not authorized until they pass.
-- Next action: restore billing for the Google API project used by GOOGLE_API_KEY (generation returns HTTP 402). Then verify only the affected provider within the remaining USD 5 authorization, record any development/held-out budget reallocation before execution, complete pending development work without replaying completed cases, freeze and run the held-out comparison, review ten triplets, and request final independent review. No Phase 08 implementation before Phase 07 merge.
+- Next action: recover access to the original research job/accounting, then verify Google and Haiku within the remaining approved budget, complete pending development, and run/review the frozen held-out comparison. User confirmed Google billing restored on 2026-11-05; generation access has not yet been reverified.
 - Docker Desktop cannot start. Installed PostgreSQL 17 with Homebrew and started an isolated cluster at `/private/tmp/arbiter-phase07-postgres` on `127.0.0.1:55432`; separate `arbiter_test` and `arbiter_benchmark` databases, user `arbiter`. Existing Docker data and root `.env` remain unchanged. Do not run fixtures against the research database.
 - All four provider credentials are configured (values not logged). Official model/price references rechecked before freeze; successful previous integration evidence is reused. Phase 07 development and one affected-provider diagnostic ran; accounting and blocker are recorded below.
 
@@ -225,5 +225,41 @@ This is an explicit exception to the usual one-branch-per-phase workflow.
 
 - PR: https://github.com/1RaghavM/arbiter/pull/9 (base `phase/07-benchmark`).
   Frontend typecheck/lint/build passed. Independent review found no code blockers
-  and passed 47 focused PostgreSQL tests. PR remains open; live gates are blocked.
+  and passed 47 focused PostgreSQL tests. PR #9 merged into Phase 07 at `d40881c`; live gates remain blocked.
   Implementation commits: `b43a8b3`, `63d68c0`, each immediately pushed.
+## Requested local setup shortcut (2026-11-04)
+
+Standalone user-requested change on `feat/make-app`, based on `origin/master`
+(the repository has no `main` branch); no phase progression or benchmark work.
+`make app` checks the local env, requires Jev plus one generator, installs locked
+packages, migrates PostgreSQL, builds and serves the frontend with an API proxy,
+and prints the localhost URL after a successful database-backed readiness read.
+Busy ports use alternatives. Ctrl+C cleans up app servers; database data persists.
+
+Validation: `uv run --frozen pytest tests/test_launcher.py`: 7 passed;
+Ruff check and format check for launcher/tests passed. Frontend `npm run typecheck`,
+`npm run lint`, `npm run build`: passed. No paid requests or full Docker startup
+rehearsal performed. Next step: review the setup PR and try `make app` with Docker
+running and configured keys. Existing uncommitted benchmark STATUS work is
+preserved in stash `pre-make-app-status` on its original branch.
+
+## Merge-readiness repair (2026-11-05)
+
+Merged current master (`e9e9b8f`) into `phase/07-benchmark`, preserving both
+benchmark and one-command setup documentation. Resolved the two append conflicts
+in SETUP and STATUS. Added `.local/` to gitignore to exclude local database files.
+User confirmed Google billing restored; this supersedes the earlier billing blocker,
+but is not a successful generation check. No paid calls were made.
+
+Original temporary research cluster remains absent. No dump/backup was found
+in Downloads or Documents within four directory levels. A local cluster at
+`.local/postgres-55432` is running and requires password authentication; the
+configured DATABASE_URL connection failed. Its contents are unverified and its
+access controls were preserved. Restore access to the original research records
+before exporting pending cases; do not fabricate records from report summaries.
+
+Latest pre-merge CI at `d40881c` passed backend/frontend. The previous review's
+master-only test results are not Phase 07 validation. This merge changes no
+Phase 07 runtime code; whitespace/conflict checks are the local validation,
+and CI must validate the combined branch. Required live comparison, grading,
+and ten triplet reviews remain incomplete. PR #8 stays draft and must not merge.

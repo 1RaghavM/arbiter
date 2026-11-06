@@ -2,7 +2,7 @@
 
 No held-out comparison has run. Quality, savings, latency comparisons and target attainment are **unmeasured**.
 
-The 30-case development pass stopped after two cases because Google generation failed without usage information. Both routed requests escalated to Anthropic and passed the online evaluator; this is not independent benchmark quality evidence. A single bounded Google diagnostic subsequently returned HTTP 402 (Payment Required). A free model lookup succeeded. Restore Google API billing before further paid work.
+The 30-case development pass stopped after two cases because Google generation failed without usage information. Both routed requests escalated to Anthropic and passed the online evaluator; this is not independent benchmark quality evidence. A single bounded Google diagnostic subsequently returned HTTP 402 (Payment Required). A free model lookup succeeded. The user confirmed billing restored on 2026-11-05; generation has not been reverified. Original research database access must be recovered before paid continuation.
 
 | Evidence | Result |
 | --- | --- |
