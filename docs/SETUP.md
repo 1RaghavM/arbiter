@@ -201,21 +201,26 @@ The list accepts a limit from 1 to 100 and omits per-case payloads. The detail r
 
 ## One-command local app
 
-Install Make, Node.js 24, uv, and Docker with Compose (running). Then run
+Install Make, Node.js 24, uv, and PostgreSQL 17 (Homebrew is detected) or running Docker with Compose. Then run
 `make app` from the cloned repository. If prompted, run `cp .env.example .env`
 and edit `.env`: provide `JEV_API_KEY` and at least one of `OPENAI_API_KEY`,
 `ANTHROPIC_API_KEY`, or `GOOGLE_API_KEY`. Keep the positive request budget.
 Run `make app` again. Keys are checked for presence, not account access.
 
 This command installs locked dependencies, builds the frontend, connects to the
-configured PostgreSQL database (or starts the supplied Docker database for the
-example URL), applies migrations, and runs live chat on localhost. It prints the
-frontend link after both servers and database reads are ready. Busy ports get
-available alternatives; existing processes are never killed. A custom database
-URL must already be reachable. `.env` values take precedence for this launcher,
+configured PostgreSQL database (or provisions a local database when its port is free), applies migrations, and runs live chat on localhost. It prints the
+frontend link after both servers and database reads are ready. Busy app ports get
+available alternatives; existing processes are never killed. Remote database
+URLs must already be reachable. Local database ports must be free or reachable
+with the configured credentials. `.env` values take precedence for this launcher,
 and it explicitly sets live mode without editing your file. Without Anthropic,
 the fixed judge is unavailable and answers may be labeled unverified.
 
-Keep the terminal open; Ctrl+C stops both app servers. Docker PostgreSQL stays
+Native PostgreSQL data is retained in `.local/postgres-PORT` (ignored by git).
+A new cluster does not import data from older clusters or benchmark backups.
+Stop it with `pg_ctl -D .local/postgres-PORT -w stop`. Passwordless local URLs
+use the local demo password `arbiter` for newly managed databases.
+
+Keep the terminal open; Ctrl+C stops both app servers. PostgreSQL stays
 running and retains data; `docker compose down` stops it without deleting data.
 Startup makes no paid provider requests; submitting chat uses your request budget.

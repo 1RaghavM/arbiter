@@ -12,3 +12,5 @@ dist/
 frontend/test-results/
 frontend/playwright-report/
 .DS_Store
+
+.local/
