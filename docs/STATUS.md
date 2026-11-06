@@ -363,3 +363,54 @@ Required backend/frontend CI passed on both push and PR runs at that head:
 Reviewer merged PR #8 with a normal merge commit `683c0d6`, using the configured
 user as sole author and committer, and immediately pushed to master. GitHub
 confirms MERGED. No additional paid calls or Phase 08 work.
+
+## Selected-run Markdown summaries (2026-11-06)
+
+Standalone requested feature on feat/run-summaries; Phase 08 remains pending.
+Adds completed-run selection, older-run loading and one Sonnet 5.5 Markdown report
+with saved conversations/results and project context. Separate durable summary
+reservations/results prevent contamination of benchmark/history accounting.
+
+- Backend Ruff check passed; four focused fake-provider summary tests passed.
+- Frontend typecheck/lint/build passed; focused Playwright download test passed
+  on desktop and mobile (2 tests). Screenshots: phase-summary-summary-*.png.
+- Combined summary/DB/chat test invocation: 7 passed, 5 database setup errors:
+  PostgreSQL requires a password on both documented port 55434 and configured
+  port 55432. Migration/real PostgreSQL summary persistence is not yet verified.
+- No paid requests. Existing Sonnet adapter reused; summary output quality/live
+  workflow remains unverified. Apply migration 005 before use.
+- Concurrent expandable-details work was preserved separately. The user stopped
+  that task and requested focus on summaries.
+- Integration isolation: the stopped task had changed the checkout branch during
+  this session. Summary commit dfd97da was pushed to feat/run-summaries; follow-up
+  removes leftover expandable-detail markup from the isolated commit. Other task
+  edits remain uncommitted. The isolated summary frontend build and two browser
+  download tests passed after correction; screenshots were regenerated.
+- Next action: review the summary PR, supply a working test-database connection,
+  verify migration/persistence, then apply migration 005 to the app database.
+
+## Summary CI fixes (2026-11-06)
+
+PR #13 at 05c59cc failed on two stale test assumptions introduced by the summary
+feature: test_db expected four migrations after adding migration 005, and the
+existing results browser fixture matched the runs URL without its new offset=0.
+CI had 340 backend passes/one failure and six browser passes/two failures
+(desktop/mobile instances of the same result-view fixture). These were missed
+by the earlier focused checks; the CI failures were not database-access errors.
+
+Updated the migration count and exact browser fixture URL. Verification used a
+clean tracked-file snapshot plus these fixes, excluding preserved concurrent edits:
+
+- Fresh disposable PostgreSQL 17 on loopback port 55439, database arbiter_test;
+  full backend pytest -q: **341 passed**. Cluster stopped after the run.
+  Ruff check and format --check: passed (34 files).
+- Frontend npm run typecheck, npm run lint, npm run build: passed.
+  npm run test:e2e: **8 passed**, desktop/mobile, all provider traffic faked.
+  Linked node_modules caused Vite font allow-list warnings in the temporary copy;
+  no UI changes/screenshots were evaluated in this test-only update.
+- The first archive-based backend rehearsal lacked Git metadata needed by six
+  comparison tests (335 passed, six failed); providing read-only GIT_DIR metadata
+  for the full rerun produced the 341-pass result above.
+- No paid calls. Actual Sonnet summary quality and live summary persistence remain
+  unverified. PR stays draft; Phase 08 remains pending.
+- Next action: verify CI on the fix commit, then review the summary feature.

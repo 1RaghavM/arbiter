@@ -47,3 +47,11 @@ Use one chat screen, one compact runs/benchmark screen, one API service, one dat
 ## Completion versus research success
 
 The software can be complete even if routing fails to save money. The experiment's provisional success criterion is held-out pass rate within 5 percentage points of the fixed-strong baseline and either at least 20% lower total runtime API cost or at least 15% lower median end-to-end latency. Freeze these targets before the final run. Report uncertainty and p95 latency; do not imply statistical equivalence from this small experiment.
+
+## Selected-run summaries (user request, 2026-11-06)
+
+The Runs & benchmarks view allows selecting completed saved runs and downloading
+one Markdown analysis from Sonnet 5.5, with Arbiter project context and the full
+saved conversations/results. Older runs can be loaded. Each report selects at most
+100 runs and must fit context and configured request-spend bounds; oversized
+selections are rejected without truncating source conversations.

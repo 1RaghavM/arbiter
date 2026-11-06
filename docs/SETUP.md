@@ -269,3 +269,12 @@ use the local demo password `arbiter` for newly managed databases.
 Keep the terminal open; Ctrl+C stops both app servers. PostgreSQL stays
 running and retains data; `docker compose down` stops it without deleting data.
 Startup makes no paid provider requests; submitting chat uses your request budget.
+
+### Selected-run Markdown reports
+
+Apply migrations with the existing migration command before using summaries.
+Configure server-side ANTHROPIC_API_KEY, an enabled claude-sonnet-5-5 registry entry,
+and REQUEST_BUDGET_USD. In Runs & benchmarks, load older runs if needed, select
+completed runs, then Download summary. The action makes one paid call even when
+the selected source runs are mock. Missing budget/access is reported as an error.
+The report includes saved conversation snapshots; multiple runs may overlap.
