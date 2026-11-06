@@ -2,6 +2,35 @@
 
 Updated: 2026-11-06 UTC.
 
+## Saved run and benchmark dropdown details (2026-11-06)
+
+Standalone user-requested fix on `fix/run-detail-dropdowns`, based on updated
+`master` at `4da846f` after summary PR #13 merged. Only the dropdown fix,
+its tests, and evidence are included; the merged summary feature is preserved.
+Phase 08 remains pending.
+
+- Replaced ID-only dropdowns with on-demand reads of the existing run/job
+  endpoints. Runs show saved conversation/answer, task and analysis, exact model
+  IDs, routing reasons, escalation, evaluations, call errors, tokens, latency,
+  and complete/incomplete costs. Benchmark jobs expose dataset/history IDs,
+  case progress, and expandable linked runs. Failed loads have explicit retries.
+- Frontend `npm run typecheck`, `npm run lint`, `npm run build`: passed.
+  `npm run test:e2e`: **10 passed**, desktop/mobile, including the already merged
+  summary download flow. An initial attempt was blocked by an orphaned test
+  server from this session; stopping that server resolved the port conflict.
+- `CAPTURE_SCREENSHOTS=1 SCREENSHOT_PHASE=restore-details npm run test:e2e -- --grep 'run and benchmark dropdowns'`:
+  **2 passed**. Visually checked run [desktop](screenshots/phase-restore-details-run-details-desktop.png)
+  / [mobile](screenshots/phase-restore-details-run-details-mobile.png) and benchmark
+  [desktop](screenshots/phase-restore-details-benchmark-details-desktop.png)
+  / [mobile](screenshots/phase-restore-details-benchmark-details-mobile.png).
+  Expanded text fits narrow screens while summary tables remain scrollable.
+- Backend `.venv/bin/ruff check .` and `.venv/bin/ruff format --check .`: passed
+  (34 files). No backend code or schema changes; backend tests and paid provider
+  checks were not repeated. All browser API traffic used offline fixtures.
+- Implementation/evidence commit: `0ae4a7f`, immediately pushed. No blockers.
+  R10/R13 evidence updated. Next action: open and review the separate fix PR
+  against `master`; no merge or phase progression is included in this request.
+
 ## App-name capitalization (2026-11-06)
 
 Standalone user-requested fix on `fix/capitalize-app-name`, based on `master`
