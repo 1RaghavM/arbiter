@@ -2,13 +2,13 @@
 
 Updated: 2026-11-05.
 
-- Current phase: 07 — controlled benchmark, **BLOCKED on research database recovery and unfinished live experiment**.
+- Current phase: 07 — controlled benchmark, **in progress: replacement database populated; full experiment unfinished**.
 - Repository/default branch: [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), `master`.
 - Phase 06 [PR #7](https://github.com/1RaghavM/arbiter/pull/7) merged at `8b681e8` after independent review and [final CI](https://github.com/1RaghavM/arbiter/actions/runs/39680736653): **264 backend tests with real PostgreSQL and six browser tests passed**, with all lint/type/build gates green. Merge author and committer are the configured user.
 - Phase branch: `phase/07-benchmark`, from fetched `origin/master` at `8b681e8`.
 - Authorization: user resumed delegated phase progression on 2026-10-21, approved **USD 5 total** for benchmark API work including independent grading, and selected **Vercel** for Phase 08. No hosting purchase is authorized or required by this selection.
 - Current PR: [draft #8](https://github.com/1RaghavM/arbiter/pull/8); live gates remain blocked and merge is not authorized until they pass.
-- Next action: recover access to the original research job/accounting, then verify Google and Haiku within the remaining approved budget, complete pending development, and run/review the frozen held-out comparison. User confirmed Google billing restored on 2026-11-05; generation access has not yet been reverified.
+- Next action: continue the remaining 28 development cases in the replacement database, allocating the remaining budget before execution; then freeze/run the held-out comparison and review ten triplets. Google and Haiku access verified. User authorized fresh calls after database loss.
 - Docker Desktop cannot start. Installed PostgreSQL 17 with Homebrew and started an isolated cluster at `/private/tmp/arbiter-phase07-postgres` on `127.0.0.1:55432`; separate `arbiter_test` and `arbiter_benchmark` databases, user `arbiter`. Existing Docker data and root `.env` remain unchanged. Do not run fixtures against the research database.
 - All four provider credentials are configured (values not logged). Official model/price references rechecked before freeze; successful previous integration evidence is reused. Phase 07 development and one affected-provider diagnostic ran; accounting and blocker are recorded below.
 
@@ -263,3 +263,25 @@ master-only test results are not Phase 07 validation. This merge changes no
 Phase 07 runtime code; whitespace/conflict checks are the local validation,
 and CI must validate the combined branch. Required live comparison, grading,
 and ten triplet reviews remain incomplete. PR #8 stays draft and must not merge.
+
+## Replacement live records (2026-11-05)
+
+User explicitly authorized fresh calls after loss of the original database.
+Created a separate password-protected cluster in ignored `.local/research-20261105`,
+localhost port 55434, database `arbiter_research`; credentials remain private.
+No existing cluster or root .env was changed. Applied all migrations successfully.
+
+- `python -m app.smoke --budget-usd 0.02 --models google haiku`: both passed,
+  one call each, complete usage, USD 0.0000121 combined.
+- `python -m app.jobs benchmark --dataset ../.local/research-20261105/dev-two.jsonl
+  --budget-usd 0.50 --request-budget-usd 0.25`: completed two live development
+  cases, both routed to Haiku and passed the online judge; USD 0.004676734,
+  complete usage. Job `4d913175-a250-44f7-9f23-62810acb1efb`.
+- New estimated cost USD 0.004688834. Retaining old unknown-cost allowance
+  USD 0.5026437 leaves USD 4.492667466 of the approved USD 5 total.
+- `pg_dump -Fc` succeeded; private backup `.local/research-20261105/research.dump`,
+  mode 0600. Provider and development results committed under reports/.
+- This is replacement work, not recovered records. The two passes are online
+  proxies, not independent held-out quality. Remaining 28 development cases,
+  90 held-out strategy rows, independent grading and ten reviews still required.
+  PR #8 must remain draft. No runtime code changed; JSON/whitespace checks passed.

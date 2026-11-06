@@ -19,3 +19,10 @@ The 30-case development pass stopped after two cases because Google generation f
 After billing is restored, record a revised allocation within the remaining authorized total, complete pending development work without replaying finished cases, freeze the held-out dataset/configuration/history, and execute all three strategies with independent grading and ten blinded triplet reviews. Final review and merge remain blocked until those gates pass. Phase 08 deployment follows that merge.
 
 The original development job cannot advance merely with `--resume`: its immutable USD 0.50 ceiling is fully retained. Preserve it and its reservations; use a separately capped continuation job containing exactly the 28 pending case IDs. Count both jobs and diagnostics against the same authorized total.
+
+Update 2026-11-05: user authorized fresh calls after data loss. A replacement
+database now contains two successful provider checks and two completed routed
+development cases. See [replacement development](replacement-development.json)
+and [provider recheck](provider-recheck.json). New cost USD 0.004688834 with
+complete usage; historical unknown reservations remain retained. The held-out
+comparison is still unrun, so the phase remains incomplete.

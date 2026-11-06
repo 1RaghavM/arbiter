@@ -1,0 +1,67 @@
+{
+  "job_id": "4d913175-a250-44f7-9f23-62810acb1efb",
+  "created_at": "2026-11-05T23:32:07.025287-05:00",
+  "status": "completed",
+  "strategy": "routed",
+  "mode": "live",
+  "dataset_hash": "ec75cd5bad55d4f705d7af3466a1cbc23b14d37885daa092f84a5c655d8fb439",
+  "history_snapshot_id": "9604b2e2eca0187a02d66bfe40b2c59ff5c454e36ce00b46369e1ff0fed45dd1",
+  "budget_usd": "0.50",
+  "budget_used_usd": "0.004676734",
+  "known_cost_usd": "0.004676734",
+  "cost_complete": true,
+  "scoring_known_cost_usd": "0",
+  "scoring_cost_complete": true,
+  "quality_basis": "Online judge proxy only; no independent benchmark grading.",
+  "case_count": 2,
+  "states": {
+    "pending": 0,
+    "running": 0,
+    "done": 2,
+    "error": 0,
+    "uncertain": 0
+  },
+  "online_pass_count": 2,
+  "cases": [
+    {
+      "ordinal": 0,
+      "case_id": "extract-color",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "e1b72240-3882-4c34-a5e2-309f64e4d0d7",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "haiku",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.002118328",
+        "total_cost_usd": "0.002118328",
+        "total_latency_ms": 2910
+      },
+      "uncertain_attempts": []
+    },
+    {
+      "ordinal": 1,
+      "case_id": "extract-invoice",
+      "strategy": "routed",
+      "stage": "runtime",
+      "state": "done",
+      "run_id": "7d9599fa-54cf-4982-8e89-0f9bd22bf4fc",
+      "attempts": 1,
+      "reserved_cost_usd": "0.25",
+      "result": {
+        "status": "passed",
+        "final_model": "haiku",
+        "cost_complete": true,
+        "error_category": null,
+        "known_cost_usd": "0.002558406",
+        "total_cost_usd": "0.002558406",
+        "total_latency_ms": 2423
+      },
+      "uncertain_attempts": []
+    }
+  ]
+}
