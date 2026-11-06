@@ -2,6 +2,21 @@
 
 Updated: 2026-11-06 UTC.
 
+## App-name capitalization (2026-11-06)
+
+Standalone user-requested fix on `fix/capitalize-app-name`, based on `master`
+at `8190fec`. The app header now displays **Arbiter**, matching the existing page
+title and composer. Phase 08 remains pending.
+
+- Frontend `npm run typecheck`, `npm run lint`, `npm run build`: passed.
+- `CAPTURE_SCREENSHOTS=1 SCREENSHOT_PHASE=capitalize-name npm run test:e2e -- --grep 'keyboard chat'`:
+  **2 passed**, desktop/mobile, offline API fixtures only.
+- Visually checked [desktop](screenshots/phase-capitalize-name-chat-desktop.png)
+  and [mobile](screenshots/phase-capitalize-name-chat-mobile.png) screenshots.
+- No backend or paid checks needed for this text-only change. No blockers.
+  Commit: `fix(ui): capitalize Arbiter in the app header`, with immediate push.
+  Next action: review the standalone fix PR; no phase progression.
+
 - Current phase: 07 — controlled benchmark, **complete and merged**. Phase 08 is pending.
 - Repository/default branch: [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), `master`.
 - Phase 06 [PR #7](https://github.com/1RaghavM/arbiter/pull/7) merged at `8b681e8` after independent review and [final CI](https://github.com/1RaghavM/arbiter/actions/runs/39680736653): **264 backend tests with real PostgreSQL and six browser tests passed**, with all lint/type/build gates green. Merge author and committer are the configured user.

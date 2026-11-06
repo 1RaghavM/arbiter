@@ -100,7 +100,7 @@ function App() {
     <div className="min-h-screen bg-stone-50 text-stone-900">
       <header className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-5 py-6">
         <div className="flex items-center gap-3">
-          <span className="text-lg font-semibold tracking-tight">arbiter</span>
+          <span className="text-lg font-semibold tracking-tight">Arbiter</span>
           {config?.mode === 'mock' && <span className="rounded-full border bg-white px-3 py-1 text-xs text-stone-600">Mock mode</span>}
         </div>
         <Button variant="outline" disabled={sending} onClick={newChat}>New chat</Button>
