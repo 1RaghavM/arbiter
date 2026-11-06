@@ -2,13 +2,13 @@
 
 Updated: 2026-11-05.
 
-- Current phase: 07 — controlled benchmark, **in progress: replacement database populated; full experiment unfinished**.
+- Current phase: 07 — controlled benchmark, **complete; independent final review/merge pending**.
 - Repository/default branch: [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), `master`.
 - Phase 06 [PR #7](https://github.com/1RaghavM/arbiter/pull/7) merged at `8b681e8` after independent review and [final CI](https://github.com/1RaghavM/arbiter/actions/runs/39680736653): **264 backend tests with real PostgreSQL and six browser tests passed**, with all lint/type/build gates green. Merge author and committer are the configured user.
 - Phase branch: `phase/07-benchmark`, from fetched `origin/master` at `8b681e8`.
 - Authorization: user resumed delegated phase progression on 2026-10-21, approved **USD 5 total** for benchmark API work including independent grading, and selected **Vercel** for Phase 08. No hosting purchase is authorized or required by this selection.
-- Current PR: [draft #8](https://github.com/1RaghavM/arbiter/pull/8); live gates remain blocked and merge is not authorized until they pass.
-- Next action: continue the remaining 28 development cases in the replacement database, allocating the remaining budget before execution; then freeze/run the held-out comparison and review ten triplets. Google and Haiku access verified. User authorized fresh calls after database loss.
+- Current PR: [#8](https://github.com/1RaghavM/arbiter/pull/8); final review pending after completed live gates.
+- Next action: independent reviewer verifies final evidence/current head and CI, then merges PR #8. Phase 08 has not started.
 - Docker Desktop cannot start. Installed PostgreSQL 17 with Homebrew and started an isolated cluster at `/private/tmp/arbiter-phase07-postgres` on `127.0.0.1:55432`; separate `arbiter_test` and `arbiter_benchmark` databases, user `arbiter`. Existing Docker data and root `.env` remain unchanged. Do not run fixtures against the research database.
 - All four provider credentials are configured (values not logged). Official model/price references rechecked before freeze; successful previous integration evidence is reused. Phase 07 development and one affected-provider diagnostic ran; accounting and blocker are recorded below.
 
@@ -192,7 +192,7 @@ Each commit uses `1RaghavM` as author/committer and was immediately pushed befor
 | 04 | merged | phase/04-evaluation | [#5](https://github.com/1RaghavM/arbiter/pull/5) | 222 offline tests, normal live flow and controlled escalation pass |
 | 05 | merged | phase/05-history-jobs | [#6](https://github.com/1RaghavM/arbiter/pull/6) | Merged at 15dc2b4; offline and persisted mock-job gates pass |
 | 06 | merged | phase/06-demo-ui | [#7](https://github.com/1RaghavM/arbiter/pull/7) | Merged at 8b681e8; 264 backend and six browser tests pass |
-| 07 | blocked | phase/07-benchmark | [draft #8](https://github.com/1RaghavM/arbiter/pull/8) | 318 backend + six browser tests pass; Google generation HTTP 402 blocks live experiment |
+| 07 | ready_for_review | phase/07-benchmark | [draft #8](https://github.com/1RaghavM/arbiter/pull/8) | 335 backend + six browser tests pass; full live comparison and ten agent triplet reviews complete |
 | 08 | pending | — | — | — |
 
 Allowed states: pending, in_progress, blocked, ready_for_review, merged. A phase becomes a dependency only after its PR is merged.
@@ -285,3 +285,41 @@ No existing cluster or root .env was changed. Applied all migrations successfull
   proxies, not independent held-out quality. Remaining 28 development cases,
   90 held-out strategy rows, independent grading and ten reviews still required.
   PR #8 must remain draft. No runtime code changed; JSON/whitespace checks passed.
+
+## Phase 07 completed experiment (2026-11-06)
+
+All 30 replacement development cases completed across jobs
+`4d913175-a250-44f7-9f23-62810acb1efb` (first 2) and
+`1bcdd027-23cc-4bf1-86eb-85fa26ad8197` (remaining 28). The latter cost
+USD 0.092312746 with complete usage and 27/28 online-proxy passes.
+Historical lost-job evidence and its retained USD 0.5026437 remain preserved.
+
+Held-out job `b733763d-7376-434f-a2af-286cd31ab57b` froze source `5f70d56`,
+dataset/config/prices/history/scorer and seed 20261021 before calls.
+`python -m app.jobs freeze --dataset ../benchmarks/test.jsonl --budget-usd 3.74
+--request-budget-usd 0.25 --scorer anthropic --seed 20261021`, then
+`benchmark --resume ID` completed 90 runtime + 90 grading rows. Exported
+`reports/benchmark.json`, `benchmark.md`, `manual-review.json` and `manual-key.json`.
+Ten triplets were inspected blinded before reading the key, explicitly labeled
+Codex agent review, not human review. Generated code was inspected, never run.
+
+Independent passes: fixed-cheap 23/30, fixed-strong 24/30, routed 25/30.
+Runtime USD: 0.0023872 / 0.025598 / 0.092456314 respectively. Median latency
+ms: 813 / 1343.5 / 2387.5. Routed quality difference +3.33 pp; cost savings
+-261.2%, median latency savings -77.7%. The frozen target was NOT met.
+No runtime errors, unknown grades or unknown new costs. Scoring cost USD
+0.152456 separately; total comparison USD 0.272897514.
+New calls this recovery total USD 0.369899094; adding historical retained
+allowance yields USD 0.872542794 against USD 5. No further paid checks needed.
+Private `pg_dump -Fc` backup refreshed after jobs/export, mode 0600.
+
+Checks: 335 backend tests passed with real PostgreSQL in separate arbiter_test;
+Ruff check/format passed (32 files). Frontend typecheck/lint/build passed;
+six Playwright desktop/mobile tests passed. Independent reviewer passed 47
+focused tests and found no code blocker. JSON/whitespace/secret checks passed.
+Final CI/current-head independent review remain the merge boundary.
+
+The report discloses small synthetic sample size, scorer/candidate overlap,
+agent-review limitations, strict-output formatting effects, price estimates,
+sequential timing and replacement database provenance. No tuning on held-out
+results, no paid replay, no deployment work.

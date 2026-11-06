@@ -1,0 +1,152 @@
+[
+  {
+    "case_id": "held-extract-eligibility",
+    "label": "A",
+    "strategy": "fixed-strong"
+  },
+  {
+    "case_id": "held-extract-eligibility",
+    "label": "B",
+    "strategy": "routed"
+  },
+  {
+    "case_id": "held-extract-eligibility",
+    "label": "C",
+    "strategy": "fixed-cheap"
+  },
+  {
+    "case_id": "held-summarize-final",
+    "label": "A",
+    "strategy": "fixed-strong"
+  },
+  {
+    "case_id": "held-summarize-final",
+    "label": "B",
+    "strategy": "routed"
+  },
+  {
+    "case_id": "held-summarize-final",
+    "label": "C",
+    "strategy": "fixed-cheap"
+  },
+  {
+    "case_id": "held-summarize-delivery",
+    "label": "A",
+    "strategy": "fixed-strong"
+  },
+  {
+    "case_id": "held-summarize-delivery",
+    "label": "B",
+    "strategy": "fixed-cheap"
+  },
+  {
+    "case_id": "held-summarize-delivery",
+    "label": "C",
+    "strategy": "routed"
+  },
+  {
+    "case_id": "held-extract-overrides",
+    "label": "A",
+    "strategy": "fixed-strong"
+  },
+  {
+    "case_id": "held-extract-overrides",
+    "label": "B",
+    "strategy": "routed"
+  },
+  {
+    "case_id": "held-extract-overrides",
+    "label": "C",
+    "strategy": "fixed-cheap"
+  },
+  {
+    "case_id": "held-summarize-pool",
+    "label": "A",
+    "strategy": "fixed-cheap"
+  },
+  {
+    "case_id": "held-summarize-pool",
+    "label": "B",
+    "strategy": "fixed-strong"
+  },
+  {
+    "case_id": "held-summarize-pool",
+    "label": "C",
+    "strategy": "routed"
+  },
+  {
+    "case_id": "held-general-claim",
+    "label": "A",
+    "strategy": "routed"
+  },
+  {
+    "case_id": "held-general-claim",
+    "label": "B",
+    "strategy": "fixed-strong"
+  },
+  {
+    "case_id": "held-general-claim",
+    "label": "C",
+    "strategy": "fixed-cheap"
+  },
+  {
+    "case_id": "held-extract-stock",
+    "label": "A",
+    "strategy": "fixed-strong"
+  },
+  {
+    "case_id": "held-extract-stock",
+    "label": "B",
+    "strategy": "fixed-cheap"
+  },
+  {
+    "case_id": "held-extract-stock",
+    "label": "C",
+    "strategy": "routed"
+  },
+  {
+    "case_id": "held-code-runs",
+    "label": "A",
+    "strategy": "fixed-cheap"
+  },
+  {
+    "case_id": "held-code-runs",
+    "label": "B",
+    "strategy": "fixed-strong"
+  },
+  {
+    "case_id": "held-code-runs",
+    "label": "C",
+    "strategy": "routed"
+  },
+  {
+    "case_id": "held-extract-address",
+    "label": "A",
+    "strategy": "routed"
+  },
+  {
+    "case_id": "held-extract-address",
+    "label": "B",
+    "strategy": "fixed-cheap"
+  },
+  {
+    "case_id": "held-extract-address",
+    "label": "C",
+    "strategy": "fixed-strong"
+  },
+  {
+    "case_id": "held-write-handover",
+    "label": "A",
+    "strategy": "fixed-strong"
+  },
+  {
+    "case_id": "held-write-handover",
+    "label": "B",
+    "strategy": "routed"
+  },
+  {
+    "case_id": "held-write-handover",
+    "label": "C",
+    "strategy": "fixed-cheap"
+  }
+]

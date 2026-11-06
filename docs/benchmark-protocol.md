@@ -61,11 +61,3 @@ cases and USD 3.74 to the single held-out comparison including scoring.
 The combined maximum is USD 4.997332534, below USD 5. Request ceiling remains
 USD 0.25. Do not replay the first two replacement development cases. Freeze
 held-out settings/history after development, without changing priors or rubrics.
-
-## Final completion allocation (2026-11-06)
-
-User requested completion of Phase 07. Following the two completed replacement
-cases, allocate USD 0.75 to exactly the remaining 28 development cases and
-USD 3.74 to the single held-out comparison including scoring. Combined new
-ceilings USD 4.49 fit within USD 4.492667466 remaining. Preserve original lost-job
-allowances. No thresholds or rubrics change; freeze history after development.

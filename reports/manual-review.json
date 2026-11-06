@@ -1,0 +1,315 @@
+{
+  "job_id": "b733763d-7376-434f-a2af-286cd31ab57b",
+  "cases": [
+    {
+      "case_id": "held-extract-eligibility",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Applications in order: K: score 82, consent yes; L: score 91, consent no; M: score 78, consent yes. Corrections: K score 79; L consent yes; M score 84. Select current applications with score at least 80 and consent yes. Return only their IDs as a JSON array in descending score order."
+        }
+      ],
+      "rubric": "Apply corrections; L 91 and M 84 qualify, K 79 does not.",
+      "reviewer": "Codex gpt-6.1-sol coding agent; blinded qualitative text inspection, not human review",
+      "answers": [
+        {
+          "label": "A",
+          "answer": "Applying the corrections, the current records are:\n- K: score 79, consent yes\n- L: score 91, consent yes\n- M: score 84, consent yes\n\nOnly L and M have a score of at least 80 with consent, and L (91) outranks M (84).\n\n[\"L\",\"M\"]",
+          "verdict": "fail",
+          "notes": "Correct selected IDs but extra explanatory prose violates return-only JSON."
+        },
+        {
+          "label": "B",
+          "answer": "Applying the corrections, the current records are:\n\n- K: score 79, consent yes\n- L: score 91, consent yes\n- M: score 84, consent yes\n\nK falls below the 80 threshold, so L and M are selected, with L (91) ahead of M (84) in descending score order.\n\n```json\n[\"L\", \"M\"]\n```",
+          "verdict": "fail",
+          "notes": "Correct IDs but prose and a Markdown fence violate return-only JSON."
+        },
+        {
+          "label": "C",
+          "answer": "```json\n[\"L\"]\n```",
+          "verdict": "fail",
+          "notes": "Omits qualifying M with corrected score 84; fenced output also violates raw JSON."
+        }
+      ]
+    },
+    {
+      "case_id": "held-summarize-final",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Summarize only the final arrangements in one sentence: Initial plan: exhibition opens June 3 at noon; tickets cost 8 dollars. Update: opening moved to June 5 at noon. Final update: doors open at 11 a.m.; ticket price is unchanged."
+        }
+      ],
+      "rubric": "Final date June 5 time 11 a.m. price 8 dollars; no obsolete date/time as current.",
+      "reviewer": "Codex gpt-6.1-sol coding agent; blinded qualitative text inspection, not human review",
+      "answers": [
+        {
+          "label": "A",
+          "answer": "The exhibition opens June 5, with doors opening at 11 a.m. and tickets still costing 8 dollars.",
+          "verdict": "pass",
+          "notes": "One sentence preserves June 5, 11 a.m. and unchanged eight-dollar price."
+        },
+        {
+          "label": "B",
+          "answer": "The exhibition opens June 5 with doors at 11 a.m., and tickets remain 8 dollars.",
+          "verdict": "pass",
+          "notes": "One sentence preserves June 5, 11 a.m. and unchanged eight-dollar price."
+        },
+        {
+          "label": "C",
+          "answer": "The exhibition will open on June 5 with doors opening at 11 a.m., and tickets will cost 8 dollars.",
+          "verdict": "pass",
+          "notes": "One sentence preserves June 5, 11 a.m. and unchanged eight-dollar price."
+        }
+      ]
+    },
+    {
+      "case_id": "held-summarize-delivery",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Summarize in at most 25 words: A printer delivery expected today is delayed until Thursday. Existing printers still work. Staff should keep using them until the replacement arrives."
+        }
+      ],
+      "rubric": "At most 25 words; Thursday delayed delivery, existing printers operational and should remain in use.",
+      "reviewer": "Codex gpt-6.1-sol coding agent; blinded qualitative text inspection, not human review",
+      "answers": [
+        {
+          "label": "A",
+          "answer": "The printer delivery, expected today, is now delayed until Thursday. Staff should continue using the existing printers, which still work, until the replacements arrive.",
+          "verdict": "pass",
+          "notes": "24 whitespace-delimited words; Thursday delay, working printers and continued use preserved."
+        },
+        {
+          "label": "B",
+          "answer": "Today's printer delivery is delayed until Thursday; please continue using existing printers until replacements arrive.",
+          "verdict": "pass",
+          "notes": "Within 25 words; Thursday delay and continued use of existing printers preserved."
+        },
+        {
+          "label": "C",
+          "answer": "The printer delivery is delayed until Thursday. Staff should keep using existing printers until the replacement arrives.",
+          "verdict": "pass",
+          "notes": "Within 25 words; Thursday delay and continued use of existing printers preserved."
+        }
+      ]
+    },
+    {
+      "case_id": "held-extract-overrides",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Equipment settings were speed=slow, color=green. The technician changed color to amber and later changed speed to fast. A separate spare unit is red. Return only the final color of the original equipment."
+        }
+      ],
+      "rubric": "Only the color override affects the requested field.",
+      "reviewer": "Codex gpt-6.1-sol coding agent; blinded qualitative text inspection, not human review",
+      "answers": [
+        {
+          "label": "A",
+          "answer": "Amber",
+          "verdict": "pass",
+          "notes": "Amber is the final original-equipment color; ignores spare unit and unrelated speed."
+        },
+        {
+          "label": "B",
+          "answer": "Amber",
+          "verdict": "pass",
+          "notes": "Amber is the final original-equipment color; ignores spare unit and unrelated speed."
+        },
+        {
+          "label": "C",
+          "answer": "Amber",
+          "verdict": "pass",
+          "notes": "Amber is the final original-equipment color; ignores spare unit and unrelated speed."
+        }
+      ]
+    },
+    {
+      "case_id": "held-summarize-pool",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Summarize in one sentence: The community pool is closed Saturday for cleaning. Swimming lessons move to Sunday at their usual times. Spectator seating is unchanged."
+        }
+      ],
+      "rubric": "One sentence; Saturday closure for cleaning, lessons Sunday usual times, unchanged seating; no invention.",
+      "reviewer": "Codex gpt-6.1-sol coding agent; blinded qualitative text inspection, not human review",
+      "answers": [
+        {
+          "label": "A",
+          "answer": "The community pool will be closed Saturday for cleaning, with swimming lessons rescheduled to Sunday at their usual times, and spectator seating remaining unchanged.",
+          "verdict": "pass",
+          "notes": "Single sentence preserves Saturday cleaning closure, Sunday usual lesson times and unchanged seating."
+        },
+        {
+          "label": "B",
+          "answer": "The community pool will be closed Saturday for cleaning, so swimming lessons will be held Sunday at their usual times, and spectator seating remains unchanged.",
+          "verdict": "pass",
+          "notes": "Single sentence preserves Saturday cleaning closure, Sunday usual lesson times and unchanged seating."
+        },
+        {
+          "label": "C",
+          "answer": "The community pool is closed Saturday for cleaning, so swimming lessons move to Sunday at their usual times, while spectator seating stays the same.",
+          "verdict": "pass",
+          "notes": "Single sentence preserves Saturday cleaning closure, Sunday usual lesson times and unchanged seating."
+        }
+      ]
+    },
+    {
+      "case_id": "held-general-claim",
+      "messages": [
+        {
+          "role": "user",
+          "content": "A shop says a new window display caused higher sales because sales rose the same week. Give exactly two alternative explanations and one useful way to investigate. Do not conclude the display had no effect."
+        }
+      ],
+      "rubric": "Two plausible alternatives(e.g.price promotion,holiday demand); useful comparison/control accounting for confounds; no definitive causal or no-effect claim.",
+      "reviewer": "Codex gpt-6.1-sol coding agent; blinded qualitative text inspection, not human review",
+      "answers": [
+        {
+          "label": "A",
+          "answer": "**Two alternative explanations**\n\n1. **Seasonal or calendar effects.** Sales may have risen because of a holiday, payday cycle, change in weather, or local event that happened to fall in the same week. These factors would raise foot traffic and purchases regardless of what was in the window.\n\n2. **Concurrent changes in the business.** A promotion, new stock, a price change, advertising, or a competitor's closure might have occurred around the same time, and any of these could account for the increase.\n\n**One useful way to investigate**\n\nRun a comparison using a control. For example, if the shop has multiple locations, install the new display in some stores but not others, then compare sales changes between the two groups over the same period. If only one store exists, alternate the new display with the old one on a schedule (say, a week on, a week off, repeated several times) and compare sales across the weeks, while tracking other factors like weather, promotions, and local events. If sales consistently rise during display weeks beyond what those other factors predict, that supports a real effect of the display.\n\nThe original observation doesn't rule out the display having helped. It simply can't distinguish the display's effect from these other possibilities, which is why a comparison like this is needed.",
+          "verdict": "pass",
+          "notes": "Two grouped alternatives and a controlled comparison; avoids claiming certainty or no effect."
+        },
+        {
+          "label": "B",
+          "answer": "**Two alternative explanations**\n\n1. **Seasonal or calendar effects.** Sales may rise at that time of year anyway, for example because of a holiday, payday timing, school break, or favorable weather. The increase might have happened with the old display too.\n\n2. **Other changes happening at the same time.** A promotion, a competitor closing or raising prices, a local event drawing foot traffic, a staffing change, or a social media mention could each have lifted sales independently of the window.\n\n**One useful way to investigate**\n\nCompare against a baseline or control. For instance, if the shop has multiple locations, change the display at only some of them and compare the sales change at those stores to the unchanged ones over the same period. If only one location exists, alternate between the old and new displays on a set schedule (say, week on, week off, repeated several times) while tracking sales and foot traffic. If sales consistently rise only during the new-display weeks, that is much stronger evidence of a real effect than a single before-and-after comparison.\n\nNone of this rules out that the display helped. The point is that the same-week timing alone can't distinguish it from other causes, so a comparison like this would show how much of the increase, if any, the display deserves credit for.",
+          "verdict": "pass",
+          "notes": "Two grouped alternatives and a controlled comparison; avoids claiming certainty or no effect."
+        },
+        {
+          "label": "C",
+          "answer": "**Two alternative explanations:**  \n1. The increase in sales was due to a seasonal event or holiday occurring that week, unrelated to the window display.  \n2. A new promotion or discount was running the same week, attracting more customers independently of the window display.\n\n**One useful way to investigate:**  \nCompare sales data from several weeks before and after the new display was introduced, controlling for other factors like promotions and holidays, or conduct an A/B test by having some stores use the new window display while others do not, then comparing their sales differences.",
+          "verdict": "pass",
+          "notes": "Two grouped alternatives and a controlled comparison; avoids claiming certainty or no effect."
+        }
+      ]
+    },
+    {
+      "case_id": "held-extract-stock",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Inventory: pen, shelf B, stock 0; ruler, shelf A, stock 2; eraser, shelf B, stock 4; marker, shelf B, stock 1. Return only an alphabetically sorted JSON array of item names on shelf B with positive stock."
+        }
+      ],
+      "rubric": "Exclude pen out of stock and ruler other shelf; alphabetic eraser,marker.",
+      "reviewer": "Codex gpt-6.1-sol coding agent; blinded qualitative text inspection, not human review",
+      "answers": [
+        {
+          "label": "A",
+          "answer": "[\"eraser\",\"marker\"]",
+          "verdict": "pass",
+          "notes": "Raw JSON correctly selects eraser and marker in alphabetical order."
+        },
+        {
+          "label": "B",
+          "answer": "```json\n[\"eraser\", \"marker\"]\n```",
+          "verdict": "fail",
+          "notes": "Correct names/order, but Markdown fence violates return-only JSON."
+        },
+        {
+          "label": "C",
+          "answer": "[\"eraser\", \"marker\"]",
+          "verdict": "pass",
+          "notes": "Raw JSON correctly selects eraser and marker in alphabetical order."
+        }
+      ]
+    },
+    {
+      "case_id": "held-code-runs",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Write only a Python function runs(values) that returns a list of (value,count) pairs for consecutive equal values. For [2,2,3,2] return [(2,2),(3,1),(2,1)]. Empty input returns[]. Do not modify the input."
+        }
+      ],
+      "rubric": "Count consecutive runs only, maintain order, restart a repeated value after interruption, handle empty, preserve input; inspect text only.",
+      "reviewer": "Codex gpt-6.1-sol coding agent; blinded qualitative text inspection, not human review",
+      "answers": [
+        {
+          "label": "A",
+          "answer": "```python\ndef runs(values):\n    if not values:\n        return []\n    result = []\n    prev = values[0]\n    count = 1\n    for v in values[1:]:\n        if v == prev:\n            count += 1\n        else:\n            result.append((prev, count))\n            prev = v\n            count = 1\n    result.append((prev, count))\n    return result\n```",
+          "verdict": "pass",
+          "notes": "Text inspection only: handles empty input, counts consecutive runs, appends final run and preserves input; Markdown fence is cosmetic."
+        },
+        {
+          "label": "B",
+          "answer": "```python\ndef runs(values):\n    result = []\n    for v in values:\n        if result and result[-1][0] == v:\n            result[-1] = (v, result[-1][1] + 1)\n        else:\n            result.append((v, 1))\n    return result\n```",
+          "verdict": "pass",
+          "notes": "Text inspection only: compares only last run, starts a new pair after interruption and leaves input unchanged; no execution."
+        },
+        {
+          "label": "C",
+          "answer": "```python\ndef runs(values):\n    result = []\n    for v in values:\n        if result and result[-1][0] == v:\n            result[-1] = (v, result[-1][1] + 1)\n        else:\n            result.append((v, 1))\n    return result\n```",
+          "verdict": "pass",
+          "notes": "Text inspection only: same last-run update logic, empty list result and no input mutation; no execution."
+        }
+      ]
+    },
+    {
+      "case_id": "held-extract-address",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Package recipient: Mina Cho. Street: 18 Willow Lane. Postal code: 00421. Return only JSON with keys recipient and postal_code, both strings."
+        }
+      ],
+      "rubric": "Preserve leading zeros and exact recipient; no street or extra keys.",
+      "reviewer": "Codex gpt-6.1-sol coding agent; blinded qualitative text inspection, not human review",
+      "answers": [
+        {
+          "label": "A",
+          "answer": "```json\n{\n  \"recipient\": \"Mina Cho\",\n  \"postal_code\": \"00421\"\n}\n```",
+          "verdict": "fail",
+          "notes": "Correct string fields preserve 00421 and recipient, but Markdown fence violates return-only JSON."
+        },
+        {
+          "label": "B",
+          "answer": "```json\n{\n  \"recipient\": \"Mina Cho\",\n  \"postal_code\": \"00421\"\n}\n```",
+          "verdict": "fail",
+          "notes": "Correct string fields preserve 00421 and recipient, but Markdown fence violates return-only JSON."
+        },
+        {
+          "label": "C",
+          "answer": "```json\n{\n  \"recipient\": \"Mina Cho\",\n  \"postal_code\": \"00421\"\n}\n```",
+          "verdict": "fail",
+          "notes": "Correct string fields preserve 00421 and recipient, but Markdown fence violates return-only JSON."
+        }
+      ]
+    },
+    {
+      "case_id": "held-write-handover",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Write exactly three numbered instructions for closing a reading room: collect loaned pencils, turn off desk lamps after all readers leave, and lock the cabinet last. Begin each instruction with an imperative verb."
+        }
+      ],
+      "rubric": "Exactly 3 numbered imperatives preserving pencil collection, lamps after readers leave, cabinet locking last.",
+      "reviewer": "Codex gpt-6.1-sol coding agent; blinded qualitative text inspection, not human review",
+      "answers": [
+        {
+          "label": "A",
+          "answer": "1. Collect all loaned pencils from the reading tables and return them to the supply tray.\n2. Turn off the desk lamps only after every reader has left the room.\n3. Lock the cabinet last, once all other closing tasks are complete.",
+          "verdict": "pass",
+          "notes": "Exactly three numbered imperatives; pencil collection, lamps after departure and cabinet last preserved."
+        },
+        {
+          "label": "B",
+          "answer": "1. Collect all loaned pencils from the reading tables and return them to the supply bin before the last reader leaves.\n2. Turn off the desk lamps once every reader has departed, checking each table to confirm none remain lit.\n3. Lock the cabinet last, after all pencils are collected and the lamps are off.",
+          "verdict": "pass",
+          "notes": "Exactly three numbered imperatives; pencil collection, lamps after departure and cabinet last preserved."
+        },
+        {
+          "label": "C",
+          "answer": "1. Collect all loaned pencils from the readers.  \n2. Turn off the desk lamps after all readers have left the room.  \n3. Lock the cabinet last to secure all materials.",
+          "verdict": "pass",
+          "notes": "Exactly three numbered imperatives; pencil collection, lamps after departure and cabinet last preserved."
+        }
+      ]
+    }
+  ]
+}
