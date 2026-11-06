@@ -323,3 +323,12 @@ The report discloses small synthetic sample size, scorer/candidate overlap,
 agent-review limitations, strict-output formatting effects, price estimates,
 sequential timing and replacement database provenance. No tuning on held-out
 results, no paid replay, no deployment work.
+## Local launcher database fix (2026-11-05)
+
+User-requested follow-up on `feat/make-app`, independent of the blocked Phase 07 experiment. Local DATABASE_URL values now provision PostgreSQL using installed native binaries (including Homebrew 17), falling back to Compose. Native clusters persist under ignored `.local/postgres-PORT`; existing reachable databases are reused, occupied inaccessible ports and remote failures are reported without replacing them. New clusters do not restore historical research data.
+
+Validation: `uv run pytest tests/test_launcher.py -q`: 9 passed; Ruff check/format passed. A real temporary PostgreSQL cluster passed creation, stop/restart with a preserved row, and reuse. `make app` completed migrations, npm install/build, and API/proxied database-read readiness; app available on localhost:5173. No paid calls. Docker fallback was not exercised on this machine. Fix will be committed and immediately pushed; next action is review the launcher PR. Phase 07 billing gate remains unchanged.
+
+Final merge synchronization: merged master `49b349c` (PR #11 local setup fix),
+preserving both appended status sections. Benchmark runtime/frozen artifacts unchanged;
+final combined-head CI remains required.

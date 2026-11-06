@@ -30,3 +30,22 @@ def test_busy_port_is_not_reused():
         occupied.bind(("127.0.0.1", 0))
         port = occupied.getsockname()[1]
         assert launcher.free_port(port) != port
+
+
+def test_remote_database_is_never_provisioned(monkeypatch):
+    def unavailable(*args, **kwargs):
+        raise launcher.psycopg.OperationalError()
+
+    monkeypatch.setattr(launcher.psycopg, "connect", unavailable)
+    with pytest.raises(RuntimeError, match="remote DATABASE_URL"):
+        launcher.ensure_database({"DATABASE_URL": "postgresql://user@remote/db"})
+
+
+def test_busy_database_port_is_not_replaced(monkeypatch):
+    def unavailable(*args, **kwargs):
+        raise launcher.psycopg.OperationalError()
+
+    monkeypatch.setattr(launcher.psycopg, "connect", unavailable)
+    monkeypatch.setattr(launcher, "free_port", lambda port: port + 1)
+    with pytest.raises(RuntimeError, match="port is occupied"):
+        launcher.ensure_database({"DATABASE_URL": "postgresql://user@localhost/db"})

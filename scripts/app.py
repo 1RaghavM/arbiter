@@ -1,8 +1,10 @@
 import os
+import shutil
 import signal
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 from urllib.request import urlopen
@@ -12,7 +14,6 @@ from dotenv import dotenv_values
 
 ROOT = Path(__file__).resolve().parents[1]
 PROVIDERS = ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GOOGLE_API_KEY")
-DEFAULT_DB = "postgresql://arbiter:arbiter@localhost:5432/arbiter"
 
 
 def validate(values):
@@ -54,6 +55,103 @@ def wait_ready(url, children):
     raise RuntimeError("Startup timed out: " + url)
 
 
+def ensure_database(env):
+    url = env["DATABASE_URL"]
+    params = psycopg.conninfo.conninfo_to_dict(url)
+    local = params.get("host") in ("localhost", "127.0.0.1", "::1")
+    if local and (ROOT / ".local" / f"postgres-{params.get('port', 5432)}").exists():
+        url = psycopg.conninfo.make_conninfo(
+            url, host="127.0.0.1", password=params.get("password") or "arbiter"
+        )
+        env["DATABASE_URL"] = url
+    try:
+        with psycopg.connect(url, connect_timeout=3):
+            return
+    except psycopg.Error:
+        pass
+    params = psycopg.conninfo.conninfo_to_dict(url)
+    if params.get("host") not in ("localhost", "127.0.0.1", "::1"):
+        raise RuntimeError(
+            "Cannot connect to remote DATABASE_URL. Start that database first."
+        )
+    port = int(params.get("port", 5432))
+    if free_port(port) != port:
+        raise RuntimeError(
+            "The database port is occupied but DATABASE_URL cannot connect. "
+            "Check its credentials and database name."
+        )
+    user = params.get("user", "arbiter")
+    database = params.get("dbname", user)
+    password = params.get("password", "")
+    password = password or "arbiter"
+    url = psycopg.conninfo.make_conninfo(url, host="127.0.0.1", password=password)
+    env["DATABASE_URL"] = url
+    pg_ctl = shutil.which("pg_ctl")
+    if not pg_ctl:
+        for prefix in ("/opt/homebrew", "/usr/local"):
+            candidate = Path(prefix) / "opt/postgresql@17/bin/pg_ctl"
+            if candidate.is_file():
+                pg_ctl = str(candidate)
+                break
+    if pg_ctl:
+        binaries = Path(pg_ctl).parent
+        data = ROOT / ".local" / f"postgres-{port}"
+        data.parent.mkdir(exist_ok=True)
+        if not (data / "PG_VERSION").exists():
+            with tempfile.NamedTemporaryFile(mode="w") as secret:
+                secret.write(password + "\n")
+                secret.flush()
+                run(
+                    [
+                        str(binaries / "initdb"),
+                        "-D",
+                        str(data),
+                        "-U",
+                        user,
+                        "--auth=scram-sha-256",
+                        "--pwfile",
+                        secret.name,
+                    ],
+                    ROOT,
+                    env,
+                )
+        run(
+            [
+                pg_ctl,
+                "-D",
+                str(data),
+                "-l",
+                str(data / "server.log"),
+                "-o",
+                f"-h 127.0.0.1 -p {port}",
+                "-w",
+                "start",
+            ],
+            ROOT,
+            env,
+        )
+        admin = psycopg.conninfo.make_conninfo(url, dbname="postgres")
+        with psycopg.connect(admin, autocommit=True) as connection:
+            if not connection.execute(
+                "SELECT 1 FROM pg_database WHERE datname = %s", (database,)
+            ).fetchone():
+                connection.execute(
+                    psycopg.sql.SQL("CREATE DATABASE {}").format(
+                        psycopg.sql.Identifier(database)
+                    )
+                )
+    else:
+        env.update(
+            ARBITER_DB_PORT=str(port),
+            ARBITER_DB_USER=user,
+            ARBITER_DB_PASSWORD=password,
+            ARBITER_DB_NAME=database,
+        )
+        run(["docker", "compose", "up", "-d", "--wait", "db"], ROOT, env)
+    with psycopg.connect(env["DATABASE_URL"], connect_timeout=3):
+        pass
+
+
 def main():
     values = dotenv_values(ROOT / ".env", interpolate=False)
     validate(values)
@@ -67,18 +165,7 @@ def main():
     }
     backend = ROOT / "backend"
     frontend = ROOT / "frontend"
-    try:
-        with psycopg.connect(env["DATABASE_URL"], connect_timeout=3):
-            pass
-    except psycopg.Error:
-        if env["DATABASE_URL"] != DEFAULT_DB:
-            raise RuntimeError(
-                "Cannot connect to DATABASE_URL. Start that database first."
-            ) from None
-        port = free_port(5432)
-        env["ARBITER_DB_PORT"] = str(port)
-        run(["docker", "compose", "up", "-d", "--wait", "db"], ROOT, env)
-        env["DATABASE_URL"] = DEFAULT_DB.replace("localhost:5432", f"127.0.0.1:{port}")
+    ensure_database(env)
     run([sys.executable, "-m", "app.db"], backend, env)
     run(["npm", "ci"], frontend, frontend_env)
     run(["npm", "run", "build"], frontend, frontend_env)
@@ -158,7 +245,7 @@ if __name__ == "__main__":
     except RuntimeError as error:
         print(str(error), file=sys.stderr)
         raise SystemExit(1)
-    except (subprocess.CalledProcessError, OSError):
+    except (subprocess.CalledProcessError, OSError, psycopg.Error):
         print(
             "Setup failed. Check the command output and .env; see docs/SETUP.md.",
             file=sys.stderr,
