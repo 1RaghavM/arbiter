@@ -28,6 +28,23 @@ export type Run = {
   cost_complete: boolean
 }
 
+export type RunDetail = Run & {
+  messages: { role: string; content: string }[]
+  final_answer: string | null
+  analysis: ChatResult['analysis']
+  route_decisions: ChatResult['route_decisions']
+  escalation_reason: string | null
+  reserved_cost_usd: string | number
+  evaluations: { attempt: number; model_key: string; status: string; reason: string }[]
+  calls: {
+    sequence: number; stage: string; attempt: number; model_id: string; status: string
+    latency_ms: number; input_tokens: number | null; output_tokens: number | null
+    cost_usd: string | number | null; error: { code: string } | null
+    output: { model_key?: string; text?: string; finish_reason?: string } | null
+  }[]
+  error: { code: string } | null
+}
+
 export type Benchmark = {
   job_id: string
   created_at: string
@@ -50,6 +67,54 @@ export type Benchmark = {
     total_runtime_cost_usd: string | null
     median_latency_ms: number | null
   }>
+}
+
+export type BenchmarkDetail = Benchmark & {
+  dataset_hash: string
+  history_snapshot_id: string | null
+  cases: { ordinal: number; case_id: string; strategy: string; stage: string; state: string; run_id: string | null; attempts: number }[]
+}
+
+export async function fetchRun(id: string): Promise<RunDetail> {
+  const response = await fetch(`/api/runs/${encodeURIComponent(id)}`, { signal: AbortSignal.timeout(10000) })
+  if (!response.ok) throw new Error()
+  const run = await response.json()
+  if (!run || run.id !== id || !Array.isArray(run.messages) || !Array.isArray(run.calls)
+    || !run.messages.every((message: RunDetail['messages'][number]) => message && typeof message.role === 'string' && typeof message.content === 'string')
+    || !Array.isArray(run.route_decisions) || !run.route_decisions.every((route: RunDetail['route_decisions'][number]) => route && typeof route.reason === 'string' && (route.selected_key === null || typeof route.selected_key === 'string'))
+    || !Array.isArray(run.evaluations) || !run.evaluations.every((grade: RunDetail['evaluations'][number]) => grade && Number.isInteger(grade.attempt) && [grade.model_key, grade.status, grade.reason].every(value => typeof value === 'string'))
+    || !run.calls.every((call: RunDetail['calls'][number]) => call
+      && Number.isInteger(call.sequence) && Number.isInteger(call.attempt)
+      && [call.stage, call.model_id, call.status].every(value => typeof value === 'string')
+      && Number.isFinite(call.latency_ms) && call.latency_ms >= 0
+      && [call.input_tokens, call.output_tokens].every(value => value === null || Number.isInteger(value) && value >= 0)
+      && (call.cost_usd === null || isMoney(call.cost_usd))
+      && (call.error === null || typeof call.error?.code === 'string')
+      && (call.output === null || typeof call.output === 'object'
+        && [call.output.model_key, call.output.text].every(value => value === undefined || typeof value === 'string')))
+    || ![run.mode, run.status].every(value => typeof value === 'string')
+    || ![run.final_model, run.final_answer, run.escalation_reason].every(value => value === null || typeof value === 'string')
+    || !(run.total_latency_ms === null || Number.isFinite(run.total_latency_ms) && run.total_latency_ms >= 0)
+    || typeof run.cost_complete !== 'boolean' || !isMoney(run.known_cost_usd) || !isMoney(run.reserved_cost_usd)
+    || !(run.total_cost_usd === null || isMoney(run.total_cost_usd))
+    || !(run.error === null || typeof run.error?.code === 'string')
+    || !(run.analysis === null || run.analysis
+      && [run.analysis.task, run.analysis.difficulty, run.analysis.reasoning, run.analysis.source].every(value => typeof value === 'string')
+      && (run.analysis.confidence === null || Number.isFinite(run.analysis.confidence) && run.analysis.confidence >= 0 && run.analysis.confidence <= 1))) throw new Error()
+  return run
+}
+
+export async function fetchBenchmark(id: string): Promise<BenchmarkDetail> {
+  const response = await fetch(`/api/benchmarks/${encodeURIComponent(id)}`, { signal: AbortSignal.timeout(10000) })
+  if (!response.ok) throw new Error()
+  const job = await response.json()
+  if (!job || job.job_id !== id || typeof job.dataset_hash !== 'string'
+    || !(job.history_snapshot_id === null || typeof job.history_snapshot_id === 'string')
+    || !Array.isArray(job.cases) || !job.cases.every((item: BenchmarkDetail['cases'][number]) => item
+      && Number.isInteger(item.ordinal) && Number.isInteger(item.attempts)
+      && [item.case_id, item.strategy, item.stage, item.state].every(value => typeof value === 'string')
+      && (item.run_id === null || typeof item.run_id === 'string'))) throw new Error()
+  return job
 }
 
 export function isMoney(value: unknown): value is string | number {
