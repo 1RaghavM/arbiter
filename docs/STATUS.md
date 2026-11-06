@@ -1,16 +1,16 @@
 # Arbiter implementation status
 
-Updated: 2026-11-05.
+Updated: 2026-11-06 UTC.
 
-- Current phase: 07 — controlled benchmark, **complete; independent final review/merge pending**.
+- Current phase: 07 — controlled benchmark, **complete and merged**. Phase 08 is pending.
 - Repository/default branch: [1RaghavM/arbiter](https://github.com/1RaghavM/arbiter), `master`.
 - Phase 06 [PR #7](https://github.com/1RaghavM/arbiter/pull/7) merged at `8b681e8` after independent review and [final CI](https://github.com/1RaghavM/arbiter/actions/runs/39680736653): **264 backend tests with real PostgreSQL and six browser tests passed**, with all lint/type/build gates green. Merge author and committer are the configured user.
-- Phase branch: `phase/07-benchmark`, from fetched `origin/master` at `8b681e8`.
+- Current branch: `master`, containing Phase 07 merge `683c0d6`; completed phase branch: `phase/07-benchmark`.
 - Authorization: user resumed delegated phase progression on 2026-10-21, approved **USD 5 total** for benchmark API work including independent grading, and selected **Vercel** for Phase 08. No hosting purchase is authorized or required by this selection.
-- Current PR: [#8](https://github.com/1RaghavM/arbiter/pull/8); final review pending after completed live gates.
-- Next action: independent reviewer verifies final evidence/current head and CI, then merges PR #8. Phase 08 has not started.
-- Docker Desktop cannot start. Installed PostgreSQL 17 with Homebrew and started an isolated cluster at `/private/tmp/arbiter-phase07-postgres` on `127.0.0.1:55432`; separate `arbiter_test` and `arbiter_benchmark` databases, user `arbiter`. Existing Docker data and root `.env` remain unchanged. Do not run fixtures against the research database.
-- All four provider credentials are configured (values not logged). Official model/price references rechecked before freeze; successful previous integration evidence is reused. Phase 07 development and one affected-provider diagnostic ran; accounting and blocker are recorded below.
+- Phase 07 [PR #8](https://github.com/1RaghavM/arbiter/pull/8) merged at `683c0d601c0696c95c219b7e3ee0a0885899a2cb` after independent final review and passing required CI on `d654697`.
+- Next action: Phase 08 may start from updated `master` when resumed. No Phase 08 work was included in this completion.
+- Active replacement research database: private ignored `.local/research-20261105`, port 55434, `arbiter_research`; separate `arbiter_test` for fixtures. Root .env and other clusters were preserved. The original temporary database was lost; historical evidence and its spending allowance remain retained.
+- All configured provider access gates have live evidence. The Google/Haiku recovery checks and full development/held-out experiment completed successfully. Final research results and limitations are recorded below and in `reports/benchmark.md`.
 
 ## Haiku easy-task candidate (2026-10-22)
 
@@ -192,7 +192,7 @@ Each commit uses `1RaghavM` as author/committer and was immediately pushed befor
 | 04 | merged | phase/04-evaluation | [#5](https://github.com/1RaghavM/arbiter/pull/5) | 222 offline tests, normal live flow and controlled escalation pass |
 | 05 | merged | phase/05-history-jobs | [#6](https://github.com/1RaghavM/arbiter/pull/6) | Merged at 15dc2b4; offline and persisted mock-job gates pass |
 | 06 | merged | phase/06-demo-ui | [#7](https://github.com/1RaghavM/arbiter/pull/7) | Merged at 8b681e8; 264 backend and six browser tests pass |
-| 07 | ready_for_review | phase/07-benchmark | [draft #8](https://github.com/1RaghavM/arbiter/pull/8) | 335 backend + six browser tests pass; full live comparison and ten agent triplet reviews complete |
+| 07 | merged | phase/07-benchmark | [#8](https://github.com/1RaghavM/arbiter/pull/8) | Merged at 683c0d6; required CI and independent review passed; full live comparison and ten agent triplet reviews complete |
 | 08 | pending | — | — | — |
 
 Allowed states: pending, in_progress, blocked, ready_for_review, merged. A phase becomes a dependency only after its PR is merged.
@@ -332,3 +332,19 @@ Validation: `uv run pytest tests/test_launcher.py -q`: 9 passed; Ruff check/form
 Final merge synchronization: merged master `49b349c` (PR #11 local setup fix),
 preserving both appended status sections. Benchmark runtime/frozen artifacts unchanged;
 final combined-head CI remains required.
+
+## Phase 07 merge verification (2026-11-06 UTC)
+
+Independent reviewer verified final head `d654697`, reproduced every reported
+metric from the frozen export and validated all ten qualitative reviews. All
+180 comparison rows finished in exactly one attempt; dataset hash/balance,
+development separation, complete grading, costs and source freeze passed.
+Focused review checks: 47 grading/report tests and Ruff passed. No unresolved
+blocking finding remained.
+
+Required backend/frontend CI passed on both push and PR runs at that head:
+[runs/42164282981](https://github.com/1RaghavM/arbiter/actions/runs/42164282981) and
+[runs/42164287691](https://github.com/1RaghavM/arbiter/actions/runs/42164287691).
+Reviewer merged PR #8 with a normal merge commit `683c0d6`, using the configured
+user as sole author and committer, and immediately pushed to master. GitHub
+confirms MERGED. No additional paid calls or Phase 08 work.
